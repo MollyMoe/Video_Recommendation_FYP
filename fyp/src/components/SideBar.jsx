@@ -67,14 +67,9 @@ const SideBar = () => {
   </li>
 
   <hr className="my-2 border-gray-300" />
-
+  
   <li>
-    <a
-      href="#"
-      className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-    >
-      Settings
-    </a>
+    <SidebarButton to="/setting" label="Setting" current={location.pathname === '/setting'} />
   </li>
   <li>
     <a

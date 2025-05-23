@@ -6,6 +6,7 @@ import HistoryPage from './pages/HistoryPage';
 import Signin from './pages/SignInPage';
 import Signup from './pages/SignUpPage';
 import ResetPassword from './pages/ResetPasswordPage';
+import SettingPage from './pages/SettingPage';
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
         path: "history",
         element: <HistoryPage />,
       },
+      {
+        path: "setting",
+        element: <SettingPage />,
+      }
     ],
   },
   {
