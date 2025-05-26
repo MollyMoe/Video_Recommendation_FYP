@@ -91,6 +91,7 @@ function SignUpPage() {
   };
   
 
+
   return (
     <div className="flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
     <div className="w-full max-w-sm mx-auto">
@@ -119,11 +120,13 @@ function SignUpPage() {
           <select
             id="userType"
             name="userType"
+
             className="w-full px-4 py-2 text-sm 
              border border-gray-300 rounded-md 
              bg-white text-gray-900 
              dark:bg-gray-700 dark:text-white 
              focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             value={formData.userType}
             onChange={handleChange}
             required
@@ -142,11 +145,13 @@ function SignUpPage() {
             id="fullName"
             name="fullName"
             type="text"
+
             className="w-full px-4 py-2 text-sm 
              border border-gray-300 rounded-md 
              bg-white text-gray-900 
              dark:bg-gray-700 dark:text-white 
              focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Enter your full name"
             value={formData.fullName}
             onChange={handleChange}
@@ -162,11 +167,13 @@ function SignUpPage() {
             id="username"
             name="username"
             type="text"
+
             className="w-full px-4 py-2 text-sm 
              border border-gray-300 rounded-md 
              bg-white text-gray-900 
              dark:bg-gray-700 dark:text-white 
              focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Choose a username"
             value={formData.username}
             onChange={handleChange}
@@ -182,11 +189,13 @@ function SignUpPage() {
             id="email"
             name="email"
             type="email"
+
             className="w-full px-4 py-2 text-sm 
              border border-gray-300 rounded-md 
              bg-white text-gray-900 
              dark:bg-gray-700 dark:text-white 
              focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Enter your email"
             value={formData.email}
             onChange={handleChange}
@@ -202,11 +211,13 @@ function SignUpPage() {
             id="password"
             name="password"
             type="password"
+
             className="w-full px-4 py-2 text-sm 
              border border-gray-300 rounded-md 
              bg-white text-gray-900 
              dark:bg-gray-700 dark:text-white 
              focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Create password"
             value={formData.password}
             onChange={handleChange}
@@ -222,11 +233,13 @@ function SignUpPage() {
             id="confirmPassword"
             name="confirmPassword"
             type="password"
+
             className="w-full px-4 py-2 text-sm 
              border border-gray-300 rounded-md 
              bg-white text-gray-900 
              dark:bg-gray-700 dark:text-white 
              focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Confirm your password"
             value={formData.confirmPassword}
             onChange={handleChange}
