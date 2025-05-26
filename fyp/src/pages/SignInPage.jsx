@@ -65,7 +65,6 @@ function SignInPage() {
   
     } catch (error) {
       setMessage({ type: 'error', text: 'Server error. Please try again.' });
-=======
     } finally {
       setIsLoading(false);
     }
