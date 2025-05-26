@@ -42,35 +42,55 @@ function SignUpPage() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setMessage(null)
-    
-    if (!validateForm()) return
-    
-    setIsLoading(true)
+    e.preventDefault();
+    setMessage(null);
+  
+    if (!validateForm()) return;
+  
+    setIsLoading(true);
+  
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setMessage({ type: 'success', text: 'Account created successfully!' })
-      console.log("Form data:", formData)
-      // Reset form after successful submission
-      setFormData({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        username: '',
-        fullName: '',
-        userType: ''
-      })
-
+      const res = await fetch('http://localhost:3001/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          username: formData.username,
+          fullName: formData.fullName,
+          userType: formData.userType
+        })
+      });
+  
+      const data = await res.json();
+  
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Account created successfully!' });
+  
+        // Reset form
+        setFormData({
+          email: '',
+          password: '',
+          confirmPassword: '',
+          username: '',
+          fullName: '',
+          userType: ''
+        });
+  
+        // Navigate only if successful
         navigate('/inputgenre');
-
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Signup failed.' });
+      }
+  
     } catch {
-      setMessage({ type: 'error', text: 'Registration failed. Please try again.' })
+      setMessage({ type: 'error', text: 'Registration failed. Please try again.' });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+  
+
 
   return (
     <div className="flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
@@ -100,7 +120,13 @@ function SignUpPage() {
           <select
             id="userType"
             name="userType"
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"
+
+            className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             value={formData.userType}
             onChange={handleChange}
             required
@@ -119,7 +145,13 @@ function SignUpPage() {
             id="fullName"
             name="fullName"
             type="text"
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+
+            className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Enter your full name"
             value={formData.fullName}
             onChange={handleChange}
@@ -135,7 +167,13 @@ function SignUpPage() {
             id="username"
             name="username"
             type="text"
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+
+            className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Choose a username"
             value={formData.username}
             onChange={handleChange}
@@ -151,7 +189,13 @@ function SignUpPage() {
             id="email"
             name="email"
             type="email"
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+
+            className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Enter your email"
             value={formData.email}
             onChange={handleChange}
@@ -167,7 +211,13 @@ function SignUpPage() {
             id="password"
             name="password"
             type="password"
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+
+            className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Create password"
             value={formData.password}
             onChange={handleChange}
@@ -183,7 +233,13 @@ function SignUpPage() {
             id="confirmPassword"
             name="confirmPassword"
             type="password"
-            className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
+
+            className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
+
             placeholder="Confirm your password"
             value={formData.confirmPassword}
             onChange={handleChange}
