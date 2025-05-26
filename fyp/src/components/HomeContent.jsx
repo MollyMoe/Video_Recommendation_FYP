@@ -7,9 +7,11 @@ function HomeContent() {
   const [selectedMovie, setSelectedMovie] = useState(null);
 
   return (
+
     
     <div className="sm:ml-64 pt-24 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       {/* Centered max-width container */}
+
 
       <div className="max-w-6xl mx-auto">
         {/* Movie Grid */}

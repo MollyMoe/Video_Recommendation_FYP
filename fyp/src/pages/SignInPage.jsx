@@ -65,10 +65,12 @@ function SignInPage() {
   
     } catch (error) {
       setMessage({ type: 'error', text: 'Server error. Please try again.' });
+=======
     } finally {
       setIsLoading(false);
     }
   };
+
 
   // FIXED: Return needs to be inside the component
   return (
@@ -78,10 +80,12 @@ function SignInPage() {
         <div className="text-center py-4">
           <img src={logoPic} alt="Cine It" className="mx-auto h-12 mb-1" />
           <h2 className="text-2xl font-semibold text-gray-800">Sign In</h2>
+
         </div>
 
         {/* Form Box */}
         <div className="bg-purple-100 rounded-lg shadow-xl p-4 mt-2">
+
           {message && (
             <div className={`mb-4 p-2 rounded-md text-center text-sm ${
               message.type === 'error'
@@ -97,6 +101,7 @@ function SignInPage() {
             <div>
               <label htmlFor="userType" className="block text-md font-medium text-gray-700 mb-1">User Type</label>
               <select
+
                 id="userType"
                 name="userType"
                 value={formData.userType}
@@ -115,6 +120,7 @@ function SignInPage() {
             <div>
               <label htmlFor="username" className="block text-md font-medium text-gray-700 mb-1">Username</label>
               <input
+
                 id="username"
                 type="text"
                 name="username"
@@ -122,14 +128,17 @@ function SignInPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 text-sm border text-black border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
                 required
+
               />
               {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
+
             </div>
 
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-md font-medium text-gray-700 mb-1">Email</label>
               <input
+
                 id="email"
                 type="email"
                 name="email"
@@ -137,14 +146,18 @@ function SignInPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-2 text-sm border text-black border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-purple-400"
                 required
+
               />
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+
             </div>
 
             {/* Password */}
             <div>
+
               <label htmlFor="password" className="block text-md font-medium text-gray-700 mb-1">Password</label>
               <input
+
                 id="password"
                 type="password"
                 name="password"
@@ -154,6 +167,7 @@ function SignInPage() {
                 required
               />
               {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+
             </div>
 
             {/* Forgot Password */}
@@ -166,6 +180,7 @@ function SignInPage() {
 
             {/* Submit Button */}
             <div className="pt-2">
+
               <button
                 type="submit"
                 disabled={isLoading}
@@ -173,10 +188,12 @@ function SignInPage() {
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </button>
+
             </div>
 
             {/* Sign Up */}
             <div className="text-sm text-gray-600 text-center mt-4">
+
               Don't have an account?{" "}
               <Link to="/signup" className="text-purple-500 hover:underline">
                 <strong>Sign Up</strong>
@@ -190,3 +207,4 @@ function SignInPage() {
 }
 
 export default SignInPage;
+
