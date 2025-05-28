@@ -108,7 +108,7 @@ function SignUpPage() {
 
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
     <div className="w-full max-w-sm mx-auto">
     {/* Header */}
     <div className="text-center py-4">
