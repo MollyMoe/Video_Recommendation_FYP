@@ -31,3 +31,30 @@ dist-ssr/
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore Electron build outputs
+dist/
+out/
+build/
+*.log
+
+# Ignore dependency folders
+node_modules/
+
+# Ignore Electron temp/cache files
+*.asar
+*.DS_Store
+
+# Vite cache
+.vite/
+
+# Electron packaging outputs
+release/
+*.dmg
+*.exe
+*.app
+*.snap
+*.deb
+*.rpm
+*.tar.gz
+*.zip
