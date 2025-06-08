@@ -41,6 +41,11 @@ useEffect(() => {
     };
   }, []);
 
+  const handleLogout = () => {
+    window.electronStore.delete('authToken');
+    navigate('/signin');
+  };
+
   return (
     // User Profile
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -79,13 +84,12 @@ useEffect(() => {
             )}
           </li>
           <hr className="my-1 border-gray-200 dark:border-gray-700" />
-          <li>
-            <a
-              href="/signin"
-              className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-            >
+          <li 
+          onClick={handleLogout}
+          className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer">
+          
               <FaSignOutAlt className="mr-2" /> Sign Out
-            </a>
+            
           </li>
         </ul>
       </div>
