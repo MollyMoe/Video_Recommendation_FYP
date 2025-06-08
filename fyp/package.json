@@ -6,7 +6,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "vite",
+    "dev": "vite & wait-on http://localhost:3000 && electron .",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
