@@ -1,17 +1,18 @@
 import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
 import HomePage from './pages/HomePage';
 import InputGenrePage from './pages/InputGenrePage';
-import MainLayout from './layouts/MainLayout';
+import AdminLayout from './layouts/AdminLayout';
 import HistoryPage from './pages/HistoryPage';
 import Signin from './pages/SignInPage';
 import Signup from './pages/SignUpPage';
 import ResetPassword from './pages/ResetPasswordPage';
 import SettingPage from './pages/SettingPage';
+import StreamerLayout from "./layouts/StreamerLayout";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <MainLayout />,
+    element: <StreamerLayout />,
     children: [
       {
         index: true,
@@ -27,6 +28,15 @@ const router = createBrowserRouter([
       }
     ],
   },
+
+// Admin Layout
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+    ],
+  },
+
   {
     path: "/inputgenre",
     element: <InputGenrePage />,
