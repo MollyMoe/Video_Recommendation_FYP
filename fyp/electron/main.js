@@ -12,11 +12,14 @@ const createWindow = () => {
     width: 800,
     height: 600,
     webPreferences: {
-        nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
       },
   })
 
   mainWindow.loadURL('http://localhost:3000')
+  // mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
