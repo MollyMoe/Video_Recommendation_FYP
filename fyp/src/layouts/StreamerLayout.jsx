@@ -1,16 +1,18 @@
 import React from 'react'
-import HomeContent from '../streamer_components/HomeContent'
 import Nav from '../streamer_components/Nav';
 import SideBar from '../streamer_components/SideBar';
+import { Outlet } from 'react-router-dom';
 
-const HomePage = () => {
+const StreamerLayout = () => {
   return (
-    <div>
+    <>
       <Nav />
       <SideBar />
-      <HomeContent />
-    </div>
+      <main>
+        <Outlet />
+      </main>
+    </>
   )
 }
 
-export default HomePage;
+export default StreamerLayout
