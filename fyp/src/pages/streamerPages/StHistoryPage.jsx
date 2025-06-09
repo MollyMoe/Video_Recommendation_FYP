@@ -19,6 +19,14 @@ const StHistoryPage = () => {
       Go to sign in
       </Link>
 
+      <Link to="/admin">
+      Go to admin dashboard page
+      </Link>
+
+      <Link to="/admin">
+      Go to admin dashboard page
+      </Link>
+
     </div>
   );
 }

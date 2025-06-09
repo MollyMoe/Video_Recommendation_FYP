@@ -1,8 +1,12 @@
 import React from 'react'
+import AdSearchBar from '../../components/admin_components/AdSearchBar'
 
 const AdVideoHomePage = () => {
   return (
-    <div>AdVideoHomePage</div>
+    <>
+    <AdNav />
+    <AdSearchBar />
+    </>
   )
 }
 
