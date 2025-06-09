@@ -96,7 +96,7 @@ function SignUpPage() {
         if (formData.userType === 'guest') {
           navigate('/inputgenre');
         } else if (formData.userType === 'admin') {
-          navigate('/admin');
+          navigate('/signin');
         }
       } else {
         setMessage({ type: 'error', text: data.error || 'Signup failed.' });
