@@ -1,9 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useLocation } from 'react-router-dom';
-import SidebarButton from './SidebarButton';
+import StSidebarButton from './StSidebarButton';
 
-const SideBar = () => {
+const StSideBar = () => {
   const location = useLocation();
   return (
     <aside
@@ -14,13 +14,13 @@ const SideBar = () => {
       <div className="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
         <ul className="space-y-2 font-medium text-center text-black dark:text-white">
   <li>
-    <SidebarButton to="/" label="Home" current={location.pathname === '/'} />
+    <StSidebarButton to="/home" label="Home" current={location.pathname === '/home'} />
   </li>
 
   <hr className="my-2 border-gray-300" />
 
   <li>
-    <SidebarButton to="/history" label="History" current={location.pathname === '/history'} />
+    <StSidebarButton to="/home/history" label="History" current={location.pathname === '/home/history'} />
   </li>
   <li>
     <a
@@ -69,7 +69,7 @@ const SideBar = () => {
   <hr className="my-2 border-gray-300" />
   
   <li>
-    <SidebarButton to="/setting" label="Setting" current={location.pathname === '/setting'} />
+    <StSidebarButton to="/home/setting" label="Setting" current={location.pathname === '/home/setting'} />
   </li>
   <li>
     <a
@@ -104,4 +104,4 @@ const SideBar = () => {
 };
 
 
-export default SideBar
+export default StSideBar

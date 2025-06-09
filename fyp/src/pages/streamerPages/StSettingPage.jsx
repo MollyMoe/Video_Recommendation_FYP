@@ -1,9 +1,8 @@
 import React, { use } from 'react'
 import { useState, useEffect, useRef } from 'react';
-import userData from '../data/userData';
 import {BadgeCheck} from "lucide-react"
 
-const SettingPage = () => {
+const StSettingPage = () => {
   const [formData, setFormData] = useState({
     username: '',
     contact: '',
@@ -16,13 +15,20 @@ const SettingPage = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    setFormData(userData);
-    if (userData.profileImage) {
-      setPreviewImage(userData.profileImage); 
-    }
-  }, []);
+useEffect(() => {
+  const savedUser = JSON.parse(localStorage.getItem('user'));
 
+  if (savedUser) {
+    setFormData((prev) => ({
+      ...prev,
+      username: savedUser.username || '',
+      contact: savedUser.email || '',
+      genre: '',
+      password: '',
+      profileImage: null
+    }));
+  }
+}, []);
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'profileImage') {
@@ -193,4 +199,4 @@ const SettingPage = () => {
   );
 };
 
-export default SettingPage;
+export default StSettingPage;
