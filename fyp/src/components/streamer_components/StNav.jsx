@@ -18,6 +18,7 @@ const StNav = () => {
             <img className='w-33 h-15 rounded-full' src={logoPic} alt= "Cine-It.png"/>
         </div>
 
+
         {/* User Profile */}
         <StUserProfile/>
         
