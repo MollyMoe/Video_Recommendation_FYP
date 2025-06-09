@@ -20,7 +20,7 @@ const Nav = () => {
         </div>
 
         {/* Search Bar */}
-        <SearchBar />
+        {/* <SearchBar /> */}
 
 
         {/* User Profile */}

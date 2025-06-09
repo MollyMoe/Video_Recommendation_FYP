@@ -36,7 +36,7 @@ const SearchBar = () => {
 
   return (
     <div className="flex-1 px-5 hidden md:flex justify-center" ref={wrapperRef}>
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md z-60">
         <input
           type="text"
           value={search}
