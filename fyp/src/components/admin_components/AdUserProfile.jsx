@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit,FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
-import user_Profile from '../images/User-profile.png';
+import user_Profile from '../../images/User-profile.png';
 
 function AdUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
@@ -57,7 +57,7 @@ useEffect(() => {
         <div className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 rounded-md shadow-lg ring-1 ring-gray-300 dark:ring-gray-600 ring-opacity-5 z-10">
         <ul className="py-1">
           <li>
-            <a href="/home/setting" 
+            <a href="/admin/editProfile" 
               className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
             ><FaUserEdit className="mr-2" /> Edit Profile</a>
           </li>

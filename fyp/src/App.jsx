@@ -8,7 +8,9 @@ import Signup from './pages/SignUpPage';
 import ResetPassword from './pages/ResetPasswordPage';
 import StSettingPage from "./pages/streamerPages/StSettingPage";
 import StreamerLayout from "./layouts/StreamerLayout";
-import AdDashboard from "./components/admin_components/AdDashboard";
+import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
+import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
+import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -41,7 +43,15 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <AdDashboard />,
+        element: <AdDashboardPage />,
+      },
+      {
+        path: "videoHomePage",
+        element: <AdVideoHomePage />,
+      },
+      {
+        path: "editProfile",
+        element: <AdEditProfilePage />,
       },
     ],
   },
