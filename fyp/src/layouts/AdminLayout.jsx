@@ -1,16 +1,18 @@
-import React from 'react'
-import AutoRedirector from '../components/AutoDirector'
-import { Outlet } from 'react-router-dom'
+import React from 'react';
+import Nav from '../streamer_components/Nav';
+import SideBar from '../streamer_components/SideBar';
+import { Outlet } from 'react-router-dom';
+import Dashboard from '../admin_components/Dashboard';
 
 const AdminLayout = () => {
   return (
     <>
-    <AutoRedirector roleRequired="admin" />
-    <main>
-      <Outlet />
-    </main>
+      <Dashboard />
+      <main>
+        <Outlet />
+      </main>
     </>
-  )
-}
+  );
+};
 
-export default AdminLayout
+export default AdminLayout;
