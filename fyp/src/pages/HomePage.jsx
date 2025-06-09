@@ -1,7 +1,7 @@
 import React from 'react'
-import HomeContent from '../components/HomeContent'
-import Nav from '../components/Nav';
-import SideBar from '../components/SideBar';
+import HomeContent from '../streamer_components/HomeContent'
+import Nav from '../streamer_components/Nav';
+import SideBar from '../streamer_components/SideBar';
 
 const HomePage = () => {
   return (
