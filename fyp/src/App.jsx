@@ -10,6 +10,7 @@ import StSettingPage from "./pages/streamerPages/StSettingPage";
 import StreamerLayout from "./layouts/StreamerLayout";
 import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
 import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
+import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 
 const router = createBrowserRouter([
   {
@@ -45,8 +46,12 @@ const router = createBrowserRouter([
         element: <AdDashboardPage />,
       },
       {
-        path: "video home page",
+        path: "videoHomePage",
         element: <AdVideoHomePage />,
+      },
+      {
+        path: "editProfile",
+        element: <AdEditProfilePage />,
       },
     ],
   },
