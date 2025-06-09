@@ -93,7 +93,11 @@ function SignUpPage() {
         });
   
         // Navigate only if successful
-        navigate('/inputgenre');
+        if (formData.userType === 'guest') {
+          navigate('/inputgenre');
+        } else if (formData.userType === 'admin') {
+          navigate('/admin');
+        }
       } else {
         setMessage({ type: 'error', text: data.error || 'Signup failed.' });
       }

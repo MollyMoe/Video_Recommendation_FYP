@@ -1,15 +1,13 @@
 import React from 'react'
-import AutoRedirector from '../components/AutoDirector';
-import Nav from '../streamer_components/Nav';
-import SideBar from '../streamer_components/SideBar';
+import StNav from '../components/streamer_components/StNav';
+import StSideBar from '../components/streamer_components/StSideBar';
 import { Outlet } from 'react-router-dom';
 
 const StreamerLayout = () => {
   return (
     <>
-    <AutoRedirector roleRequired="streamer" />
-      <Nav />
-      <SideBar />
+      <StNav />
+      <StSideBar />
       <main>
         <Outlet />
       </main>

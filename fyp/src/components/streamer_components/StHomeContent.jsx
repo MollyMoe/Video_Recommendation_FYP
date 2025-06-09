@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
-import movies from "../data/movieData";
+import movies from "../../data/movieData";
 import {Play,Heart,Bookmark} from "lucide-react"
 
-function HomeContent() {
+function StHomeContent() {
   const [selectedMovie, setSelectedMovie] = useState(null);
 
   return (
 
     
-    <div className="sm:ml-64 pt-24 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       {/* Centered max-width container */}
 
 
@@ -118,4 +118,4 @@ function HomeContent() {
   );
 }
 
-export default HomeContent;
+export default StHomeContent;

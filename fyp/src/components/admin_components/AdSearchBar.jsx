@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace } from "react-icons/fa";
 
-const SearchBar = () => {
+const AdSearchBar = () => {
   const [search, setSearch] = useState("");
   const [history, setHistory] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -36,7 +36,7 @@ const SearchBar = () => {
 
   return (
     <div className="flex-1 px-5 hidden md:flex justify-center" ref={wrapperRef}>
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md z-60">
         <input
           type="text"
           value={search}
@@ -73,4 +73,4 @@ const SearchBar = () => {
   );
 };
 
-export default SearchBar;
+export default AdSearchBar;
