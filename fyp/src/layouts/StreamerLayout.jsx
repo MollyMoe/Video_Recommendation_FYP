@@ -1,6 +1,6 @@
 import React from 'react'
-import Nav from '../streamer_components/Nav';
-import SideBar from '../streamer_components/SideBar';
+import Nav from '../components/streamer_components/Nav';
+import SideBar from '../components/streamer_components/SideBar';
 import { Outlet } from 'react-router-dom';
 
 const StreamerLayout = () => {

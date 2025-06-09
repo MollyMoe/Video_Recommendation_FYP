@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
-import movies from "../data/movieData";
+import movies from "../../data/movieData";
 import {Play,Heart,Bookmark} from "lucide-react"
 
 function HomeContent() {
