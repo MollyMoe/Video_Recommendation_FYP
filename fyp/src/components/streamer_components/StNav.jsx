@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { FaMoon, FaSignOutAlt, FaUserEdit } from 'react-icons/fa';
 import logoPic from '../images/Cine-It.png';
 import { FaSearch } from 'react-icons/fa';
-import SearchBar from './SearchBar';
-import UserProfile from './UserProfile';
+import SearchBar from './StSearchBar';
+import UserProfile from './StUserProfile';
 
 const Nav = () => {
   const [open, setOpen] = useState(false);
