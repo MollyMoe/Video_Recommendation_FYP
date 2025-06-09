@@ -9,7 +9,7 @@ function HomeContent() {
   return (
 
     
-    <div className="sm:ml-64 pt-24 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       {/* Centered max-width container */}
 
 
