@@ -21,11 +21,7 @@ const AdSideButtons = () => {
                 Update
             </button>
         </div>
-    </aside>
-       
-        
-    
-    
+    </aside> 
     </div>
   )
 }
