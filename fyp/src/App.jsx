@@ -1,14 +1,14 @@
 import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
-import HomePage from './pages/HomePage';
+import StHomePage from "./pages/streamerPages/StHomePage";
 import InputGenrePage from './pages/InputGenrePage';
 import AdminLayout from './layouts/AdminLayout';
-import HistoryPage from './pages/HistoryPage';
+import StHistoryPage from "./pages/streamerPages/StHistoryPage";
 import Signin from './pages/SignInPage';
 import Signup from './pages/SignUpPage';
 import ResetPassword from './pages/ResetPasswordPage';
-import SettingPage from './pages/SettingPage';
+import StSettingPage from "./pages/streamerPages/StSettingPage";
 import StreamerLayout from "./layouts/StreamerLayout";
-import Dashboard from "./admin_components/Dashboard";
+import AdDashboard from "./components/admin_components/AdDashboard";
 
 const router = createBrowserRouter([
   {
@@ -22,15 +22,15 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: <StHomePage />,
       },
       {
         path: "history",
-        element: <HistoryPage />,
+        element: <StHistoryPage />,
       },
       {
         path: "setting",
-        element: <SettingPage />,
+        element: <StSettingPage />,
       }
     ],
   },
@@ -41,7 +41,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Dashboard />,
+        element: <AdDashboard />,
       },
     ],
   },
