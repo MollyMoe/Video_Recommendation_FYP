@@ -18,13 +18,15 @@ const StHistoryPage = () => {
       <Link to="/signin">
       Go to sign in
       </Link>
+      <br></br>
 
       <Link to="/admin">
       Go to admin dashboard page
       </Link>
+      <br></br>
 
-      <Link to="/admin">
-      Go to admin dashboard page
+      <Link to="/admin/videoHomePage">
+      Go to admin video home page
       </Link>
 
     </div>
