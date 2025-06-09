@@ -1,8 +1,8 @@
 import React from 'react'
-import userProfile from '../images/User-profile.png';
+import userProfile from '../../images/User-profile.png';
 import { useState } from 'react';
 import { FaMoon, FaSignOutAlt, FaUserEdit } from 'react-icons/fa';
-import logoPic from '../images/Cine-It.png';
+import logoPic from '../../images/Cine-It.png';
 import { FaSearch } from 'react-icons/fa';
 import AdUserProfile from './AdUserProfile';
 
