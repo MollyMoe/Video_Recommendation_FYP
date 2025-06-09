@@ -1,42 +1,60 @@
 import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
-import HomePage from './pages/HomePage';
+import StHomePage from "./pages/streamerPages/StHomePage";
 import InputGenrePage from './pages/InputGenrePage';
 import AdminLayout from './layouts/AdminLayout';
-import HistoryPage from './pages/HistoryPage';
+import StHistoryPage from "./pages/streamerPages/StHistoryPage";
 import Signin from './pages/SignInPage';
 import Signup from './pages/SignUpPage';
 import ResetPassword from './pages/ResetPasswordPage';
-import SettingPage from './pages/SettingPage';
+import StSettingPage from "./pages/streamerPages/StSettingPage";
 import StreamerLayout from "./layouts/StreamerLayout";
+import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
+import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
+import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <Signin />,
+  },
+  
+  {
+    path: "/home",
     element: <StreamerLayout />,
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: <StHomePage />,
       },
       {
         path: "history",
-        element: <HistoryPage />,
+        element: <StHistoryPage />,
       },
       {
         path: "setting",
-        element: <SettingPage />,
+        element: <StSettingPage />,
       }
     ],
   },
-
-// Admin Layout
+  // Admin Layout
   {
     path: "/admin",
     element: <AdminLayout />,
     children: [
+      {
+        index: true,
+        element: <AdDashboardPage />,
+      },
+      {
+        path: "videoHomePage",
+        element: <AdVideoHomePage />,
+      },
+      {
+        path: "editProfile",
+        element: <AdEditProfilePage />,
+      },
     ],
   },
-
   {
     path: "/inputgenre",
     element: <InputGenrePage />,

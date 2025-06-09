@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom';
 
-const SidebarButton = ({ to, label, current, children }) => {
+const StSidebarButton = ({ to, label, current, children }) => {
   return (
     <Link
       to={to}
@@ -14,4 +14,4 @@ const SidebarButton = ({ to, label, current, children }) => {
   );
 };
 
-export default SidebarButton
+export default StSidebarButton
