@@ -4,10 +4,9 @@ import { useState } from 'react';
 import { FaMoon, FaSignOutAlt, FaUserEdit } from 'react-icons/fa';
 import logoPic from '../images/Cine-It.png';
 import { FaSearch } from 'react-icons/fa';
-import SearchBar from './SearchBar';
-import UserProfile from './AdUserProfile';
+import AdUserProfile from './AdUserProfile';
 
-const Nav = () => {
+const AdNav = () => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -19,12 +18,8 @@ const Nav = () => {
             <img className='w-33 h-15 rounded-full' src={logoPic} alt= "Cine-It.png"/>
         </div>
 
-        {/* Search Bar */}
-        {/* <SearchBar /> */}
-
-
         {/* User Profile */}
-        <UserProfile/>
+        <AdUserProfile/>
         
     </div>
   </div>
@@ -33,4 +28,4 @@ const Nav = () => {
   )
 }
 
-export default Nav
+export default AdNav

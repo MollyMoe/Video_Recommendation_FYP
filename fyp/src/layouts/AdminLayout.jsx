@@ -7,7 +7,7 @@ import Dashboard from '../components/admin_components/AdDashboard';
 const AdminLayout = () => {
   return (
     <>
-      <Dashboard />
+      <AdDashboard />
       <main>
         <Outlet />
       </main>

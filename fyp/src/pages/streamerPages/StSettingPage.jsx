@@ -2,7 +2,7 @@ import React, { use } from 'react'
 import { useState, useEffect, useRef } from 'react';
 import {BadgeCheck} from "lucide-react"
 
-const SettingPage = () => {
+const StSettingPage = () => {
   const [formData, setFormData] = useState({
     username: '',
     contact: '',
@@ -199,4 +199,4 @@ useEffect(() => {
   );
 };
 
-export default SettingPage;
+export default StSettingPage;

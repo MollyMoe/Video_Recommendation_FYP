@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FaUserEdit,FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import user_Profile from '../images/User-profile.png';
 
-function UserProfile({ userProfile }) {
+function AdUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
@@ -94,4 +94,4 @@ useEffect(() => {
   );
 }
 
-export default UserProfile;
+export default AdUserProfile;
