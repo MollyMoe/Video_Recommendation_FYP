@@ -1,8 +1,8 @@
 import React from 'react'
-import HomeContent from '../streamer_components/HomeContent'
-import Nav from '../streamer_components/Nav';
-import SideBar from '../streamer_components/SideBar';
-import SearchBar from '../streamer_components/SearchBar';
+import HomeContent from '../../components/streamer_components/HomeContent'
+import Nav from '../../components/streamer_components/Nav';
+import SideBar from '../../components/streamer_components/SideBar';
+import SearchBar from '../../components/streamer_components/SearchBar';
 
 const HomePage = () => {
   return (
