@@ -59,7 +59,7 @@ function SignInPage() {
     setIsLoading(true);
   
     try {
-      const res = await fetch('http://localhost:3001/api/auth/login', {
+      const res = await fetch('http://localhost:3001/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,7 +73,18 @@ function SignInPage() {
       if (res.ok) {
         setMessage({ type: 'success', text: 'Login successful!' });
         localStorage.setItem('token', data.token); // Save JWT if needed
-        navigate('/');
+
+        // Save user info (you can store as JSON string)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // Redirect based on selected user type
+        if (formData.userType === 'admin') {
+          navigate('/admin');
+        } else if (formData.userType === 'guest') {
+          navigate('/home');
+        } else {
+          navigate('/home'); // Fallback
+        }
       } else {
         setMessage({ type: 'error', text: data.error || 'Login failed. Please try again.' });
       }

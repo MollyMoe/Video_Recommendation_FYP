@@ -8,10 +8,16 @@ import Signup from './pages/SignUpPage';
 import ResetPassword from './pages/ResetPasswordPage';
 import SettingPage from './pages/SettingPage';
 import StreamerLayout from "./layouts/StreamerLayout";
+import Dashboard from "./admin_components/Dashboard";
 
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <Signin />,
+  },
+  
+  {
+    path: "/home",
     element: <StreamerLayout />,
     children: [
       {
@@ -33,6 +39,10 @@ const router = createBrowserRouter([
     path: "/admin",
     element: <AdminLayout />,
     children: [
+      {
+        index: true,
+        element: <Dashboard />,
+      },
     ],
   },
   {
