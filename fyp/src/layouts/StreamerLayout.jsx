@@ -1,13 +1,13 @@
 import React from 'react'
-import Nav from '../components/streamer_components/StNav';
-import SideBar from '../components/streamer_components/StSideBar';
+import StNav from '../components/streamer_components/StNav';
+import StSideBar from '../components/streamer_components/StSideBar';
 import { Outlet } from 'react-router-dom';
 
 const StreamerLayout = () => {
   return (
     <>
-      <Nav />
-      <SideBar />
+      <StNav />
+      <StSideBar />
       <main>
         <Outlet />
       </main>

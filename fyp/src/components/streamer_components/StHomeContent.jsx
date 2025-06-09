@@ -3,7 +3,7 @@ import { Dialog } from "@headlessui/react";
 import movies from "../../data/movieData";
 import {Play,Heart,Bookmark} from "lucide-react"
 
-function HomeContent() {
+function StHomeContent() {
   const [selectedMovie, setSelectedMovie] = useState(null);
 
   return (
@@ -118,4 +118,4 @@ function HomeContent() {
   );
 }
 
-export default HomeContent;
+export default StHomeContent;

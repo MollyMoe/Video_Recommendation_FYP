@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace } from "react-icons/fa";
 
-const SearchBar = () => {
+const StSearchBar = () => {
   const [search, setSearch] = useState("");
   const [history, setHistory] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -73,4 +73,4 @@ const SearchBar = () => {
   );
 };
 
-export default SearchBar;
+export default StSearchBar;
