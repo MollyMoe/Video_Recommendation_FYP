@@ -1,8 +1,7 @@
 import React from 'react'
-import userProfile from '../images/User-profile.png';
 import { useState } from 'react';
 import { FaMoon, FaSignOutAlt, FaUserEdit } from 'react-icons/fa';
-import logoPic from '../images/Cine-It.png';
+import logoPic from '../../images/Cine-It.png';
 import { FaSearch } from 'react-icons/fa';
 import StUserProfile from './StUserProfile';
 
@@ -17,7 +16,6 @@ const StNav = () => {
         <div className="flex items-center justify-start rtl:justify-end">
             <img className='w-33 h-15 rounded-full' src={logoPic} alt= "Cine-It.png"/>
         </div>
-
 
         {/* User Profile */}
         <StUserProfile/>

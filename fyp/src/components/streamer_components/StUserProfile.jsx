@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit,FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
-import user_Profile from '../images/User-profile.png';
+import user_Profile from '../../images/User-profile.png';
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
