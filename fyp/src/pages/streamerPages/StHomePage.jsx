@@ -6,7 +6,7 @@ import StSearchBar from '../../components/streamer_components/StSearchBar';
 
 const StHomePage = () => {
   return (
-    <div>
+    <>
      
       <StNav />
       <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
@@ -14,7 +14,7 @@ const StHomePage = () => {
       </div>
       <StSideBar />
       <StHomeContent />
-    </div>
+    </>
   )
 }
 
