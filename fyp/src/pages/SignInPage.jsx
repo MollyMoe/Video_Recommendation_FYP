@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import logoPic from '../images/Cine-It.png';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import * as jwt_decode from "jwt-decode";
+
+
 
 function SignInPage() {
     const navigate = useNavigate();
@@ -50,40 +53,57 @@ function SignInPage() {
   };
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
-  
-    if (!validateForm()) return;
-  
-    setIsLoading(true);
-  
-    try {
-      const res = await fetch('http://localhost:3001/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password
-        })
-      });
-  
-      const data = await res.json();
-  
-      if (res.ok) {
-        setMessage({ type: 'success', text: 'Login successful!' });
-        localStorage.setItem('token', data.token); // Save JWT if needed
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMessage(null);
+
+  if (!validateForm()) return;
+
+  setIsLoading(true);
+
+  try {
+    const res = await fetch('http://localhost:3001/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: formData.username,
+        password: formData.password
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      setMessage({ type: 'success', text: 'Login successful!' });
+
+      // Save token securely to electron-store
+      window.electronStore.set('authToken', data.token);
+
+      // Decode role from token
+      const decoded = jwt_decode(data.token);
+      const userRole = decoded.role;
+
+      // Navigate based on role and userType
+      if (userRole === 'admin' && formData.userType === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'streamer' && formData.userType === 'guest') {
         navigate('/');
       } else {
-        setMessage({ type: 'error', text: data.error || 'Login failed. Please try again.' });
+        setMessage({ type: 'error', text: 'User type mismatch. Please select correct user type.' });
+        window.electronStore.delete('authToken'); // Clean up token if wrong type
       }
-  
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Server error. Please try again.' });
-    } finally {
-      setIsLoading(false);
+
+    } else {
+      setMessage({ type: 'error', text: data.error || 'Login failed. Please try again.' });
     }
-  };
+
+  } catch (error) {
+    setMessage({ type: 'error', text: 'Server error. Please try again.' });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
 
   // FIXED: Return needs to be inside the component
