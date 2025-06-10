@@ -219,7 +219,6 @@ const AdEditProfilePage = () => {
                 )}
               </div>
     </div>
->>>>>>> 3a6924ac77307247c74359f3390de2794cc49dbb
   )
 }
 
