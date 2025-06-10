@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit,FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
-import user_Profile from '../../images/User-profile.png';
+import { useUser } from '../../context/UserContext';
+import defaultImage from '../../images/User-profile.png';
+
 
 function AdUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
+
+  const { profileImage, setCurrentRole } = useUser();
+
+  useEffect(() => {
+    setCurrentRole('admin');
+  }, []);
 
  useEffect(() => {
   const savedTheme = localStorage.getItem("darkMode");
@@ -49,7 +57,9 @@ useEffect(() => {
         onClick={() => setOpen(!open)}
         className="flex text-sm bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-300"
       >
-        <img className="w-10 h-10 rounded-full" src={user_Profile} alt="User profile" />
+        <img className="w-10 h-10 rounded-full"
+          src={profileImage || defaultImage}
+          alt="User" />
       </button>
 
       {/* Dropdown Menu */}
@@ -57,7 +67,7 @@ useEffect(() => {
         <div className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 rounded-md shadow-lg ring-1 ring-gray-300 dark:ring-gray-600 ring-opacity-5 z-10">
         <ul className="py-1">
           <li>
-            <a href="" 
+            <a href="/admin/editProfile" 
               className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
             ><FaUserEdit className="mr-2" /> Edit Profile</a>
           </li>
