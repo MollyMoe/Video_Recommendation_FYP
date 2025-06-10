@@ -62,7 +62,7 @@ const AdSearch = ({ onSearch }) => {
             {history.map((item) => (
               <div
                 key={item}
-                onClick={() => handleHistoryClick(item)} // ✅ Click to re-search
+                onClick={() => handleHistoryClick(item)}
                 className="flex justify-between items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
               >
                 <span>{item}</span>
