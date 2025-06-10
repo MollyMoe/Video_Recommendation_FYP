@@ -14,7 +14,7 @@ const AdDashboard = () => {
             </div>
           </Link>
 
-          <Link to="/admin/AdVideoHomePage">
+          <Link to="/admin/editProfile">
             <div className="bg-blue-200 p-6 rounded shadow text-center hover:bg-blue-300 cursor-pointer">
               User Manage
             </div>
