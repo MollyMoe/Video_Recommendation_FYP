@@ -1,12 +1,12 @@
 import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
 import StHomePage from "./pages/streamerPages/StHomePage";
-import InputGenrePage from './pages/InputGenrePage';
-import AdminLayout from './layouts/AdminLayout';
+import InputGenrePage from "./pages/InputGenrePage";
+import AdminLayout from "./layouts/AdminLayout";
 import StHistoryPage from "./pages/streamerPages/StHistoryPage";
-import Signin from './pages/SignInPage';
-import Signup from './pages/SignUpPage';
-import ResetPassword from './pages/ResetPasswordPage';
+import Signin from "./pages/SignInPage";
+import Signup from "./pages/SignUpPage";
+import ResetPassword from "./pages/ResetPasswordPage";
 import StSettingPage from "./pages/streamerPages/StSettingPage";
 import StreamerLayout from "./layouts/StreamerLayout";
 import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
@@ -20,7 +20,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <Signin />,
   },
-  
+
   {
     path: "/home",
     element: <StreamerLayout />,
@@ -36,7 +36,7 @@ const router = createBrowserRouter([
       {
         path: "setting",
         element: <StSettingPage />,
-      }
+      },
     ],
   },
   // Admin Layout
@@ -62,8 +62,8 @@ const router = createBrowserRouter([
       },
       {
         path: "view/:id",
-        element: <AdUserDetails/>,
-      }
+        element: <AdUserDetails />,
+      },
     ],
   },
   {
@@ -83,7 +83,6 @@ const router = createBrowserRouter([
     element: <ResetPassword />,
   },
 ]);
-
 
 function App() {
   return (
