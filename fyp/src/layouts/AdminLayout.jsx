@@ -1,13 +1,15 @@
 import React from 'react';
-import Nav from '../components/streamer_components/StNav';
-import SideBar from '../components/streamer_components/StSideBar';
 import { Outlet } from 'react-router-dom';
-import Dashboard from '../components/admin_components/AdDashboard';
+<<<<<<< HEAD
+=======
+import AdDashboard from '../components/admin_components/AdDashboard';
+>>>>>>> cc047ee2691cf7fb9d28f39c7b88e775f41c3f05
+import AdNav from '../components/admin_components/AdNav';
 
 const AdminLayout = () => {
   return (
     <>
-      <AdDashboard />
+      <AdNav />
       <main>
         <Outlet />
       </main>

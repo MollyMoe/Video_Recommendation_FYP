@@ -1,6 +1,7 @@
 import React, { use } from 'react'
 import { useState, useEffect, useRef } from 'react';
 import {BadgeCheck} from "lucide-react"
+import { useUser } from "../../context/UserContext";
 
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ const StSettingPage = () => {
     profileImage: null,
   });
 
+  const { updateProfileImage, setCurrentRole } = useUser();
   const [previewImage, setPreviewImage] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const fileInputRef = useRef(null);
@@ -29,18 +31,30 @@ useEffect(() => {
     }));
   }
 }, []);
+
+  useEffect(() => {
+  setCurrentRole('streamer');
+}, []);
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === 'profileImage') {
       const file = files[0];
       if (file) {
-        setFormData((prev) => ({ ...prev, profileImage: file }));
-        setPreviewImage(URL.createObjectURL(file));
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = reader.result;
+          updateProfileImage(base64, 'streamer');     // 💡 Shared state update
+          setPreviewImage(base64);        // For preview in this page
+          setFormData((prev) => ({ ...prev, profileImage: file }));
+        };
+        reader.readAsDataURL(file);
       }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -76,6 +90,7 @@ useEffect(() => {
                         onChange={handleChange}
                         className="hidden"
                     />
+                    {/* {setPreviewImage && <img src={setPreviewImage} alt="Preview" />} */}
                     <button
                         type="button"
                         onClick={triggerFileInput}
