@@ -1,12 +1,11 @@
-import React, { useState } from 'react'
-import AdNav from '../../components/admin_components/AdNav'
-import AdSearch from '../../components/admin_components/AdSearch'
-import { Link } from 'react-router-dom'
-import AdUserTable from '../../components/admin_components/AdUserTable'
-import AdUserDetails from '../../components/admin_components/AdUserDetails'
+import React, { useState } from "react";
+import AdNav from "../../components/admin_components/AdNav";
+import AdSearch from "../../components/admin_components/AdSearch";
+import { Link } from "react-router-dom";
+import AdUserTable from "../../components/admin_components/AdUserTable";
 
 const AdUserManagePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <>
@@ -29,11 +28,11 @@ const AdUserManagePage = () => {
           </div>
         </aside>
       </div>
-      <div className="flex-1 pt-20 pl-[120px]">
+      <div className="flex-1 pt-20 pl-[120px] dark:bg-gray-800">
         <AdUserTable searchQuery={searchQuery} />
       </div>
     </>
   );
-}
+};
 
 export default AdUserManagePage;
