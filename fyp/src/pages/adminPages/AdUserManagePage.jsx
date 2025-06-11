@@ -3,6 +3,7 @@ import AdNav from '../../components/admin_components/AdNav'
 import AdSearch from '../../components/admin_components/AdSearch'
 import { Link } from 'react-router-dom'
 import AdUserTable from '../../components/admin_components/AdUserTable'
+import AdUserDetails from '../../components/admin_components/AdUserDetails'
 
 const AdUserManagePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,7 +29,7 @@ const AdUserManagePage = () => {
           </div>
         </aside>
       </div>
-      <div className="flex-1 pt-20 pl-[30px]">
+      <div className="flex-1 pt-20 pl-[120px]">
         <AdUserTable searchQuery={searchQuery} />
       </div>
     </>
