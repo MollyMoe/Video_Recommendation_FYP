@@ -80,7 +80,7 @@ useEffect(() => {
         <form onSubmit={handleSubmit} className="w-full">
             {/* Profile Image Section */}
             <div className="mb-5 flex flex-row items-center space-x-4">
-                <img src={PreviewImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+                <img src={previewImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
                 <div className="flex flex-col space-y-2">
                     <input
                         type="file"
