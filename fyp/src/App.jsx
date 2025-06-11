@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
+import { UserProvider } from "./context/UserContext";
 import StHomePage from "./pages/streamerPages/StHomePage";
 import InputGenrePage from './pages/InputGenrePage';
 import AdminLayout from './layouts/AdminLayout';
@@ -75,7 +76,11 @@ const router = createBrowserRouter([
 
 
 function App() {
-  return <RouterProvider router={router} />
+  return (
+    <UserProvider>
+      <RouterProvider router={router} />
+    </UserProvider>
+  );
 }
 
 export default App;
