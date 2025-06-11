@@ -12,6 +12,8 @@ import StreamerLayout from "./layouts/StreamerLayout";
 import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
 import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
 import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
+import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
+import AdUserDetails from "./components/admin_components/AdUserDetails";
 
 const router = createBrowserRouter([
   {
@@ -54,6 +56,14 @@ const router = createBrowserRouter([
         path: "editProfile",
         element: <AdEditProfilePage />,
       },
+      {
+        path: "manageUser",
+        element: <AdUserManagePage />,
+      },
+      {
+        path: "view/:id",
+        element: <AdUserDetails/>,
+      }
     ],
   },
   {
