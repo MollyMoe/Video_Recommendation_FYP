@@ -64,7 +64,8 @@ function SignInPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: formData.username,
-          password: formData.password
+          password: formData.password,
+          userType: formData.userType.toLowerCase()
         })
       });
   
@@ -80,7 +81,7 @@ function SignInPage() {
         // Redirect based on selected user type
         if (formData.userType === 'admin') {
           navigate('/admin');
-        } else if (formData.userType === 'guest') {
+        } else if (formData.userType === 'streamer') {
           navigate('/home');
         } else {
           navigate('/home'); // Fallback
@@ -138,7 +139,7 @@ function SignInPage() {
             <span>
               {formData.userType === 'admin'
                 ? 'System Admin'
-                : formData.userType === 'guest'
+                : formData.userType === 'streamer'
                 ? 'Streamer'
                 : 'Choose'}
             </span>
@@ -163,7 +164,7 @@ function SignInPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    handleChange({ target: { name: 'userType', value: 'guest' } });
+                    handleChange({ target: { name: 'userType', value: 'streamer' } });
                     setDropdownOpen(false);
                   }}
                   className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"

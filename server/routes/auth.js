@@ -1,54 +1,61 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const Admin = require('../models/Admin');
+const Streamer = require('../models/Streamer');
 
 const router = express.Router();
 
+// SIGNUP — plain password
 router.post('/signup', async (req, res) => {
   const { fullName, username, email, password, userType } = req.body;
 
   try {
-    const existingUser = await User.findOne({ username });
-    if (existingUser) return res.status(400).json({ error: 'Username already exists' });
+    const Model = userType === 'admin' ? Admin : Streamer;
 
-    const hashed = await bcrypt.hash(password, 10);
-    const newUser = new User({ fullName, username, email, password: hashed, userType });
+    const existingUser = await Model.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    const newUser = new Model({ fullName, username, email, password });
     await newUser.save();
 
     res.status(201).json({ message: 'User created' });
   } catch (err) {
-    console.error(err);
+    console.error('Signup error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 router.post('/signin', async (req, res) => {
+  const { username, password } = req.body;
+  const userType = req.body.userType?.toLowerCase(); // normalize
+
+  console.log('Sign-in request received:', req.body);
+
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    
-    if (!user) return res.status(400).json({ error: 'Invalid credentials' });
+    const Model = userType === 'admin' ? Admin : Streamer;
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
+    const user = await Model.findOne({ username });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    console.log(`Finding user in: ${userType}`);
+    console.log(`Login attempt → Username: ${username} | DB Password: ${user?.password} | Entered: ${password}`);
 
-    // Send token AND user info
-    res.json({
-      message: 'Login successful--',
-      token,
+    if (!user || user.password !== password) {
+      return res.status(400).json({ error: 'Invalid username or password' });
+    }
+
+    return res.json({
+      message: 'Login successful',
       user: {
-        id: user._id,
         username: user.username,
         email: user.email,
-        userType: user.userType
+        fullName: user.fullName,
+        userType: user.userType,
       }
     });
   } catch (err) {
-    console.error('Signin error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Login error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 });
 
