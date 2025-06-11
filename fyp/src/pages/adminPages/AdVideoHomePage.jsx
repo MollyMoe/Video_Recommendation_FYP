@@ -1,12 +1,11 @@
 import React from 'react'
 import AdSearchBar from '../../components/admin_components/AdSearchBar'
-<<<<<<< HEAD
-import AdNav from '../../components/admin_components/AdNav'
-=======
+
+
 import AdSideButtons from '../../components/admin_components/AdSideButtons'
 import AdNav from '../../components/admin_components/AdNav'
 import AdMovieContent from '../../components/admin_components/AdMovieContent'
->>>>>>> cc047ee2691cf7fb9d28f39c7b88e775f41c3f05
+
 
 const AdVideoHomePage = () => {
   return (
