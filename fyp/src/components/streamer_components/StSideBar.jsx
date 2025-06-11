@@ -1,9 +1,23 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useLocation } from 'react-router-dom';
-import StSidebarButton from './StSidebarButton';
+
 
 const StSideBar = () => {
+
+  const StSidebarButton = ({ to, label, current, children }) => {
+    return (
+      <Link
+        to={to}
+        className={`block p-4 rounded-lg ${
+          current ? 'bg-gray-200 text-black font-semibold' : 'hover:bg-gray-200 dark:hover:bg-gray-700'
+        }`}
+      >
+        {children || label}
+      </Link>
+    );
+  };
+
   const location = useLocation();
   return (
     <aside
