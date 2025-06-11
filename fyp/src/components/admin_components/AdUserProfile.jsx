@@ -1,11 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit,FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
-import user_Profile from '../../images/User-profile.png';
+import { useUser } from '../../context/UserContext';
+import defaultImage from '../../images/User-profile.png';
+
 
 function AdUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
+
+  const { profileImage, setCurrentRole } = useUser();
+
+  useEffect(() => {
+    setCurrentRole('admin');
+  }, []);
 
  useEffect(() => {
   const savedTheme = localStorage.getItem("darkMode");
@@ -49,7 +57,9 @@ useEffect(() => {
         onClick={() => setOpen(!open)}
         className="flex text-sm bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-300"
       >
-        <img className="w-10 h-10 rounded-full" src={user_Profile} alt="User profile" />
+        <img className="w-10 h-10 rounded-full"
+          src={profileImage || defaultImage}
+          alt="User" />
       </button>
 
       {/* Dropdown Menu */}

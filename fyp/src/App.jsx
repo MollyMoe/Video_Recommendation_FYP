@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
+import { UserProvider } from "./context/UserContext";
 import StHomePage from "./pages/streamerPages/StHomePage";
 import InputGenrePage from './pages/InputGenrePage';
 import AdminLayout from './layouts/AdminLayout';
@@ -11,6 +12,8 @@ import StreamerLayout from "./layouts/StreamerLayout";
 import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
 import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
 import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
+import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
+import AdUserDetails from "./components/admin_components/AdUserDetails";
 
 const router = createBrowserRouter([
   {
@@ -53,6 +56,14 @@ const router = createBrowserRouter([
         path: "editProfile",
         element: <AdEditProfilePage />,
       },
+      {
+        path: "manageUser",
+        element: <AdUserManagePage />,
+      },
+      {
+        path: "view/:id",
+        element: <AdUserDetails/>,
+      }
     ],
   },
   {
@@ -75,7 +86,11 @@ const router = createBrowserRouter([
 
 
 function App() {
-  return <RouterProvider router={router} />
+  return (
+    <UserProvider>
+      <RouterProvider router={router} />
+    </UserProvider>
+  );
 }
 
 export default App;
