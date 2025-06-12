@@ -10,7 +10,7 @@ const AdUserManagePage = () => {
   return (
     <>
       <AdNav />
-      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
+      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5 ">
         <AdSearch onSearch={(value) => setSearchQuery(value)} />
       </div>
       <div>
@@ -28,7 +28,7 @@ const AdUserManagePage = () => {
           </div>
         </aside>
       </div>
-      <div className="flex-1 pt-20 pl-[120px] dark:bg-gray-800">
+      <div className=" min h-screen flex-1 pt-20 pl-[120px] dark:bg-gray-800">
         <AdUserTable searchQuery={searchQuery} />
       </div>
     </>
