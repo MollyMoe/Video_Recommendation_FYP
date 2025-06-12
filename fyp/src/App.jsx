@@ -64,6 +64,7 @@ const router = createBrowserRouter([
         path: "view/:id",
         element: <AdUserDetails />,
       },
+    
     ],
   },
   {
