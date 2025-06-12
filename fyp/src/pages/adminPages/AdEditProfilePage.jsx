@@ -6,18 +6,18 @@ import { useUser } from '../../context/UserContext';
 
 const AdEditProfilePage = () => {
 
-    const SideButton = ({ to, label, current, children }) => {
-      return (
-        <Link
-          to={to}
-          className={`block p-1 rounded-lg ${
-            current ? 'bg-gray-200 text-black font-semibold' : 'hover:bg-gray-200 '
-          }`}
-        >
-          {children || label}
-        </Link>
-      );
-    };
+    // const SideButton = ({ to, label, current, children }) => {
+    //   return (
+    //     <Link
+    //       to={to}
+    //       className={`block p-1 rounded-lg ${
+    //         current ? 'bg-gray-200 text-black font-semibold' : 'hover:bg-gray-200 '
+    //       }`}
+    //     >
+    //       {children || label}
+    //     </Link>
+    //   );
+    // };
 
     const [formData, setFormData] = useState({
         username: '',
@@ -88,11 +88,11 @@ const AdEditProfilePage = () => {
       };
 
   return (
-    <div className="min-h-screen  pt-30 px-4 sm:px-8 dark:bg-gray-800 ">
+    <div className="min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800 ">
 
-          <div className="fixed top-17  px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
-            <button className="  bg-white border border-gray-400 text-black text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                <SideButton to="/admin" label="Back" current={location.pathname === '/admin'} />    
+          <div className="fixed top-17 px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
+            <button className="bg-white border border-gray-400 text-black text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
+                <Link to="/admin">Back</Link>
             </button>
 
         </div>
