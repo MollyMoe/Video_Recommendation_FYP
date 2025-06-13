@@ -59,5 +59,24 @@ router.post('/signin', async (req, res) => {
   }
 });
 
+// DELETE user by username
+router.delete('/delete/:userType/:username', async (req, res) => {
+  const { userType, username } = req.params;
+  const Model = userType === 'admin' ? Admin : Streamer;
+
+  try {
+    const deletedUser = await Model.findOneAndDelete({ username });
+
+    if (!deletedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('Delete error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 module.exports = router;
