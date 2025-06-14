@@ -20,7 +20,10 @@ const AdUserTable = ({ searchQuery }) => {
   };
 
   const handleView = (user) => {
-    navigate(`/admin/view/${user.id}`);
+    navigate(`/admin/view/${user.id}`,
+      {
+        state: { searchQuery },
+      });
   };
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return [];
@@ -76,7 +79,7 @@ const AdUserTable = ({ searchQuery }) => {
                   <div className="mt-2 flex gap-2">
                     <button
                       onClick={() => handleView(user)}
-                      className="bg-blue-500 text-white px-3 py-1 text-xs rounded hover:bg-blue-600"
+                      className="bg-blue-500 text-white px-5 py-2 text-xs rounded hover:bg-blue-600"
                     >
                       View
                     </button>
