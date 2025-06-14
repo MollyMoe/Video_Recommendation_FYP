@@ -6,6 +6,8 @@ const StreamerSchema = new mongoose.Schema({
   email: String,
   fullName: String,
   userType: { type: String, default: 'streamer' },
+  resetToken: String,
+  tokenExpiry: Date,
 });
 
 module.exports = mongoose.model('Streamer', StreamerSchema, 'streamer');
