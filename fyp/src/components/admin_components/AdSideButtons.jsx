@@ -35,7 +35,8 @@ const AdSideButtons = () => {
             />
           </button>
           <br></br>
-          <button className="bg-white border border-gray-400 text-black text-md px-4 py-2 mt-10 rounded-lg shadow-md hover:bg-gray-200">
+          <button className="bg-white border border-gray-400 text-black text-md px-4 py-2 mt-10 rounded-lg shadow-md hover:bg-gray-200
+          ">
             Update
           </button>
         </div>
