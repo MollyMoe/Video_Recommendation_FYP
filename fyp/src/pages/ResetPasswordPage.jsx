@@ -19,30 +19,43 @@ function ResetPasswordPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
+  e.preventDefault();
+  setMessage(null);
 
-    if (!validateEmail()) return;
+  if (!validateEmail()) return;
 
-    setIsLoading(true);
-    try {
-      // Simulate API call to send reset link
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  setIsLoading(true);
+  try {
+    const res = await fetch('http://localhost:3001/api/auth/request-password-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
       setMessage({
-        type: "success",
-        text: "Password reset link sent to your email!",
+        type: 'success',
+        text: 'Password reset link sent to your email!',
       });
-      // Optional: Redirect after success
-      setTimeout(() => navigate("/signin"), 3000);
-    } catch {
+      setTimeout(() => navigate('/signin'), 3000);
+    } else {
       setMessage({
-        type: "error",
-        text: "Failed to send reset link. Please try again.",
+        type: 'error',
+        text: data.error || 'Failed to send reset link.',
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  } catch {
+    setMessage({
+      type: 'error',
+      text: 'Something went wrong. Try again later.',
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 font-sans mb-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
@@ -55,7 +68,7 @@ function ResetPasswordPage() {
           </h2>
         </div>
 
-        <div className="bg-purple-100 rounded-lg shadow-xl p-4 mt-2">
+        <div className="bg-purple-100 rounded-lg shadow-xl p-4 mt-2 dark:bg-gray-600 dark:border-white">
           {/* Message display */}
           {message && (
             <div
