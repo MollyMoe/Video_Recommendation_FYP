@@ -209,8 +209,6 @@ const AdEditProfilePage = () => {
                     />
                     </div>
         
-                    
-        
                     <div className="flex flex-col items-end space-y-2 mt-4">
                         {/* Submit */}
                         <button
