@@ -3,21 +3,27 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react';
 import {BadgeCheck} from "lucide-react"
 import { useUser } from '../../context/UserContext';
+import { useNavigate } from 'react-router-dom';
 
 const AdEditProfilePage = () => {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const savedUser = JSON.parse(localStorage.getItem('user'));
+  const navigate = useNavigate();
 
-    const SideButton = ({ to, label, current, children }) => {
-      return (
-        <Link
-          to={to}
-          className={`block p-1 rounded-lg ${
-            current ? 'bg-gray-200 text-black font-semibold' : 'hover:bg-gray-200 '
-          }`}
-        >
-          {children || label}
-        </Link>
-      );
-    };
+  const modalRef = useRef(null)
+
+    // const SideButton = ({ to, label, current, children }) => {
+    //   return (
+    //     <Link
+    //       to={to}
+    //       className={`block p-1 rounded-lg ${
+    //         current ? 'bg-gray-200 text-black font-semibold' : 'hover:bg-gray-200 '
+    //       }`}
+    //     >
+    //       {children || label}
+    //     </Link>
+    //   );
+    // };
 
     const [formData, setFormData] = useState({
         username: '',
@@ -87,12 +93,42 @@ const AdEditProfilePage = () => {
         fileInputRef.current.click();
       };
 
-  return (
-    <div className="min-h-screen  pt-30 px-4 sm:px-8 dark:bg-gray-800 ">
+  const handleDelete = async (userType, username) => {
+    console.log('handleDelete called with:', { userType, username });
+    try {
+      const res = await fetch(`http://localhost:3001/api/auth/delete/${userType}/${username}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Deleted successfully');
+         localStorage.removeItem('user');
+         navigate('/signin');
+      } else {
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-          <div className="fixed top-17  h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
-            <button className="  bg-white border border-gray-400 text-black text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                <SideButton to="/admin" label="Back" current={location.pathname === '/admin'} />    
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (showConfirm && modalRef.current && !modalRef.current.contains(e.target)) {
+        setShowConfirm(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [showConfirm])
+
+  return (
+    <div className="min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800 ">
+
+          <div className="fixed top-17 px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
+            <button className="bg-white border border-gray-400 text-black text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
+                <Link to="/admin">Back</Link>
             </button>
 
         </div>
@@ -173,8 +209,6 @@ const AdEditProfilePage = () => {
                     />
                     </div>
         
-                    
-        
                     <div className="flex flex-col items-end space-y-2 mt-4">
                         {/* Submit */}
                         <button
@@ -184,15 +218,49 @@ const AdEditProfilePage = () => {
                             Save Changes
                         </button>
         
-                        {/* Delete Account */}
-                        <button
+                    <div className="relative">
+                          {/* Delete Button */}
+                          <button
                             type="button"
+                            onClick={() => setShowConfirm(true)}
                             className="w-32 text-white bg-red-600 hover:bg-red-700 focus:ring-4 
                             focus:outline-none focus:ring-red-300 font-medium rounded-lg text-xs px-5 py-2.5 
                             text-center dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-800"
-                        >
+                          >
                             Delete Account
-                        </button>
+                          </button>
+
+                          {/* Confirmation Modal */}
+                          {showConfirm && (
+                            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+                              <div
+                                ref={modalRef}
+                                className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg max-w-sm w-full"
+                              >
+                                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                                  Are you sure you want to delete the account?
+                                </h2>
+                                <div className="flex justify-end space-x-4">
+                                  <button
+                                    onClick={() => setShowConfirm(false)}
+                                    className="px-4 py-2 rounded-md text-sm border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleDelete(savedUser?.userType, savedUser?.username);
+                                      setShowConfirm(false);
+                                    }}
+                                    className="px-4 py-2 rounded-md text-sm text-white bg-red-600 hover:bg-red-700"
+                                  >
+                                    Yes
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                     </div>
                 </form>
                 

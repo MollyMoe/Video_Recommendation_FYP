@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace } from "react-icons/fa";
 
-const AdSearch = ({ onSearch }) => {
-  const [search, setSearch] = useState("");
+const AdSearch = ({ searchQuery, setSearchQuery, onSearch }) => {
   const [history, setHistory] = useState([]);
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef(null);
@@ -21,17 +20,17 @@ const AdSearch = ({ onSearch }) => {
   }, []);
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && search.trim()) {
-      const trimmed = search.trim();
+    if (e.key === "Enter" && searchQuery.trim()) {
+      const trimmed = searchQuery.trim();
       if (!history.includes(trimmed)) {
         setHistory([trimmed, ...history]);
       }
       onSearch(trimmed);
-      setSearch("");
     }
   };
 
   const handleHistoryClick = (term) => {
+    setSearchQuery(term);
     onSearch(term);
     setIsFocused(false);
   };
@@ -46,8 +45,8 @@ const AdSearch = ({ onSearch }) => {
       <div className="relative w-full max-w-md z-60">
         <input
           type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search..."

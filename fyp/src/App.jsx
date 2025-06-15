@@ -1,12 +1,11 @@
 import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
 import StHomePage from "./pages/streamerPages/StHomePage";
-import InputGenrePage from './pages/InputGenrePage';
-import AdminLayout from './layouts/AdminLayout';
+import InputGenrePage from "./pages/InputGenrePage";
+import AdminLayout from "./layouts/AdminLayout";
 import StHistoryPage from "./pages/streamerPages/StHistoryPage";
-import Signin from './pages/SignInPage';
-import Signup from './pages/SignUpPage';
-import ResetPassword from './pages/ResetPasswordPage';
+import Signin from "./pages/SignInPage";
+import Signup from "./pages/SignUpPage";
 import StSettingPage from "./pages/streamerPages/StSettingPage";
 import StreamerLayout from "./layouts/StreamerLayout";
 import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
@@ -14,13 +13,15 @@ import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
 import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
 import AdUserDetails from "./components/admin_components/AdUserDetails";
+import SetNewPasswordPage from "./pages/SetNewPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Signin />,
   },
-  
+
   {
     path: "/home",
     element: <StreamerLayout />,
@@ -36,7 +37,7 @@ const router = createBrowserRouter([
       {
         path: "setting",
         element: <StSettingPage />,
-      }
+      },
     ],
   },
   // Admin Layout
@@ -62,8 +63,9 @@ const router = createBrowserRouter([
       },
       {
         path: "view/:id",
-        element: <AdUserDetails/>,
-      }
+        element: <AdUserDetails />,
+      },
+    
     ],
   },
   {
@@ -80,10 +82,13 @@ const router = createBrowserRouter([
   },
   {
     path: "/reset-password",
-    element: <ResetPassword />,
+    element: <ResetPasswordPage />,
   },
+  {
+    path: "/reset-password-form",
+    element: <SetNewPasswordPage />,
+  }
 ]);
-
 
 function App() {
   return (
