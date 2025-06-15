@@ -1,34 +1,45 @@
-import React, { useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import userData from "../../data/userData";
 
 const AdUserTable = ({ searchQuery }) => {
-  const [users, setUsers] = useState(userData);
+  const [users, setUsers] = useState([]);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchStreamers = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/api/auth/users/streamer");
+        const data = await res.json();
+        const enriched = data.map(user => ({ ...user, status: "Active" }));
+        setUsers(enriched);
+      } catch (err) {
+        console.error("Error loading users:", err);
+      }
+    };
+
+    fetchStreamers();
+  }, []);
+
   const handleToggleSuspend = (userId) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId
-          ? {
-              ...user,
-              status: user.status === "Suspended" ? "Active" : "Suspended",
-            }
-          : user,
-      ),
+    setUsers((prev) =>
+      prev.map((user) =>
+        user._id === userId
+          ? { ...user, status: user.status === "Suspended" ? "Active" : "Suspended" }
+          : user
+      )
     );
   };
 
   const handleView = (user) => {
-    navigate(`/admin/view/${user.id}`,
-      {
-        state: { searchQuery },
-      });
+    navigate(`/admin/view/${user._id}`, {
+      state: { searchQuery },
+    });
   };
+
   const filteredUsers = useMemo(() => {
-    if (!searchQuery) return [];
+    if (!searchQuery) return users;
     return users.filter((user) =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()),
+      user.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, users]);
 
@@ -40,33 +51,29 @@ const AdUserTable = ({ searchQuery }) => {
         <table className="min-w-full leading-normal">
           <thead>
             <tr>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800  uppercase ">
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 #
               </th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600  dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 User
               </th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600  dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 Email
               </th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600  dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 Action
               </th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => (
-              <tr key={user.id}>
+              <tr key={user._id}>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   {index + 1}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   <div className="flex items-center">
-                    <img
-                      className="w-10 h-10 rounded-full"
-                      src={user.avatarUrl}
-                      alt={user.username}
-                    />
+                    
                     <div className="ml-3">
                       <p className="text-gray-900 dark:text-white">{user.username}</p>
                     </div>
@@ -76,7 +83,7 @@ const AdUserTable = ({ searchQuery }) => {
                   {user.email}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
-                  <div className="mt-2 flex gap-2">
+                  <div className="flex gap-2 mt-2">
                     <button
                       onClick={() => handleView(user)}
                       className="bg-blue-500 text-white px-5 py-2 text-xs rounded hover:bg-blue-600"
@@ -84,9 +91,12 @@ const AdUserTable = ({ searchQuery }) => {
                       View
                     </button>
                     <button
-                      onClick={() => handleToggleSuspend(user.id)}
-                      className={`px-3 py-1 text-xs rounded text-white 
-                        ${user.status === "Suspended" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}`}
+                      onClick={() => handleToggleSuspend(user._id)}
+                      className={`px-3 py-1 text-xs rounded text-white ${
+                        user.status === "Suspended"
+                          ? "bg-green-500 hover:bg-green-600"
+                          : "bg-red-500 hover:bg-red-600"
+                      }`}
                     >
                       {user.status === "Suspended" ? "Unsuspend" : "Suspend"}
                     </button>
