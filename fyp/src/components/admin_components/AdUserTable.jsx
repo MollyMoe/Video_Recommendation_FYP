@@ -8,9 +8,11 @@ const AdUserTable = ({ searchQuery }) => {
   useEffect(() => {
     const fetchStreamers = async () => {
       try {
-        const res = await fetch("http://localhost:3001/api/auth/users/streamer");
+        const res = await fetch(
+          "http://localhost:3001/api/auth/users/streamer"
+        );
         const data = await res.json();
-        const enriched = data.map(user => ({ ...user, status: "Active" }));
+        const enriched = data.map((user) => ({ ...user, status: "Active" }));
         setUsers(enriched);
       } catch (err) {
         console.error("Error loading users:", err);
@@ -20,14 +22,29 @@ const AdUserTable = ({ searchQuery }) => {
     fetchStreamers();
   }, []);
 
-  const handleToggleSuspend = (userId) => {
-    setUsers((prev) =>
-      prev.map((user) =>
-        user._id === userId
-          ? { ...user, status: user.status === "Suspended" ? "Active" : "Suspended" }
-          : user
-      )
+  const handleToggleSuspend = async (userId) => {
+    const updatedUsers = users.map((user) =>
+      user._id === userId
+        ? {
+            ...user,
+            status: user.status === "Suspended" ? "Active" : "Suspended",
+          }
+        : user
     );
+
+    setUsers(updatedUsers);
+
+    const newStatus = updatedUsers.find((user) => user._id === userId)?.status;
+
+    try {
+      await fetch(`http://localhost:3001/api/auth/users/${userId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
   };
 
   const handleView = (user) => {
@@ -73,9 +90,10 @@ const AdUserTable = ({ searchQuery }) => {
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   <div className="flex items-center">
-                    
                     <div className="ml-3">
-                      <p className="text-gray-900 dark:text-white">{user.username}</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {user.username}
+                      </p>
                     </div>
                   </div>
                 </td>
