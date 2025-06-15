@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 
+
 const InputGenrePage = () => {
   const navigate = useNavigate();
 
@@ -9,6 +10,7 @@ const InputGenrePage = () => {
     e.preventDefault();
     navigate("/signin");
   };
+
 
   return (
     <>
@@ -57,7 +59,6 @@ const InputGenrePage = () => {
 export default InputGenrePage;
 
 // <form onSubmit={handleSubmit} class="max-w-sm mx-auto">
-
 // <div className="mb-5">
 //     <label for="input"
 //         className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your password</label>
