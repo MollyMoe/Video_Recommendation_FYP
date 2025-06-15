@@ -1,4 +1,4 @@
-const movies = [
+/*const movies = [
   {
     id: 1,
     title: "Monsters, Inc.",
@@ -85,4 +85,4 @@ const movies = [
   },
 ];
 
-export default movies
+export default movies*/
