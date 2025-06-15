@@ -52,9 +52,22 @@ const AdSearch = ({ searchQuery, setSearchQuery, onSearch }) => {
           placeholder="Search..."
           className="w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-500">
+        <button
+          type="button"
+          onClick={() => {
+            const trimmed = searchQuery.trim();
+            if (trimmed) {
+              if (!history.includes(trimmed)) {
+                setHistory([trimmed, ...history]);
+              }
+              onSearch(trimmed);
+              setIsFocused(false);
+            }
+          }}
+          className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+        >
           <FaSearch />
-        </div>
+        </button>
 
         {isFocused && history.length > 0 && (
           <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-md">
