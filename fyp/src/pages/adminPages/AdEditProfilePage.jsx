@@ -33,7 +33,7 @@ const AdEditProfilePage = () => {
         profileImage: null,
       });
       
-      const { updateProfileImage, setCurrentRole } = useUser();
+      const { profileImage, updateProfileImage, setCurrentRole } = useUser();
       const [previewImage, setPreviewImage] = useState(null);
       const [showSuccessModal, setShowSuccessModal] = useState(false);
       const fileInputRef = useRef(null);
@@ -139,7 +139,7 @@ const AdEditProfilePage = () => {
                 <form onSubmit={handleSubmit} className="w-full">
                     {/* Profile Image Section */}
                     <div className="mb-5 flex flex-row items-center space-x-4">
-                        <img src={previewImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+                        <img src={profileImage || previewImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
                         <div className="flex flex-col space-y-2">
                             <input
                                 type="file"
