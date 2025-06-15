@@ -1,9 +1,25 @@
 const express = require('express');
+const router = express.Router(); // ✅ Define router BEFORE using it
 const Admin = require('../models/Admin');
 const Streamer = require('../models/Streamer');
 
-const router = express.Router();
+
 const bcrypt = require('bcrypt');
+
+
+// GET all streamers
+router.get('/users/streamer', async (req, res) => {
+  try {
+    const streamers = await Streamer.find(); // Fetch all streamer users
+    res.json(streamers);
+  } catch (err) {
+    console.error('Failed to get streamers:', err);
+    res.status(500).json({ error: 'Server error while fetching streamers' });
+  }
+});
+
+
+
 
 // SIGNUP — plain password
 router.post('/signup', async (req, res) => {
