@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from "react";
 
 // const UserContext = createContext();
 
@@ -26,8 +26,6 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 // export const useUser = () => useContext(UserContext);
 
-
-
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
@@ -38,27 +36,27 @@ export const UserProvider = ({ children }) => {
 
   // Load on init
   useEffect(() => {
-    setAdminProfile(localStorage.getItem('admin_profileImage'));
-    setStreamerProfile(localStorage.getItem('streamer_profileImage'));
+    setAdminProfile(localStorage.getItem("admin_profileImage"));
+    setStreamerProfile(localStorage.getItem("streamer_profileImage"));
   }, []);
 
   // Unified update function
   const updateProfileImage = (base64Image, role) => {
-    if (role === 'admin') {
+    if (role === "admin") {
       setAdminProfile(base64Image);
-      localStorage.setItem('admin_profileImage', base64Image);
+      localStorage.setItem("admin_profileImage", base64Image);
     } else {
       setStreamerProfile(base64Image);
-      localStorage.setItem('streamer_profileImage', base64Image);
+      localStorage.setItem("streamer_profileImage", base64Image);
     }
   };
 
   return (
-    <UserContext.Provider 
+    <UserContext.Provider
       value={{
-        profileImage: currentRole === 'admin' ? adminProfile : streamerProfile,
+        profileImage: currentRole === "admin" ? adminProfile : streamerProfile,
         updateProfileImage,
-        setCurrentRole // Allow components to declare their role
+        setCurrentRole, // Allow components to declare their role
       }}
     >
       {children}

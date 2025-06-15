@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import userData from '../../data/userData';
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import userData from "../../data/userData";
 
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState(userData);
@@ -12,65 +12,83 @@ const AdUserTable = ({ searchQuery }) => {
         user.id === userId
           ? {
               ...user,
-              status: user.status === 'Suspended' ? 'Active' : 'Suspended',
+              status: user.status === "Suspended" ? "Active" : "Suspended",
             }
-          : user
-      )
+          : user,
+      ),
     );
   };
 
-
-const handleView = (user) => {
-    navigate(`/admin/view/${user.id}`);
+  const handleView = (user) => {
+    navigate(`/admin/view/${user.id}`,
+      {
+        state: { searchQuery },
+      });
   };
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return [];
     return users.filter((user) =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      user.username.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [searchQuery, users]);
 
   if (filteredUsers.length === 0) return null;
 
   return (
-    <div className="container mx-auto px-4 sm:px-8 py-8">
-      <div className="shadow rounded-lg overflow-hidden">
+    <div className="container mx-auto px-4 sm:px-8 py-8 dark:bg-gray-800">
+      <div className="shadow rounded-lg overflow-hidden dark:bg-gray-800">
         <table className="min-w-full leading-normal">
           <thead>
             <tr>
-              <th className="px-5 py-3 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800  uppercase ">
+                #
+              </th>
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600  dark:text-white dark:bg-gray-800 uppercase">
+                User
+              </th>
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600  dark:text-white dark:bg-gray-800 uppercase">
+                Email
+              </th>
+              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600  dark:text-white dark:bg-gray-800 uppercase">
+                Action
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => (
               <tr key={user.id}>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{index + 1}</td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+                  {index + 1}
+                </td>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   <div className="flex items-center">
-                    <img className="w-10 h-10 rounded-full" src={user.avatarUrl} alt={user.username} />
+                    <img
+                      className="w-10 h-10 rounded-full"
+                      src={user.avatarUrl}
+                      alt={user.username}
+                    />
                     <div className="ml-3">
-                      <p className="text-gray-900">{user.username}</p>
+                      <p className="text-gray-900 dark:text-white">{user.username}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">{user.email}</td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+                  {user.email}
+                </td>
+                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   <div className="mt-2 flex gap-2">
                     <button
                       onClick={() => handleView(user)}
-                      className="bg-blue-500 text-white px-3 py-1 text-xs rounded hover:bg-blue-600"
+                      className="bg-blue-500 text-white px-5 py-2 text-xs rounded hover:bg-blue-600"
                     >
                       View
                     </button>
                     <button
                       onClick={() => handleToggleSuspend(user.id)}
                       className={`px-3 py-1 text-xs rounded text-white 
-                        ${user.status === 'Suspended' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}
+                        ${user.status === "Suspended" ? "bg-green-500 hover:bg-green-600" : "bg-red-500 hover:bg-red-600"}`}
                     >
-                      {user.status === 'Suspended' ? 'Unsuspend' : 'Suspend'}
+                      {user.status === "Suspended" ? "Unsuspend" : "Suspend"}
                     </button>
                   </div>
                 </td>

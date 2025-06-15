@@ -1,18 +1,25 @@
-import React, { useState } from 'react'
-import AdNav from '../../components/admin_components/AdNav'
-import AdSearch from '../../components/admin_components/AdSearch'
-import { Link } from 'react-router-dom'
-import AdUserTable from '../../components/admin_components/AdUserTable'
-import AdUserDetails from '../../components/admin_components/AdUserDetails'
+import React, { useState } from "react";
+import AdNav from "../../components/admin_components/AdNav";
+import AdSearch from "../../components/admin_components/AdSearch";
+import { Link } from "react-router-dom";
+import AdUserTable from "../../components/admin_components/AdUserTable";
+import { useLocation } from "react-router-dom";
 
 const AdUserManagePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-
+  const location = useLocation();
+  const restoredQuery = location.state?.searchQuery || "";
+  const [searchQuery, setSearchQuery] = useState(restoredQuery);
   return (
     <>
       <AdNav />
+
       <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-        <AdSearch onSearch={(value) => setSearchQuery(value)} />
+        <AdSearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearch={(value) => setSearchQuery(value)}
+        />
+
       </div>
       <div>
         <aside
@@ -29,11 +36,11 @@ const AdUserManagePage = () => {
           </div>
         </aside>
       </div>
-      <div className="flex-1 pt-20 pl-[120px]">
+      <div className=" min h-screen flex-1 pt-20 pl-[120px] dark:bg-gray-800">
         <AdUserTable searchQuery={searchQuery} />
       </div>
     </>
   );
-}
+};
 
 export default AdUserManagePage;
