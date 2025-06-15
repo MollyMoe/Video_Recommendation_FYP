@@ -61,6 +61,14 @@ router.post('/signin', async (req, res) => {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
 
+        // check if the user is suspended
+        if (user.status === 'Suspended') {
+          return res.status(403).json({ error: 'Account suspended. Contact admin.' });
+        }
+    
+
+
+
     return res.json({
       message: 'Login successful',
       user: {
@@ -189,5 +197,24 @@ router.post('/reset-password', async (req, res) => {
     res.status(500).json({ error: 'Something went wrong.' });
   }
 });
+
+// Update streamer status
+router.put('/users/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const updated = await Streamer.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+    res.json(updated);
+  } catch (err) {
+    console.error('Error updating status:', err);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
 
 module.exports = router;
