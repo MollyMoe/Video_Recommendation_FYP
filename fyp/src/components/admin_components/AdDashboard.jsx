@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import AdminUserManage from "../../images/adminUserManage.png";
@@ -26,9 +27,11 @@ const AdDashboard = () => {
                 alt="User Icon"
                 className="w-24 h-24 mt-2 scale-300"
               />
+
             </div>
           </div>
         </Link>
+
 
         <Link to="/admin/videoHomePage">
           <div className="bg-neutral-50 px-20 py-4 rounded shadow-md text-center hover:bg-gray-300 cursor-pointer dark:text-gray-800 dark:bg-gray-200 dark:hover:bg-white">
@@ -49,5 +52,6 @@ const AdDashboard = () => {
     </div>
     );
 };
+
 
 export default AdDashboard;
