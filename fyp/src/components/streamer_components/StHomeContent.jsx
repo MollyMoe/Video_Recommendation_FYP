@@ -55,7 +55,6 @@ function StHomeContent({ movieId }) {
                   className="w-full h-full object-cover"
                 />
               </div>
-
               {/* Hover Preview */}
               <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
                 <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">

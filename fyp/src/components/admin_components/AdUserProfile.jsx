@@ -1,32 +1,38 @@
 import { useEffect, useRef, useState } from "react";
-import { FaUserEdit,FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
-import user_Profile from '../../images/User-profile.png';
+import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
+import { useUser } from "../../context/UserContext";
+import defaultImage from "../../images/User-profile.png";
 
 function AdUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
 
- useEffect(() => {
-  const savedTheme = localStorage.getItem("darkMode");
-  if (savedTheme === "true") {
-    setDarkMode(true);
-  }
-}, []);
+  const { profileImage, setCurrentRole } = useUser();
 
-useEffect(() => {
-  if (darkMode) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-  localStorage.setItem("darkMode", darkMode);
-}, [darkMode]);
+  useEffect(() => {
+    setCurrentRole("admin");
+  }, []);
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("darkMode");
+    if (savedTheme === "true") {
+      setDarkMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", darkMode);
+  }, [darkMode]);
 
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-  }
+    setDarkMode(!darkMode);
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -49,46 +55,53 @@ useEffect(() => {
         onClick={() => setOpen(!open)}
         className="flex text-sm bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-300"
       >
-        <img className="w-10 h-10 rounded-full" src={user_Profile} alt="User profile" />
+        <img
+          className="w-10 h-10 rounded-full"
+          src={profileImage || defaultImage}
+          alt="User"
+        />
       </button>
 
       {/* Dropdown Menu */}
       {open && (
         <div className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 rounded-md shadow-lg ring-1 ring-gray-300 dark:ring-gray-600 ring-opacity-5 z-10">
-        <ul className="py-1">
-          <li>
-            <a href="/admin/editProfile" 
-              className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-            ><FaUserEdit className="mr-2" /> Edit Profile</a>
-          </li>
-          <hr className="my-1 border-gray-200 dark:border-gray-700" />
-          <li
-            onClick={toggleDarkMode}
-            className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-          >
-            {darkMode ? (
-              <>
-                <FaSun className="mr-2" />
-                <span>Light Mode</span>
-              </>
-            ) : (
-              <>
-                <FaMoon className="mr-2" />
-                <span>Dark Mode</span>
-              </>
-            )}
-          </li>
-          <hr className="my-1 border-gray-200 dark:border-gray-700" />
-          <li>
-            <a
-              href="/signin"
+          <ul className="py-1">
+            <li>
+              <a
+                href="/admin/editProfile"
+                className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <FaUserEdit className="mr-2" /> Edit Profile
+              </a>
+            </li>
+            <hr className="my-1 border-gray-200 dark:border-gray-700" />
+            <li
+              onClick={toggleDarkMode}
               className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
             >
-              <FaSignOutAlt className="mr-2" /> Sign Out
-            </a>
-          </li>
-        </ul>
-      </div>
+              {darkMode ? (
+                <>
+                  <FaSun className="mr-2" />
+                  <span>Light Mode</span>
+                </>
+              ) : (
+                <>
+                  <FaMoon className="mr-2" />
+                  <span>Dark Mode</span>
+                </>
+              )}
+            </li>
+            <hr className="my-1 border-gray-200 dark:border-gray-700" />
+            <li>
+              <a
+                href="/signin"
+                className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <FaSignOutAlt className="mr-2" /> Sign Out
+              </a>
+            </li>
+          </ul>
+        </div>
       )}
     </div>
   );
