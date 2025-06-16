@@ -62,21 +62,21 @@ const AdUserTable = ({ searchQuery }) => {
   if (filteredUsers.length === 0) return null;
 
   return (
-    <div className="container mx-auto px-4 sm:px-8 py-8 dark:bg-gray-800">
+    <div className="sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-800">
       <div className="shadow rounded-lg overflow-hidden dark:bg-gray-800">
-        <table className="min-w-full leading-normal">
+        <table className="min-w-full overflow-hidden">
           <thead>
             <tr>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-10 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 UserID
               </th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-7 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 User
               </th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-10 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 Email
               </th>
-              <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-15 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 Action
               </th>
             </tr>
@@ -84,7 +84,7 @@ const AdUserTable = ({ searchQuery }) => {
           <tbody>
             {filteredUsers.map((user, index) => (
               <tr key={user._id}>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+                <td className="px-10 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   {user.userId}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
@@ -109,7 +109,7 @@ const AdUserTable = ({ searchQuery }) => {
                     </button>
                     <button
                       onClick={() => handleToggleSuspend(user._id)}
-                      className={`px-3 py-1 text-xs rounded text-white ${
+                      className={`min-w-[90px] px-3 py-1 text-xs rounded text-white ${
                         user.status === "Suspended"
                           ? "bg-green-500 hover:bg-green-600"
                           : "bg-red-500 hover:bg-red-600"
