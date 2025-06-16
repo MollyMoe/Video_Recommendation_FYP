@@ -23,6 +23,11 @@ mongoose.connect(process.env.MONGO_URI, {
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/movies", require("./routes/movieRoutes"));
+app.use("/api/usersRoutes", require("./routes/usersRoutes"));
+app.use("/api/profile", require("./routes/profile"));
+app.use("/uploads", express.static("uploads")); 
+
+
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running at http://localhost:${process.env.PORT}`);
