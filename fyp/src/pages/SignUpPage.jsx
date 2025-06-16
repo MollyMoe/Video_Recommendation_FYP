@@ -86,6 +86,8 @@ function SignUpPage() {
       if (res.ok) {
         setMessage({ type: "success", text: "Account created successfully!" });
 
+        localStorage.setItem("user", JSON.stringify(data));
+
         // Reset form
         setFormData({
           email: "",

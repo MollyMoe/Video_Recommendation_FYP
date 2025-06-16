@@ -1,76 +1,91 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 
-
 const InputGenrePage = () => {
   const navigate = useNavigate();
+  const [genreInput, setGenreInput] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/signin");
+
+    const genres = genreInput
+      .split(",")
+      .map((g) => g.trim())
+      .filter((g) => g);
+
+    if (genres.length === 0) {
+      setError("Please enter at least one genre.");
+      return;
+    }
+
+    if (!savedUser || !savedUser.username) {
+      setError("User information missing. Please sign in again.");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:3001/api/preference/genre", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: savedUser.username,
+          genres, // send the array directly
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data?.error || "Failed to save preferences");
+      }
+
+      const updatedUser = { ...savedUser, genres };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      console.log("Preferences saved, redirecting to signin...");
+      
+      navigate("/signin");
+    } catch (err) {
+      console.error("Error saving preferences:", err);
+      setError(err.message || "Failed to save preferences.");
+    }
   };
 
-
   return (
-    <>
-      <div className="flex flex-col items-center justify-center mt-30 bg-white space-y-6 px-4">
-        {/* Logo */}
-        <div className="flex items-center justify-start rtl:justify-end">
-          <img
-            className="w-70 h-20 rounded-full"
-            src={logoPic}
-            alt="Cine-It.png"
-          />
-        </div>
+    <div className="flex flex-col items-center justify-center mt-20 bg-white space-y-6 px-4">
+      <img className="w-70 h-20 rounded-full" src={logoPic} alt="Cine-It Logo" />
 
-        {/* Form container */}
-        <div className="w-full max-w-lg h-60 p-4 bg-[#F6EBFF] border border-gray-200 rounded-lg shadow-sm sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <h5 className="text-xl font-medium text-gray-900 dark:text-white text-center">
-              What are your preference genres?
-            </h5>
-            <div>
-              <input
-                type="text"
-                id="genre"
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                    focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 
-                    dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                    dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="mx-auto text-black bg-white hover:bg-blue-800 focus:ring-4 focus:outline-none flex items-center
-                focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5
-                hover:bg-gray-200 dark:hover:bg-gray-700 shadow-md dark:focus:ring-blue-800"
-            >
-              Continue
-            </button>
-          </form>
-        </div>
+      <div className="w-full max-w-lg p-6 bg-[#F6EBFF] border rounded-lg shadow-sm">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <h5 className="text-xl font-medium text-gray-900 text-center">
+            Enter your preferred genres (comma-separated)
+          </h5>
+
+          <input
+            type="text"
+            value={genreInput}
+            onChange={(e) => {
+              setGenreInput(e.target.value);
+              setError("");
+            }}
+            placeholder="e.g., Action, Comedy, Horror"
+            className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+            required
+          />
+
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+
+          <button
+            type="submit"
+            className="block mx-auto bg-purple-600 hover:bg-purple-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-md"
+          >
+            Save Preferences
+          </button>
+        </form>
       </div>
-    </>
+    </div>
   );
 };
 
 export default InputGenrePage;
-
-// <form onSubmit={handleSubmit} class="max-w-sm mx-auto">
-// <div className="mb-5">
-//     <label for="input"
-//         className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your password</label>
-//     <input type="text" id="Genre" className="bg-gray-50 border border-gray-300 text-gray-900
-//     text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
-//     dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500
-//     dark:focus:border-blue-500" required />
-// </div>
-
-// <button type="submit" className="text-white bg-blue-700
-// hover:bg-blue-800 focus:ring-4 focus:outline-none
-// focus:ring-blue-300 font-medium rounded-lg text-sm
-// w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600
-// dark:hover:bg-blue-700 dark:focus:ring-blue-800">Submit</button>
-// </form>
