@@ -36,7 +36,7 @@ router.post('/signup', async (req, res) => {
     const newUser = new Model({ fullName, username, email, password });
     await newUser.save();
 
-    res.status(201).json({ message: 'User created' });
+    res.status(201).json({ username: newUser.username });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -65,13 +65,11 @@ router.post('/signin', async (req, res) => {
         if (user.status === 'Suspended') {
           return res.status(403).json({ error: 'Account is suspended.' });
         }
-    
-
-
 
     return res.json({
       message: 'Login successful',
       user: {
+        userId: user.userId, //added
         username: user.username,
         email: user.email,
         fullName: user.fullName,
@@ -213,6 +211,53 @@ router.put('/users/:id/status', async (req, res) => {
   } catch (err) {
     console.error('Error updating status:', err);
     res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+//Genre prefrences update
+router.post('/preferences', async (req, res) => {
+  const { userId, genres } = req.body;
+
+  if (!userId || !genres) {
+    return res.status(400).json({ error: 'userId and genres are required' });
+  }
+
+  try {
+    // Check both Admin and Streamer collections
+    let user = await Streamer.findByIdAndUpdate(
+      userId,
+      { genres },
+      { new: true }
+    );
+
+    if (!user) {
+      user = await Admin.findByIdAndUpdate(
+        userId,
+        { genres },
+        { new: true }
+      );
+    }
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.status(200).json({ message: 'Preferences updated', user });
+  } catch (err) {
+    console.error('Error updating preferences:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+//get username for the genre of homecontent
+router.get('/by-username/:username', async (req, res) => {
+  try {
+    const user = await Streamer.findOne({ username: req.params.username });
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.json(user); // This will include genres
+  } catch (err) {
+    console.error('Error fetching user by username:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

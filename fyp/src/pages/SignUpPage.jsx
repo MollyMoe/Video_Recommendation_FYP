@@ -98,6 +98,7 @@ function SignUpPage() {
 
         // Navigate only if successful
         if (formData.userType === "guest") {
+          localStorage.setItem("user", JSON.stringify({ username: data.username })); 
           navigate("/inputgenre");
         } else if (formData.userType === "admin") {
           navigate("/signin");
