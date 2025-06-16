@@ -63,7 +63,7 @@ router.post('/signin', async (req, res) => {
 
         // check if the user is suspended
         if (user.status === 'Suspended') {
-          return res.status(403).json({ error: 'Account suspended. Contact admin.' });
+          return res.status(403).json({ error: 'Account is suspended.' });
         }
     
 
