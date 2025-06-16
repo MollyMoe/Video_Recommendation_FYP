@@ -57,7 +57,7 @@ const StSideBar = () => {
               href="#"
               className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
-              Liked Videos
+              Liked Movies
             </a>
           </li>
 
