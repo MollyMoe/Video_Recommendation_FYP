@@ -171,7 +171,7 @@ const StSettingPage = () => {
 
           {/* Password */}
           <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Reset Password</label>
+            <label className="block mb-2 text-sm font-medium">Change Password</label>
             <input
               type="password"
               name="password"
