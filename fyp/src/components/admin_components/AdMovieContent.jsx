@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaTrash } from 'react-icons/fa';
-import movieData from '../../data/movieData'; // Adjust the path as needed
+import movieData from '../../data/movieData';
 
 const AdMovieContent = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);

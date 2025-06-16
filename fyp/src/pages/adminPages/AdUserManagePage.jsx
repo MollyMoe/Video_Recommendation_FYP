@@ -30,7 +30,7 @@ const AdUserManagePage = () => {
           <div className="min-h-screen flex-1 pt-20 pl-[160px] pr-6 dark:bg-gray-800">
 
             <Link to="/admin">
-              <button className="bg-white border border-gray-400 text-black text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
+              <button className="fixed bg-white border border-gray-400 text-black top-17 left-10 text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
                 Home
               </button>
             </Link>
