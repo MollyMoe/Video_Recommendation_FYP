@@ -212,6 +212,50 @@ const StSettingPage = () => {
 
           {/* Password Modal Button */}
           <div className="mb-5">
+<<<<<<< HEAD
+=======
+            <label className="block mb-2 text-sm font-medium">Contact Info</label>
+            <input
+              type="text"
+              name="contact"
+              value={formData.contact}
+              onChange={handleChange}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            />
+          </div>
+
+          {/* Password */}
+          <div className="mb-5">
+            <label className="block mb-2 text-sm font-medium">Change Password</label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            />
+          </div>
+
+          {/* Genre */}
+          <div className="mb-5">
+            <label className="block mb-2 text-sm font-medium">Preferred Genre</label>
+            <input
+              type="text"
+              name="genre"
+              value={formData.genre}
+              onChange={handleChange}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            />
+          </div>
+
+          <div className="flex flex-col items-end space-y-2 mt-4">
+>>>>>>> origin/main
             <button
               type="button"
               onClick={() => {
