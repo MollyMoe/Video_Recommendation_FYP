@@ -176,7 +176,7 @@ const AdEditProfilePage = () => {
 
           {/* Password */}
           <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Reset password</label>
+            <label className="block mb-2 text-sm font-medium">Change password</label>
             <input
               type="password"
               name="password"
