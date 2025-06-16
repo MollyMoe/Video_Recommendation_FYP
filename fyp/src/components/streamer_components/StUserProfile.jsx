@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
+
+
 // import defaultImage from "../../images/profile.png";
 
 const defaultImage = "http://localhost:3001/uploads/profile.png";
 
 function StUserProfile({ userProfile }) {
+  
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  const { setCurrentRole } = useUser();
+  const { updateProfileImage, setCurrentRole } = useUser();
+
   const [profileImage, setProfileImage] = useState(defaultImage);
 
   useEffect(() => {
