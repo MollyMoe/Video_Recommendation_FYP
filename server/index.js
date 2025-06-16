@@ -17,8 +17,8 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log("Main DB connected"))
-.catch((err) => console.error(" Main DB error:", err));
+.then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.log('❌ MongoDB error:', err));
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
