@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
-
+const defaultImage = "http://localhost:3001/uploads/profile.png";
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -74,6 +74,7 @@ const StSettingPage = () => {
     const data = await res.json();
     if (res.ok) {
       alert("Upload successful");
+      window.location.reload()
     } else {
       alert("Error: " + (data.error || "Server error"));
     }
@@ -139,7 +140,7 @@ const StSettingPage = () => {
           {/* Profile Image Section */}
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
-              src={profileImage || previewImage}
+              src={profileImage || previewImage || defaultImage}
               className="w-32 h-32 rounded-full shadow-lg border border-gray-300"
             />
             <div className="flex flex-col space-y-2">

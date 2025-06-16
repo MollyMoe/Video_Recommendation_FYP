@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
-import defaultImage from "../../images/User-profile.png";
+// import defaultImage from "../../images/profile.png";
+
+const defaultImage = "http://localhost:3001/uploads/profile.png";
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
@@ -19,25 +21,24 @@ function StUserProfile({ userProfile }) {
   }, []);
 
   useEffect(() => {
-    setCurrentRole("streamer");
-  }, []);
-
-  useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user?._id || user.userType !== "streamer") return;
-  
+
     fetch(`http://localhost:3001/api/profile/streamers/${user._id}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.profileImage) {
-          setProfileImage("http://localhost:3001" + data.profileImage);
+        if (data.profileImage && data.profileImage !== "") {
+          const fullPath = "http://localhost:3001" + data.profileImage;
+          setProfileImage(fullPath); // local state
+          updateProfileImage(fullPath, "streamer"); // ✅ sync with global context
+        } else {
+          updateProfileImage("", "streamer"); // ✅ clear global if user has no image
         }
       })
       .catch((err) => {
         console.error("Failed to fetch streamer profile image:", err);
       });
   }, []);
-  
 
   useEffect(() => {
     if (darkMode) {

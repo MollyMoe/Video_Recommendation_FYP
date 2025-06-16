@@ -77,6 +77,11 @@ function SignInPage() {
 
       if (res.ok) {
         setMessage({ type: "success", text: "Login successful!" });
+
+        //Clear old profile images
+        localStorage.removeItem("streamer_profileImage");
+        localStorage.removeItem("admin_profileImage");
+        
         localStorage.setItem("token", data.token); 
         localStorage.setItem("user", JSON.stringify(data.user));
 

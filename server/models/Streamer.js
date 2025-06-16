@@ -11,7 +11,8 @@ const StreamerSchema = new mongoose.Schema({
   status: { type: String, default: 'Active' } ,
   resetToken: String,
   tokenExpiry: Date,
-  profileImage: { type: String, default: "" }
+  profileImage: { type: String, default: "/uploads/profile.png" }
+
 
 
 });
