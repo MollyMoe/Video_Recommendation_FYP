@@ -1,11 +1,9 @@
 const express = require('express');
-const router = express.Router(); // ✅ Define router BEFORE using it
+const router = express.Router();
 const Admin = require('../models/Admin');
 const Streamer = require('../models/Streamer');
 
-
 const bcrypt = require('bcrypt');
-
 
 // GET all streamers
 router.get('/users/streamer', async (req, res) => {
@@ -17,9 +15,6 @@ router.get('/users/streamer', async (req, res) => {
     res.status(500).json({ error: 'Server error while fetching streamers' });
   }
 });
-
-
-
 
 // SIGNUP — plain password
 router.post('/signup', async (req, res) => {
@@ -65,11 +60,11 @@ router.post('/signin', async (req, res) => {
         if (user.status === 'Suspended') {
           return res.status(403).json({ error: 'Account is suspended.' });
         }
-
+    
     return res.json({
       message: 'Login successful',
       user: {
-        userId: user.userId, //added
+        userId: user.userId,
         username: user.username,
         email: user.email,
         fullName: user.fullName,
@@ -133,13 +128,13 @@ router.post('/request-password-reset', async (req, res) => {
     const transporter = require('nodemailer').createTransport({
       service: 'Gmail',
       auth: {
-        user: 'myahmue80@gmail.com',
-        pass: 'fqys rdwj ibeb pcat',
+        user: 'cineit.helpdesk@gmail.com',
+        pass: 'xnba wevp gvgo irpg',
       },
     });
 
     await transporter.sendMail({
-      from: '"Cine It Support" <myahmue80@gmail.com>',
+      from: '"Cine It Support" <cineit.helpdesk@gmail.com>',
       to: user.email,
       subject: 'Password Reset Request',
       html: `<p>You requested a password reset. Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
@@ -261,5 +256,20 @@ router.get('/by-username/:username', async (req, res) => {
   }
 });
 
+// Get user by userId
+router.get('/users/:userId', async (req, res) => {
+  try {
+    const user = await Streamer.findOne({ userId: req.params.userId });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching user by userId:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;
