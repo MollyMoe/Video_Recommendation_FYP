@@ -63,7 +63,7 @@ router.post('/signin', async (req, res) => {
 
         // check if the user is suspended
         if (user.status === 'Suspended') {
-          return res.status(403).json({ error: 'Account suspended. Contact admin.' });
+          return res.status(403).json({ error: 'Account is suspended.' });
         }
     
 
@@ -135,13 +135,13 @@ router.post('/request-password-reset', async (req, res) => {
     const transporter = require('nodemailer').createTransport({
       service: 'Gmail',
       auth: {
-        user: 'myahmue80@gmail.com',
-        pass: 'fqys rdwj ibeb pcat',
+        user: 'cineit.helpdesk@gmail.com',
+        pass: 'xnba wevp gvgo irpg',
       },
     });
 
     await transporter.sendMail({
-      from: '"Cine It Support" <myahmue80@gmail.com>',
+      from: '"Cine It Support" <cineit.helpdesk@gmail.com>',
       to: user.email,
       subject: 'Password Reset Request',
       html: `<p>You requested a password reset. Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
