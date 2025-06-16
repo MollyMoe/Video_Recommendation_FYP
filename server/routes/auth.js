@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Router(); // ✅ Define router BEFORE using it
+const router = express.Router();
 const Admin = require('../models/Admin');
 const Streamer = require('../models/Streamer');
 
@@ -31,7 +31,7 @@ router.post('/signup', async (req, res) => {
     const newUser = new Model({ fullName, username, email, password });
     await newUser.save();
 
-    res.status(201).json({ message: 'User created' });
+    res.status(201).json({ username: newUser.username });
   } catch (err) {
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -64,6 +64,7 @@ router.post('/signin', async (req, res) => {
     return res.json({
       message: 'Login successful',
       user: {
+        userId: user.userId,
         username: user.username,
         email: user.email,
         fullName: user.fullName,

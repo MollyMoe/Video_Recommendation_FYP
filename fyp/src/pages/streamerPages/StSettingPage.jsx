@@ -36,16 +36,32 @@ const StSettingPage = () => {
   });
   const [passwordError, setPasswordError] = useState("");
 
-  useEffect(() => {
-    if (savedUser) {
+useEffect(() => {
+  const fetchUser = async () => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!savedUser?.userId) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/auth/users/${savedUser.userId}`);
+      const data = await res.json();
+
+      console.log("Fetched user from backend:", data);
+
       setFormData((prev) => ({
         ...prev,
-        username: savedUser.username || "",
-        contact: savedUser.email || "",
+        username: data.username || "",
+        contact: data.email || "",
+        genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
       }));
+    } catch (err) {
+      console.error("Failed to fetch user:", err);
     }
-    setCurrentRole("streamer");
-  }, []);
+  };
+
+  fetchUser();
+  setCurrentRole("streamer");
+}, []);
+
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -203,9 +219,11 @@ const StSettingPage = () => {
                 name={field}
                 value={formData[field]}
                 onChange={handleChange}
-                className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                disabled={field === "contact"}
+                className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
-                dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
+                ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
               />
             </div>
           ))}
