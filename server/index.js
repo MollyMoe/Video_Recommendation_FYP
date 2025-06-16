@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const authRoutes = require('./routes/auth');
+const genreRoutes = require('./routes/genreRoutes');
 
 
 dotenv.config();
@@ -23,6 +24,11 @@ mongoose.connect(process.env.MONGO_URI, {
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/movies", require("./routes/movieRoutes"));
+app.use("/api/preference", require("./routes/genreRoutes"));
+app.use('/api/users', authRoutes); //  This makes /users/by-username work
+ 
+
+
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running at http://localhost:${process.env.PORT}`);
