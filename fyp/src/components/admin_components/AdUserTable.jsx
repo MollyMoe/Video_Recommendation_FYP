@@ -69,7 +69,7 @@ const AdUserTable = ({ searchQuery }) => {
           <thead>
             <tr>
               <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
-                #
+                UserID
               </th>
               <th className="px-5 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
                 User
@@ -86,7 +86,7 @@ const AdUserTable = ({ searchQuery }) => {
             {filteredUsers.map((user, index) => (
               <tr key={user._id}>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
-                  {index + 1}
+                  {user.userId}
                 </td>
                 <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   <div className="flex items-center">
