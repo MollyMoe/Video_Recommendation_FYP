@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
-import defaultImage from "../../images/User-profile.png";
+const defaultImage = "http://localhost:3001/uploads/profile.png";
+
 
 function AdUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
