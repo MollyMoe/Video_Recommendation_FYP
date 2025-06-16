@@ -7,8 +7,9 @@ const InputGenrePage = () => {
   const [genreInput, setGenreInput] = useState("");
   const [error, setError] = useState("");
 
-  const savedUser = JSON.parse(localStorage.getItem("user")); 
 
+
+  const savedUser = JSON.parse(localStorage.getItem("user"));
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -42,7 +43,10 @@ const InputGenrePage = () => {
         throw new Error(data?.error || "Failed to save preferences");
       }
 
+      const updatedUser = { ...savedUser, genres };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
       console.log("Preferences saved, redirecting to signin...");
+      
       navigate("/signin");
     } catch (err) {
       console.error("Error saving preferences:", err);

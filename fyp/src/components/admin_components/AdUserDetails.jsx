@@ -2,7 +2,6 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AdUserTable from "./AdUserTable";
-import userData from "../../data/userData"; // adjust the path as needed
 
 const AdUserDetails = () => {
   const SideButton = ({ to, label, current, children }) => {
@@ -35,9 +34,21 @@ const [page, setPage] = useState(restoredPage);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // find the user with matching id (id from useParams is a string)
-    const foundUser = userData.find((u) => u.id === Number(id));
-    setUser(foundUser || null);
+    const fetchUser = async (userId) => {
+      try {
+        const res = await fetch(`http://localhost:3001/api/auth/users/${userId}`);
+        if (!res.ok) {
+          throw new Error("User not found");
+        }
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+        setUser(null);
+      }
+    };
+
+    fetchUser(id);
   }, [id]);
 
   if (!user) return <div className="text-red-600">User not found</div>;
@@ -127,31 +138,3 @@ const [page, setPage] = useState(restoredPage);
 
 export default AdUserDetails;
 
-// backend connecting
-
-// const [error, setError] = useState(null);
-
-//   useEffect(() => {
-//     const fetchUser = async () => {
-//       try {
-//         const res = await fetch(`http://localhost:3001/api/users/${id}`, {
-//           method: 'GET',
-//           headers: { 'Content-Type': 'application/json' },
-//         });
-
-//         if (!res.ok) {
-//           throw new Error('User not found');
-//         }
-
-//         const data = await res.json();
-//         setUser(data);
-//       } catch (err) {
-//         setError(err.message);
-//       }
-//     };
-
-//     fetchUser();
-//   }, [id]);
-
-//   if (error) return <div className="text-red-600">Error: {error}</div>;
-//   if (!user) return <div>Loading...</div>;
