@@ -75,12 +75,10 @@ function SignInPage() {
 
       if (res.ok) {
         setMessage({ type: "success", text: "Login successful!" });
-        localStorage.setItem("token", data.token); // Save JWT if needed
-
-        // Save user info (you can store as JSON string)
+        localStorage.setItem("token", data.token); 
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        // Redirect based on selected user type
+
         if (formData.userType === "admin") {
           navigate("/admin");
         } else if (formData.userType === "streamer") {
@@ -88,6 +86,11 @@ function SignInPage() {
         } else {
           navigate("/home"); // Fallback
         }
+      } else if (res.status === 403 && data.error?.toLowerCase().includes("suspend")) {
+        setMessage({
+          type: "error",
+          text: "Your account is suspended. Please contact support.",
+        });
       } else {
         setMessage({
           type: "error",
