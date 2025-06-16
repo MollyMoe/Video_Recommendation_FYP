@@ -47,7 +47,7 @@ const AdUserTable = ({ searchQuery }) => {
   };
 
   const handleView = (user) => {
-    navigate(`/admin/view/${user._id}`, {
+    navigate(`/admin/view/${user.userId}`, {
       state: { searchQuery },
     });
   };

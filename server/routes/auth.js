@@ -3,9 +3,7 @@ const router = express.Router(); // ✅ Define router BEFORE using it
 const Admin = require('../models/Admin');
 const Streamer = require('../models/Streamer');
 
-
 const bcrypt = require('bcrypt');
-
 
 // GET all streamers
 router.get('/users/streamer', async (req, res) => {
@@ -17,9 +15,6 @@ router.get('/users/streamer', async (req, res) => {
     res.status(500).json({ error: 'Server error while fetching streamers' });
   }
 });
-
-
-
 
 // SIGNUP — plain password
 router.post('/signup', async (req, res) => {
@@ -66,9 +61,6 @@ router.post('/signin', async (req, res) => {
           return res.status(403).json({ error: 'Account is suspended.' });
         }
     
-
-
-
     return res.json({
       message: 'Login successful',
       user: {
@@ -216,5 +208,20 @@ router.put('/users/:id/status', async (req, res) => {
   }
 });
 
+// Get user by userId
+router.get('/users/:userId', async (req, res) => {
+  try {
+    const user = await Streamer.findOne({ userId: req.params.userId });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching user by userId:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;
