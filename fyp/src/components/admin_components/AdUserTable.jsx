@@ -12,8 +12,7 @@ const AdUserTable = ({ searchQuery }) => {
           "http://localhost:3001/api/auth/users/streamer"
         );
         const data = await res.json();
-        const enriched = data.map((user) => ({ ...user, status: "Active" }));
-        setUsers(enriched);
+        setUsers(data);
       } catch (err) {
         console.error("Error loading users:", err);
       }
