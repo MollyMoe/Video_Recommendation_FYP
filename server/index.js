@@ -24,7 +24,6 @@ mongoose.connect(process.env.MONGO_URI, {
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/movies", require("./routes/movieRoutes"));
 app.use('/api/users', authRoutes); //  This makes /users/by-username work
- 
 
 
 app.use("/api/password", require("./routes/passwordRoute"));
