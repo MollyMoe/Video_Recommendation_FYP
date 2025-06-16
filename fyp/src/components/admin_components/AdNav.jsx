@@ -1,13 +1,16 @@
-import React from "react";
+
 import userProfile from "../../images/User-profile.png";
-import { useState } from "react";
+import { useUser } from "../../context/UserContext";
+import React, { useEffect, useState } from "react";
 import { FaMoon, FaSignOutAlt, FaUserEdit } from "react-icons/fa";
 import logoPic from "../../images/Cine-It.png";
 import { FaSearch } from "react-icons/fa";
 import AdUserProfile from "./AdUserProfile";
-import { useUser } from "../../context/UserContext";
+
 const AdNav = () => {
   const [open, setOpen] = useState(false);
+
+  const { setCurrentRole } = useUser(); // <-- Add this line
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -15,6 +18,7 @@ const AdNav = () => {
       setCurrentRole(user.userType); // either 'admin' or 'streamer'
     }
   }, []);
+
 
   return (
     <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200 dark:bg-gray-800 dark:border-gray-700">

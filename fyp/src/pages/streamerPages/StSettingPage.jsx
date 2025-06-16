@@ -73,6 +73,8 @@ const StSettingPage = () => {
     );
     const data = await res.json();
     if (res.ok) {
+      updateProfileImage("http://localhost:3001" + data.profileImage, "streamer");
+
       alert("Upload successful");
       window.location.reload()
     } else {
@@ -133,6 +135,15 @@ const StSettingPage = () => {
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
+  let imageUrl = defaultImage;
+if (previewImage) {
+  imageUrl = previewImage;
+} else if (profileImage) {
+  imageUrl = profileImage.startsWith("http")
+    ? profileImage
+    : `http://localhost:3001${profileImage}`;
+}
+
   return (
     <div className="min-h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800">
       <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
@@ -140,8 +151,13 @@ const StSettingPage = () => {
           {/* Profile Image Section */}
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
-              src={profileImage || previewImage || defaultImage}
+              src={imageUrl}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = defaultImage;
+              }}
               className="w-32 h-32 rounded-full shadow-lg border border-gray-300"
+              alt="Profile"
             />
             <div className="flex flex-col space-y-2">
               <input

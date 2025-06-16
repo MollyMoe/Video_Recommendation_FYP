@@ -8,7 +8,7 @@ const AdminSchema = new mongoose.Schema({
   email: String,
   fullName: String,
   userType: { type: String, default: 'admin' },
-  profileImage: { type: String, default: "" },
+  profileImage: { type: String, default: "/uploads/profile.png" }
 
 });
 
