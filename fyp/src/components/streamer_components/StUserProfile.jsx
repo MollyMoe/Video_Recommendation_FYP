@@ -8,7 +8,8 @@ function StUserProfile({ userProfile }) {
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  const { profileImage, setCurrentRole } = useUser();
+  const { setCurrentRole } = useUser();
+  const [profileImage, setProfileImage] = useState(defaultImage);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
@@ -20,6 +21,23 @@ function StUserProfile({ userProfile }) {
   useEffect(() => {
     setCurrentRole("streamer");
   }, []);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user?._id || user.userType !== "streamer") return;
+  
+    fetch(`http://localhost:3001/api/profile/streamers/${user._id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.profileImage) {
+          setProfileImage("http://localhost:3001" + data.profileImage);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch streamer profile image:", err);
+      });
+  }, []);
+  
 
   useEffect(() => {
     if (darkMode) {

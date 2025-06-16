@@ -8,6 +8,8 @@ const AdminSchema = new mongoose.Schema({
   email: String,
   fullName: String,
   userType: { type: String, default: 'admin' },
+  profileImage: { type: String, default: "" },
+
 });
 
 AdminSchema.pre("save", async function (next) {

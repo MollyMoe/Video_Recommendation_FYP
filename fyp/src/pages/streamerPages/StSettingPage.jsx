@@ -45,7 +45,7 @@ const StSettingPage = () => {
         reader.onloadend = () => {
           const base64 = reader.result;
           updateProfileImage(base64, "streamer");
-          setPreviewImage(base64);
+          setPreviewImage(URL.createObjectURL(file)); // for instant preview
           setFormData((prev) => ({ ...prev, profileImage: file }));
         };
         reader.readAsDataURL(file);
@@ -54,15 +54,29 @@ const StSettingPage = () => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Submit logic goes here
-    console.log(formData);
 
-    setSuccessMessage("Changes have been saved!");
-    setRedirectAfterModal(false);
-    setShowSuccessModal(true);
+    const user = JSON.parse(localStorage.getItem("user"));
+    const formDataToSend = new FormData();
+    formDataToSend.append("profileImage", formData.profileImage);
+
+    console.log(user); // check if _id exists and is correct
+
+    // send to backend
+    const res = await fetch(
+      `http://localhost:3001/api/profile/upload/streamer/${user._id}`,
+      {
+        method: "PUT",
+        body: formDataToSend,
+      }
+    );
+    const data = await res.json();
+    if (res.ok) {
+      alert("Upload successful");
+    } else {
+      alert("Error: " + (data.error || "Server error"));
+    }
   };
 
   const triggerFileInput = () => {
@@ -78,9 +92,12 @@ const StSettingPage = () => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/auth/delete/${userType}/${username}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://localhost:3001/api/auth/delete/${userType}/${username}`,
+        {
+          method: "DELETE",
+        }
+      );
       const data = await res.json();
       if (res.ok) {
         localStorage.removeItem("user");
@@ -101,7 +118,11 @@ const StSettingPage = () => {
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (showConfirm && modalRef.current && !modalRef.current.contains(e.target)) {
+      if (
+        showConfirm &&
+        modalRef.current &&
+        !modalRef.current.contains(e.target)
+      ) {
         setShowConfirm(false);
       }
     };
@@ -157,7 +178,9 @@ const StSettingPage = () => {
 
           {/* Contact */}
           <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Contact Info</label>
+            <label className="block mb-2 text-sm font-medium">
+              Contact Info
+            </label>
             <input
               type="text"
               name="contact"
@@ -171,7 +194,9 @@ const StSettingPage = () => {
 
           {/* Password */}
           <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Reset Password</label>
+            <label className="block mb-2 text-sm font-medium">
+              Reset Password
+            </label>
             <input
               type="password"
               name="password"
@@ -185,7 +210,9 @@ const StSettingPage = () => {
 
           {/* Genre */}
           <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Preferred Genre</label>
+            <label className="block mb-2 text-sm font-medium">
+              Preferred Genre
+            </label>
             <input
               type="text"
               name="genre"
@@ -235,7 +262,10 @@ const StSettingPage = () => {
                       </button>
                       <button
                         onClick={() => {
-                          handleDelete(savedUser?.userType, savedUser?.username);
+                          handleDelete(
+                            savedUser?.userType,
+                            savedUser?.username
+                          );
                           setShowConfirm(false);
                         }}
                         className="px-4 py-2 rounded-md text-sm text-white bg-red-600 hover:bg-red-700"

@@ -72,6 +72,8 @@ function SignInPage() {
       });
 
       const data = await res.json();
+      console.log("Login API response data:", data);
+
 
       if (res.ok) {
         setMessage({ type: "success", text: "Login successful!" });
