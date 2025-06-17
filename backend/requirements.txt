@@ -1,7 +1,7 @@
-fastapi
+gunicorn
 uvicorn
+fastapi
 pymongo
 python-dotenv
-bcrypt
-email-validator
+
 
