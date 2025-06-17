@@ -34,6 +34,7 @@ useEffect(() => {
     axios
       .get("http://localhost:3001/api/movies/all")
       .then((res) => {
+        console.log("Raw API response:", res.data);
         const validMovies = res.data.filter(
           (movie) =>
             movie.poster_url &&
