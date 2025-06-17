@@ -3,6 +3,8 @@ import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark } from "lucide-react";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 
 function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
@@ -17,7 +19,7 @@ useEffect(() => {
   if (!username) return;
 
   axios
-    .get(`http://localhost:3001/api/users/by-username/${username}`)
+    .get(`${API}/users/by-username/${username}`)
     .then((res) => {
        console.log("Genres fetched for user:", res.data.genres);
       setPreferredGenres(res.data.genres || []);
@@ -32,7 +34,7 @@ useEffect(() => {
   // Fetch all movies and filter based on preferredGenres
   useEffect(() => {
     axios
-      .get("http://localhost:3001/api/movies/all")
+      .get(`${API}/movies/all`)
       .then((res) => {
         console.log("Raw API response:", res.data);
         const validMovies = res.data.filter(
