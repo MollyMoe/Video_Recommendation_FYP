@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BadgeCheck } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdEditProfilePage = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -83,7 +85,7 @@ const AdEditProfilePage = () => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/auth/delete/${userType}/${username}`, {
+      const res = await fetch(`${API}/auth/delete/${userType}/${username}`, {
         method: 'DELETE',
       });
       const data = await res.json();
@@ -113,7 +115,7 @@ const AdEditProfilePage = () => {
   const verifyCurrentPassword = async () => {
     setIsVerifying(true);
     try {
-      const res = await fetch('http://localhost:3001/api/password/verify-password', {
+      const res = await fetch(`${API}/password/verify-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,7 +144,7 @@ const AdEditProfilePage = () => {
     }
 
     try {
-      const updateRes = await fetch('http://localhost:3001/api/password/update-password', {
+      const updateRes = await fetch(`${API}/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

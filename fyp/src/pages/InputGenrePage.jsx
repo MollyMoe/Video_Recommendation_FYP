@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const InputGenrePage = () => {
   const navigate = useNavigate();
   const [genreInput, setGenreInput] = useState("");
@@ -29,7 +31,7 @@ const InputGenrePage = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:3001/api/preference/genre", {
+      const res = await fetch(`${API}/preference/genre`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
