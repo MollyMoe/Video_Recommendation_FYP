@@ -3,5 +3,6 @@ uvicorn
 fastapi
 pymongo
 python-dotenv
+pydantic[email]
 
 
