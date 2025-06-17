@@ -26,7 +26,7 @@ function ResetPasswordPage() {
 
   setIsLoading(true);
   try {
-    const res = await fetch('http://localhost:3001/api/auth/request-password-reset', {
+    const res = await fetch('/api/auth/request-password-reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
