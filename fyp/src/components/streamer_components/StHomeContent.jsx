@@ -91,7 +91,7 @@ useEffect(() => {
   }, [preferredGenres]);
   
   return (
-    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+    <div className=" min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
           {movies.map((movie) => (
