@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
-
+const defaultImage = "http://localhost:3001/uploads/profile.png";
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -72,7 +72,7 @@ useEffect(() => {
         reader.onloadend = () => {
           const base64 = reader.result;
           updateProfileImage(base64, "streamer");
-          setPreviewImage(base64);
+          setPreviewImage(URL.createObjectURL(file)); // for instant preview
           setFormData((prev) => ({ ...prev, profileImage: file }));
         };
         reader.readAsDataURL(file);
@@ -81,6 +81,7 @@ useEffect(() => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
+<<<<<<< HEAD
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
@@ -91,6 +92,34 @@ useEffect(() => {
     setSuccessMessage("Changes have been saved!");
     setRedirectAfterModal(false);
     setShowSuccessModal(true);
+=======
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const user = JSON.parse(localStorage.getItem("user"));
+    const formDataToSend = new FormData();
+    formDataToSend.append("profileImage", formData.profileImage);
+
+    console.log(user); // check if _id exists and is correct
+
+    // send to backend
+    const res = await fetch(
+      `http://localhost:3001/api/profile/upload/streamer/${user._id}`,
+      {
+        method: "PUT",
+        body: formDataToSend,
+      }
+    );
+    const data = await res.json();
+    if (res.ok) {
+      updateProfileImage("http://localhost:3001" + data.profileImage, "streamer");
+
+      alert("Upload successful");
+      window.location.reload()
+    } else {
+      alert("Error: " + (data.error || "Server error"));
+    }
+>>>>>>> Clara
   };
 
   const closeModal = () => {
@@ -100,9 +129,12 @@ useEffect(() => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/auth/delete/${userType}/${username}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://localhost:3001/api/auth/delete/${userType}/${username}`,
+        {
+          method: "DELETE",
+        }
+      );
       const data = await res.json();
       localStorage.removeItem("user");
       setSuccessMessage(res.ok ? "Account deleted successfully!" : data.error || "Something went wrong.");
@@ -183,7 +215,11 @@ useEffect(() => {
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (showConfirm && modalRef.current && !modalRef.current.contains(e.target)) {
+      if (
+        showConfirm &&
+        modalRef.current &&
+        !modalRef.current.contains(e.target)
+      ) {
         setShowConfirm(false);
       }
     };
@@ -191,13 +227,41 @@ useEffect(() => {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [showConfirm]);
 
+<<<<<<< HEAD
+=======
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+
+  let imageUrl = defaultImage;
+if (previewImage) {
+  imageUrl = previewImage;
+} else if (profileImage) {
+  imageUrl = profileImage.startsWith("http")
+    ? profileImage
+    : `http://localhost:3001${profileImage}`;
+}
+
+>>>>>>> Clara
   return (
     <div className="min-h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800">
       <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
+<<<<<<< HEAD
           {/* Profile Image */}
           <div className="mb-5 flex items-center space-x-4">
             <img src={profileImage || previewImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+=======
+          {/* Profile Image Section */}
+          <div className="mb-5 flex flex-row items-center space-x-4">
+            <img
+              src={imageUrl}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = defaultImage;
+              }}
+              className="w-32 h-32 rounded-full shadow-lg border border-gray-300"
+              alt="Profile"
+            />
+>>>>>>> Clara
             <div className="flex flex-col space-y-2">
               <input type="file" accept="image/*" name="profileImage" ref={fileInputRef} onChange={handleChange} className="hidden" />
               <button
@@ -230,6 +294,56 @@ useEffect(() => {
 
           {/* Password Modal Button */}
           <div className="mb-5">
+<<<<<<< HEAD
+=======
+            <label className="block mb-2 text-sm font-medium">
+              Contact Info
+            </label>
+            <input
+              type="text"
+              name="contact"
+              value={formData.contact}
+              onChange={handleChange}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            />
+          </div>
+
+          {/* Password */}
+          <div className="mb-5">
+            <label className="block mb-2 text-sm font-medium">
+              Reset Password
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            />
+          </div>
+
+          {/* Genre */}
+          <div className="mb-5">
+            <label className="block mb-2 text-sm font-medium">
+              Preferred Genre
+            </label>
+            <input
+              type="text"
+              name="genre"
+              value={formData.genre}
+              onChange={handleChange}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            />
+          </div>
+
+          <div className="flex flex-col items-end space-y-2 mt-4">
+>>>>>>> Clara
             <button
               type="button"
               onClick={() => {
@@ -271,7 +385,10 @@ useEffect(() => {
                       </button>
                       <button
                         onClick={() => {
-                          handleDelete(savedUser?.userType, savedUser?.username);
+                          handleDelete(
+                            savedUser?.userType,
+                            savedUser?.username
+                          );
                           setShowConfirm(false);
                         }}
                         className="px-4 py-2 rounded-md text-sm text-white bg-red-600 hover:bg-red-700"
