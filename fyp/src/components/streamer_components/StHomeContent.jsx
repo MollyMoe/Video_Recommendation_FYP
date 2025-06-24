@@ -3,15 +3,38 @@ import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark } from "lucide-react";
 
-function StHomeContent({ movieId }) {
-  const [movies, setMovies] = useState([]);
-  const [selectedMovie, setSelectedMovie] = useState(null);
 
+function StHomeContent({ userId }) {
+  const [movies, setMovies] = useState([]);
+  const [preferredGenres, setPreferredGenres] = useState([]);
+  const [selectedMovie, setSelectedMovie] = useState(null); 
+
+const savedUser = JSON.parse(localStorage.getItem("user"));
+const username = savedUser?.username;
+
+  // Fetch user preferred genres
+useEffect(() => {
+  if (!username) return;
+
+  axios
+    .get(`http://localhost:3001/api/users/by-username/${username}`)
+    .then((res) => {
+       console.log("Genres fetched for user:", res.data.genres);
+      setPreferredGenres(res.data.genres || []);
+    })
+    .catch((err) => {
+      console.error("Failed to fetch user preferences", err);
+      console.error("Failed to fetch user preferences", err);
+      setPreferredGenres([]);
+    });
+}, [username]);
+
+  // Fetch all movies and filter based on preferredGenres
   useEffect(() => {
     axios
       .get("http://localhost:3001/api/movies/all")
       .then((res) => {
-        const filtered = res.data.filter(
+        const validMovies = res.data.filter(
           (movie) =>
             movie.poster_url &&
             movie.trailer_url &&
@@ -21,23 +44,49 @@ function StHomeContent({ movieId }) {
             movie.trailer_url.toLowerCase() !== "nan" &&
             movie.poster_url.trim() !== "" &&
             movie.trailer_url.trim() !== ""
-        );
+        )
+        .map((movie) => {
+          if (typeof movie.genres === "string") {
+            movie.genres = movie.genres
+              .split(/[,|]/)   
+              .map((g) => g.trim());
+          }
+          return movie;
+        });
 
         const uniqueMovies = [];
         const seenTitles = new Set();
 
-        for (const movie of filtered) {
+        for (const movie of validMovies) {
           if (!seenTitles.has(movie.title)) {
             seenTitles.add(movie.title);
             uniqueMovies.push(movie);
           }
         }
+        
+      console.log("All unique movies loaded:", uniqueMovies.length);
+      console.log("Preferred genres:", preferredGenres);
 
-        setMovies(uniqueMovies);
+        if (preferredGenres.length === 0) {
+          setMovies(uniqueMovies); // no preference → show all
+        } else {
+          const filteredMovies = uniqueMovies.filter((movie) =>
+           movie.genres?.some((genre) =>
+           preferredGenres.some((pref) =>
+            genre.toLowerCase().includes(pref.toLowerCase())
+           )
+         )
+       );
+
+          console.log("Filtered movies by genre:", filteredMovies.length);
+          setMovies(filteredMovies);
+        }
       })
-      .catch((err) => console.error("Failed to fetch movies", err));
-  }, []);
-
+      .catch((err) => {
+        console.error("Failed to fetch movies", err);
+      });
+  }, [preferredGenres]);
+  
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
