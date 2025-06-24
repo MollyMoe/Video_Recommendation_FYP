@@ -1,21 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
-
-
-// import defaultImage from "../../images/profile.png";
-
-const defaultImage = "http://localhost:3001/uploads/profile.png";
+import defaultImage from "../../images/User-profile.png";
 
 function StUserProfile({ userProfile }) {
-  
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  const { updateProfileImage, setCurrentRole } = useUser();
-
-  const [profileImage, setProfileImage] = useState(defaultImage);
+  const { profileImage, setCurrentRole } = useUser();
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
@@ -25,23 +18,7 @@ function StUserProfile({ userProfile }) {
   }, []);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user?._id || user.userType !== "streamer") return;
-
-    fetch(`http://localhost:3001/api/profile/streamers/${user._id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.profileImage && data.profileImage !== "") {
-          const fullPath = "http://localhost:3001" + data.profileImage;
-          setProfileImage(fullPath); // local state
-          updateProfileImage(fullPath, "streamer"); // ✅ sync with global context
-        } else {
-          updateProfileImage("", "streamer"); // ✅ clear global if user has no image
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch streamer profile image:", err);
-      });
+    setCurrentRole("streamer");
   }, []);
 
   useEffect(() => {
