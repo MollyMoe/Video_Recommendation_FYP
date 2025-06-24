@@ -9,6 +9,7 @@ const StreamerSchema = new mongoose.Schema({
   fullName: String,
   userType: { type: String, default: 'streamer' },
   status: { type: String, default: 'Active' } ,
+  genres: [String],
   resetToken: String,
   tokenExpiry: Date,
 });
