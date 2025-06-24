@@ -8,33 +8,30 @@ function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null); 
+  const [isLoading, setIsLoading] = useState(true);
 
-const savedUser = JSON.parse(localStorage.getItem("user"));
-const username = savedUser?.username;
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const username = savedUser?.username;
 
   // Fetch user preferred genres
 useEffect(() => {
-  if (!username) return;
+  const fetchUserAndMovies = async () => {
+    if (!username) return;
 
-  axios
-    .get(`http://localhost:3001/api/users/by-username/${username}`)
-    .then((res) => {
-       console.log("Genres fetched for user:", res.data.genres);
-      setPreferredGenres(res.data.genres || []);
-    })
-    .catch((err) => {
-      console.error("Failed to fetch user preferences", err);
-      console.error("Failed to fetch user preferences", err);
-      setPreferredGenres([]);
-    });
-}, [username]);
+    setIsLoading(true); // start loading at the very beginning
 
-  // Fetch all movies and filter based on preferredGenres
-  useEffect(() => {
-    axios
-      .get("http://localhost:3001/api/movies/all")
-      .then((res) => {
-        const validMovies = res.data.filter(
+    try {
+      // Step 1: Fetch user preferred genres
+      const userRes = await axios.get(`http://localhost:3001/api/users/by-username/${username}`);
+      const userGenres = userRes.data.genres || [];
+      console.log("Genres fetched for user:", userGenres);
+      setPreferredGenres(userGenres);
+
+      // Step 2: Fetch movies
+      const movieRes = await axios.get("http://localhost:3001/api/movies/all");
+
+      const validMovies = movieRes.data
+        .filter(
           (movie) =>
             movie.poster_url &&
             movie.trailer_url &&
@@ -47,45 +44,54 @@ useEffect(() => {
         )
         .map((movie) => {
           if (typeof movie.genres === "string") {
-            movie.genres = movie.genres
-              .split(/[,|]/)   
-              .map((g) => g.trim());
+            movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
           }
           return movie;
         });
 
-        const uniqueMovies = [];
-        const seenTitles = new Set();
+      const uniqueMovies = [];
+      const seenTitles = new Set();
 
-        for (const movie of validMovies) {
-          if (!seenTitles.has(movie.title)) {
-            seenTitles.add(movie.title);
-            uniqueMovies.push(movie);
-          }
+      for (const movie of validMovies) {
+        if (!seenTitles.has(movie.title)) {
+          seenTitles.add(movie.title);
+          uniqueMovies.push(movie);
         }
-        
+      }
+
       console.log("All unique movies loaded:", uniqueMovies.length);
-      console.log("Preferred genres:", preferredGenres);
+      console.log("Preferred genres:", userGenres);
 
-        if (preferredGenres.length === 0) {
-          setMovies(uniqueMovies); // no preference → show all
-        } else {
-          const filteredMovies = uniqueMovies.filter((movie) =>
-           movie.genres?.some((genre) =>
-           preferredGenres.some((pref) =>
-            genre.toLowerCase().includes(pref.toLowerCase())
-           )
-         )
-       );
+      if (userGenres.length === 0) {
+        setMovies(uniqueMovies); // no filtering
+      } else {
+                  const normalizedPreferred = userGenres.map(g => g.toLowerCase().trim());
 
-          console.log("Filtered movies by genre:", filteredMovies.length);
-          setMovies(filteredMovies);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch movies", err);
-      });
-  }, [preferredGenres]);
+const filtered = uniqueMovies.filter((movie) =>
+  Array.isArray(movie.genres) &&
+  movie.genres.some((genre) => {
+    const g = genre.toLowerCase().trim();
+    return normalizedPreferred.some((pref) => g.includes(pref));
+  })
+);
+
+console.log("Filtered movies by genre:", filtered.length);
+setMovies(filtered);
+
+      }
+    } catch (err) {
+      console.error("Error fetching user or movies:", err);
+      setPreferredGenres([]);
+      setMovies([]);
+    } finally {
+      setIsLoading(false); // loading ends only after both are done
+    }
+  };
+
+  fetchUserAndMovies();
+}, [username]);
+
+
   
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
@@ -187,6 +193,15 @@ useEffect(() => {
           </Dialog.Panel>
         </div>
       </Dialog>
+      {isLoading && (
+      <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+          <p className="text-lg font-semibold">Loading movies...</p>
+          <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+        </div>
+      </div>
+    )}
+
     </div>
   );
 }
