@@ -15,6 +15,9 @@ load_dotenv(dotenv_path=env_path)
 
 # Load environment variables
 USER_DB_URI = os.getenv("MONGO_URI")
+print("Connecting to Mongo URI:", USER_DB_URI)
+print("MONGO_URI loaded:", os.getenv("MONGO_URI"))
+
 MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
 JWT_SECRET = os.getenv("JWT_SECRET")
 
