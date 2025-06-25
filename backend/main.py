@@ -28,10 +28,17 @@ movie_db = movie_client["MovieDatabase"]
 # Initialize FastAPI
 app = FastAPI()
 
+# ✅ Replace with the actual frontend URL you're using
+origins = [
+    "http://localhost:3000",  # React dev server
+    # "https://your-deployed-frontend.com"  ← optional for production
+]
+
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
