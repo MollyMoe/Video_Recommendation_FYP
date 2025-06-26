@@ -29,6 +29,11 @@ export default defineConfig({
       },
     },
   },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
