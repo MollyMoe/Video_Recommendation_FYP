@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
 import defaultImage from "../../images/User-profile.png";
+import { Link } from "react-router-dom";
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
@@ -67,12 +68,12 @@ function StUserProfile({ userProfile }) {
         <div className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 rounded-md shadow-lg ring-1 ring-gray-300 dark:ring-gray-600 ring-opacity-5 z-10">
           <ul className="py-1">
             <li>
-              <a
-                href="/home/setting"
+              <Link
+                to="/home/setting"
                 className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 <FaUserEdit className="mr-2" /> Edit Profile
-              </a>
+              </Link>
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
             <li
@@ -93,12 +94,12 @@ function StUserProfile({ userProfile }) {
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
             <li>
-              <a
-                href="/signin"
+              <Link
+                to="/signin"
                 className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 <FaSignOutAlt className="mr-2" /> Sign Out
-              </a>
+              </Link>
             </li>
           </ul>
         </div>

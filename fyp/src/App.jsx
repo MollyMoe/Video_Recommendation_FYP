@@ -17,6 +17,7 @@ import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
+
   return (
     <UserProvider>
       <HashRouter>

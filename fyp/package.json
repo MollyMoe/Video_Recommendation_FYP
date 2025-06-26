@@ -1,10 +1,11 @@
 {
-  "name": "fyp",
-  "private": true,
-  "version": "0.0.0",
+  "name": "cineit",
+  "version": "1.0.0",
   "description": "CineIt",
-  "type": "module",
   "main": "electron/main.js",
+  "author": "Your Name",
+  "private": true,
+  "type": "module",
   "scripts": {
     "start": "electron .",
     "dev": "vite & wait-on http://localhost:3000 && electron .",
@@ -12,6 +13,22 @@
     "dist": "vite build && electron-builder",
     "lint": "eslint .",
     "preview": "vite preview"
+  },
+  "build": {
+    "productName": "CineIt",
+    "directories": {
+      "buildResources": "assets"
+    },
+    "files": [
+      "dist",
+      "electron"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "win": {
+      "target": "nsis"
+    }
   },
   "dependencies": {
     "@headlessui/react": "^2.2.3",
