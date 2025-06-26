@@ -19,7 +19,7 @@ useEffect(() => {
   if (!username) return;
 
   axios
-    .get(`${API}/users/by-username/${username}`)
+    .get(`${API}/api/auth/by-username/${username}`)
     .then((res) => {
        console.log("Genres fetched for user:", res.data.genres);
       setPreferredGenres(res.data.genres || []);
@@ -34,7 +34,7 @@ useEffect(() => {
   // Fetch all movies and filter based on preferredGenres
   useEffect(() => {
     axios
-      .get(`${API}/movies/all`)
+      .get(`${API}/api/movies/all`)
       .then((res) => {
         console.log("Raw API response:", res.data);
         const validMovies = res.data.filter(

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AdUserTable from "./AdUserTable";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdUserDetails = () => {
   const SideButton = ({ to, label, current, children }) => {
     return (
@@ -36,7 +38,7 @@ const [page, setPage] = useState(restoredPage);
   useEffect(() => {
     const fetchUser = async (userId) => {
       try {
-        const res = await fetch(`http://localhost:3001/api/auth/users/${userId}`);
+        const res = await fetch(`${API}/api/auth/users/${userId}`);
         if (!res.ok) {
           throw new Error("User not found");
         }

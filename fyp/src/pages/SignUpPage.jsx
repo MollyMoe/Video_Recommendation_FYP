@@ -102,7 +102,7 @@ function SignUpPage() {
         });
 
         // Navigate only if successful
-        if (formData.userType === "guest") {
+        if (formData.userType === "streamer") {
           localStorage.setItem("user", JSON.stringify({ username: data.username })); 
           navigate("/inputgenre");
         } else if (formData.userType === "admin") {
@@ -170,7 +170,7 @@ function SignUpPage() {
                 <span>
                   {formData.userType === "admin"
                     ? "System Admin"
-                    : formData.userType === "guest"
+                    : formData.userType === "streamer"
                       ? "Streamer"
                       : "Choose"}
                 </span>
@@ -198,7 +198,7 @@ function SignUpPage() {
                       type="button"
                       onClick={() => {
                         handleChange({
-                          target: { name: "userType", value: "guest" },
+                          target: { name: "userType", value: "streamer" },
                         });
                         setDropdownOpen(false);
                       }}

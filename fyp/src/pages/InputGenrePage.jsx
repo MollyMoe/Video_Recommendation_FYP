@@ -31,7 +31,7 @@ const InputGenrePage = () => {
     }
 
     try {
-      const res = await fetch(`${API}/preference/genre`, {
+      const res = await fetch(`${API}/api/preference/genre`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

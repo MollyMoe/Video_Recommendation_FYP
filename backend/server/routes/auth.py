@@ -34,7 +34,8 @@ router = APIRouter()
 @router.get("/users/streamer")
 def get_streamers(request: Request):
     db = request.app.state.user_db
-    streamers = list(db.streamers.find({}, {"_id": 0}))
+    streamers = list(db.streamer.find({}, {"_id": 0}))
+    print("Streamers fetched from DB:", streamers)
     return streamers
 
 @router.post("/signup")
@@ -49,9 +50,6 @@ def signup(request: Request, user: SignUpRequest):
     # Generate userId
     user_count = Model.count_documents({})
     user_id = f"U{str(user_count + 1).zfill(3)}"
-
-    # Hash password
-    hashed_pw = bcrypt.hashpw(user.password.encode(), bcrypt.gensalt()).decode()
 
     # Build user document
     user_data = {
@@ -218,4 +216,13 @@ def get_user_by_id(request: Request, userId: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+@router.get("/debug/insert-test-streamer")
+def insert_test_streamer(request: Request):
+    db = request.app.state.user_db
+    db.streamer.insert_one({
+        "username": "debug_user",
+        "email": "debug@example.com",
+        "status": "Active"
+    })
+    return {"message": "Test streamer inserted"}
 

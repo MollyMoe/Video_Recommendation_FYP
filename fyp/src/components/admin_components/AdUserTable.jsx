@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
@@ -9,9 +11,10 @@ const AdUserTable = ({ searchQuery }) => {
     const fetchStreamers = async () => {
       try {
         const res = await fetch(
-          "http://localhost:3001/api/auth/users/streamer"
+          `${API}/api/auth/users/streamer`
         );
         const data = await res.json();
+        console.log("Fetched streamers:", data);
         setUsers(data);
       } catch (err) {
         console.error("Error loading users:", err);
@@ -36,7 +39,7 @@ const AdUserTable = ({ searchQuery }) => {
     const newStatus = updatedUsers.find((user) => user._id === userId)?.status;
 
     try {
-      await fetch(`http://localhost:3001/api/auth/users/${userId}/status`, {
+      await fetch(`${API}/api/auth/users/${userId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

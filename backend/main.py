@@ -18,12 +18,14 @@ USER_DB_URI = os.getenv("MONGO_URI")
 print("Connecting to Mongo URI:", USER_DB_URI)
 print("MONGO_URI loaded:", os.getenv("MONGO_URI"))
 
+
 MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
 JWT_SECRET = os.getenv("JWT_SECRET")
 
 # Connect to MongoDB
 user_client = MongoClient(USER_DB_URI)
 user_db = user_client["users"]
+
 
 movie_client = MongoClient(MOVIE_DB_URI)
 movie_db = movie_client["MovieDatabase"]

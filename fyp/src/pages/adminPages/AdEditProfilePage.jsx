@@ -85,7 +85,7 @@ const AdEditProfilePage = () => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(`${API}/auth/delete/${userType}/${username}`, {
+      const res = await fetch(`${API}/api/auth/delete/${userType}/${username}`, {
         method: 'DELETE',
       });
       const data = await res.json();
@@ -115,7 +115,7 @@ const AdEditProfilePage = () => {
   const verifyCurrentPassword = async () => {
     setIsVerifying(true);
     try {
-      const res = await fetch(`${API}/password/verify-password`, {
+      const res = await fetch(`${API}/api/password/verify-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +144,7 @@ const AdEditProfilePage = () => {
     }
 
     try {
-      const updateRes = await fetch(`${API}/password/update-password`, {
+      const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

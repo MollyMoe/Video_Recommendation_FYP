@@ -3,6 +3,8 @@ import { BadgeCheck } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -42,7 +44,7 @@ useEffect(() => {
     if (!savedUser?.userId) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/auth/users/${savedUser.userId}`);
+      const res = await fetch(`${API}/api/auth/users/${savedUser.userId}`);
       const data = await res.json();
 
       console.log("Fetched user from backend:", data);
@@ -100,7 +102,7 @@ useEffect(() => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/auth/delete/${userType}/${username}`, {
+      const res = await fetch(`${API}/api/auth/delete/${userType}/${username}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -126,7 +128,7 @@ useEffect(() => {
     setPasswordError("");
 
     try {
-      const response = await fetch("http://localhost:3001/api/password/verify-password", {
+      const response = await fetch(`${API}/api/password/verify-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -156,7 +158,7 @@ useEffect(() => {
     }
 
     try {
-      const updateRes = await fetch("http://localhost:3001/api/password/update-password", {
+      const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
