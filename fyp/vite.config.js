@@ -1,9 +1,10 @@
-import { defineConfig } from 'vite';
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
 
-// https://vite.dev/config/
 export default defineConfig({
+  base: './', // ✅ required for Electron to find assets
   plugins: [
     react(),
     tailwindcss({
@@ -13,6 +14,11 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'), // optional, useful for clean imports
+    },
+  },
   server: {
     port: 3000,
     proxy: {
@@ -23,4 +29,8 @@ export default defineConfig({
       },
     },
   },
-});
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+})

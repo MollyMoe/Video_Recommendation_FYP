@@ -216,13 +216,3 @@ def get_user_by_id(request: Request, userId: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.get("/debug/insert-test-streamer")
-def insert_test_streamer(request: Request):
-    db = request.app.state.user_db
-    db.streamer.insert_one({
-        "username": "debug_user",
-        "email": "debug@example.com",
-        "status": "Active"
-    })
-    return {"message": "Test streamer inserted"}
-

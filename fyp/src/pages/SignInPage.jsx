@@ -87,15 +87,20 @@ function SignInPage() {
         } else {
           navigate("/home"); // Fallback
         }
-      } else if (res.status === 403 && data.error?.toLowerCase().includes("suspend")) {
+      } else if (res.status === 403 && data.detail?.toLowerCase().includes("suspend")) {
         setMessage({
           type: "error",
           text: "Your account is suspended. Please contact support.",
         });
+      } else if (res.status === 400 && data.detail?.toLowerCase().includes("invalid")) {
+        setMessage({
+          type: "error",
+          text: "Invalid username or password.",
+        });
       } else {
         setMessage({
           type: "error",
-          text: data.error || "Login failed. Please try again.",
+          text: data.detail || "Login failed. Please try again.",
         });
       }
     } catch (error) {

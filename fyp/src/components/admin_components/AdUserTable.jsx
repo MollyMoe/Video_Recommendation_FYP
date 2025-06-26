@@ -26,7 +26,7 @@ const AdUserTable = ({ searchQuery }) => {
 
   const handleToggleSuspend = async (userId) => {
     const updatedUsers = users.map((user) =>
-      user._id === userId
+      user.userId === userId
         ? {
             ...user,
             status: user.status === "Suspended" ? "Active" : "Suspended",
@@ -36,7 +36,7 @@ const AdUserTable = ({ searchQuery }) => {
 
     setUsers(updatedUsers);
 
-    const newStatus = updatedUsers.find((user) => user._id === userId)?.status;
+    const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
 
     try {
       await fetch(`${API}/api/auth/users/${userId}/status`, {
@@ -111,7 +111,7 @@ const AdUserTable = ({ searchQuery }) => {
                       View
                     </button>
                     <button
-                      onClick={() => handleToggleSuspend(user._id)}
+                      onClick={() => handleToggleSuspend(user.userId)}
                       className={`min-w-[90px] px-3 py-1 text-xs rounded text-white ${
                         user.status === "Suspended"
                           ? "bg-green-500 hover:bg-green-600"
