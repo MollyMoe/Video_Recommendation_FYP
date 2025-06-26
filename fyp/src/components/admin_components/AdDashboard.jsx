@@ -1,9 +1,9 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import AdminUserManage from "../../images/adminUserManage.png";
-import AdminVideoManage from "../../images/adminVideoManage.png";
-import AdminBoard from "../../images/adminBoard.png";
+import AdminUserManage from "../../images/AdminUserManage.png";
+import AdminVideoManage from "../../images/AdminVideoManage.png";
+import AdminBoard from "../../images/AdminBoard.png";
 
 const AdDashboard = () => {
   return (
