@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 from fastapi.responses import JSONResponse
 from pymongo import ReturnDocument
+from urllib.parse import quote
 
 # Define the path to your .env file first
 root_dir = Path(__file__).resolve().parents[2] 
@@ -120,7 +121,7 @@ def request_password_reset(request: Request, body: dict):
             token = secrets.token_hex(16)
             collection.update_one({"_id": user["_id"]}, {"$set": {"resetToken": token, "tokenExpiry": int(os.times()[4]*1000) + 3600000}})
 
-            reset_url = f"https://cineit-frontend.onrender.com/reset-password-form?token={token}"
+            reset_url = f"https://cineit-frontend.onrender.com/#/reset-password-form?token={quote(token)}"
             message = EmailMessage()
             message.set_content(f"Click the link to reset password: {reset_url}")
             message["Subject"] = "Password Reset Request"
