@@ -2,11 +2,12 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 
-const StSideBar = () => {
-  const StSidebarButton = ({ to, label, current, children }) => {
+const StSideBar = ({onRegenerate}) => {
+  const StSidebarButton = ({ to, label, current, children, onClick }) => {
     return (
       <Link
         to={to}
+        onClick={onClick}
         className={`block p-4 rounded-lg ${
           current
             ? "bg-gray-200 text-black font-semibold"
@@ -71,14 +72,13 @@ const StSideBar = () => {
               Hide Recommendations
             </a>
           </li>
-          <li>
             <a
               href="#"
               className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
-              Regenerate Recommendations
+              Regenerate Recommendation
             </a>
-          </li>
+          
           <li>
             <a
               href="#"
