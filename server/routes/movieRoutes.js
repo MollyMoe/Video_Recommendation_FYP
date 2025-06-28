@@ -12,7 +12,9 @@ const Movie = getMovieModel(movieConnection);
 
 router.get("/all", async (req, res) => {
   try {
-    const allMovies = await Movie.find().limit(25000);
+    const count = await Movie.countDocuments();
+    const randomSkip = Math.floor(Math.random() * Math.max(0, count - 20)); // pick a different start each time
+    const allMovies = await Movie.find().skip(randomSkip).limit(20); // fetch a randoom 20 movies from entire collection each time, regardless of limit
     res.json(allMovies);
   } catch (err) {
     console.error("Failed to fetch movies:", err);
