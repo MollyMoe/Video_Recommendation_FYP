@@ -1,21 +1,22 @@
-import os
-from fastapi import APIRouter, UploadFile, File, HTTPException, Request
-from fastapi.responses import JSONResponse
-import cloudinary
 import cloudinary.uploader
+from fastapi import UploadFile, File, Request, APIRouter, HTTPException
 
 router = APIRouter()
 
 @router.put("/upload/{userType}/{userId}")
-async def upload_profile_image(request: Request, userType: str, userId: str, profileImage: UploadFile = File(...)):
+async def upload_profile_image(
+    request: Request,
+    userType: str,
+    userId: str,
+    profileImage: UploadFile = File(...)
+):
     db = request.app.state.user_db
     collection = db.admin if userType == "admin" else db.streamer
 
     try:
-        # Read the file content
         contents = await profileImage.read()
 
-        # Upload to Cloudinary (replace if exists)
+        # Upload to Cloudinary
         result = cloudinary.uploader.upload(
             contents,
             folder="profile_images",
@@ -23,9 +24,9 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
             overwrite=True
         )
 
-        # Save the secure URL in database
         image_url = result["secure_url"]
 
+        # Save URL to database
         updated = await collection.find_one_and_update(
             {"userId": userId},
             {"$set": {"profileImage": image_url}},
@@ -35,7 +36,8 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
         if not updated:
             raise HTTPException(status_code=404, detail="User not found")
 
-        return {"message": "Profile image updated", "profileImage": image_url}
+        return {"message": "Profile image uploaded", "profileImage": image_url}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print("Upload failed:", str(e))
+        raise HTTPException(status_code=500, detail="Upload failed")
