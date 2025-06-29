@@ -12,7 +12,7 @@ const Movie = getMovieModel(movieConnection);
 
 router.get("/all", async (req, res) => {
   try {
-    const allMovies = await Movie.find().limit(25000).lean();
+    const allMovies = await Movie.find().limit(25000);
     res.json(allMovies);
   } catch (err) {
     console.error("Failed to fetch movies:", err);
