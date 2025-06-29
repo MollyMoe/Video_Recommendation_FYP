@@ -25,10 +25,11 @@ function StUserProfile({ userProfile }) {
       updateProfileImage(stored, "streamer");
     } else {
       updateProfileImage(defaultImage, "streamer");
+      localStorage.setItem("streamer_profileImage", defaultImage);
     }
   
     // ✅ Fetch latest from backend
-    fetch(`${API}/api/profile/streamer/${user.userId}`) //backend connect
+    fetch(`${API}/api/auth/users/streamer/${user.userId}`) //backend connect
       .then((res) => res.json())
       .then((data) => {
         if (data.profileImage && data.profileImage !== "") {

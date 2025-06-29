@@ -91,6 +91,10 @@ function SignUpPage() {
 
         localStorage.setItem("user", JSON.stringify(data));
 
+        // Clear previously stored profile image
+        localStorage.removeItem("streamer_profileImage");
+        localStorage.removeItem("admin_profileImage");
+
         // Reset form
         setFormData({
           email: "",
@@ -104,8 +108,10 @@ function SignUpPage() {
         // Navigate only if successful
         if (formData.userType === "streamer") {
           localStorage.setItem("user", JSON.stringify({ username: data.username })); 
+          localStorage.setItem("streamer_profileImage", defaultImage);
           navigate("/inputgenre");
         } else if (formData.userType === "admin") {
+          localStorage.setItem("admin_profileImage", defaultImage);
           navigate("/signin");
         }
       } else {
