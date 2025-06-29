@@ -9,7 +9,6 @@ const AdEditProfilePage = () => {
   const [formData, setFormData] = useState({
     username: '',
     contact: '',
-    genre: '',
     profileImage: null,
   });
 
@@ -32,9 +31,8 @@ const AdEditProfilePage = () => {
   const fileInputRef = useRef(null);
   const modalRef = useRef(null);
   const navigate = useNavigate();
-
-  const savedUser = JSON.parse(localStorage.getItem('user'));
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
+  const savedUser = JSON.parse(localStorage.getItem('user'));
 
  useEffect(() => {
     const fetchUser = async () => {
@@ -42,10 +40,10 @@ const AdEditProfilePage = () => {
       if (!savedUser?.userId) return;
   
       try {
-        const res = await fetch(`${API}/api/auth/users/${savedUser.userId}`);
+        const res = await fetch(`${API}/api/auth/users/admin/${savedUser.userId}`);
         const data = await res.json();
   
-        localStorage.setItem("user", JSON.stringify(data));
+        console.log("Fetched user from backend:", data);
   
         setFormData((prev) => ({
           ...prev,
@@ -58,6 +56,7 @@ const AdEditProfilePage = () => {
     };
   
     fetchUser();
+    setCurrentRole("admin");
   }, []);
 
   const handleChange = (e) => {

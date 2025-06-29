@@ -209,11 +209,14 @@ def get_by_username(request: Request, username: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-@router.get("/users/{userId}")
-def get_user_by_id(request: Request, userId: str):
+@router.get("/users/{userType}/{userId}")
+def get_user_by_id(request: Request, userType: str, userId: str):
     db = request.app.state.user_db
-    user = db.streamer.find_one({"userId": userId}, {"_id": 0})
+    collection = db.get_collection(userType)  # either "streamer" or "admin"
+
+    user = collection.find_one({"userId": userId}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
 

@@ -44,7 +44,7 @@ useEffect(() => {
     if (!savedUser?.userId) return;
 
     try {
-      const res = await fetch(`${API}/api/auth/users/${savedUser.userId}`);
+      const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
       const data = await res.json();
 
       console.log("Fetched user from backend:", data);
@@ -265,6 +265,14 @@ useEffect(() => {
 
           {/* Submit & Delete */}
           <div className="flex flex-col items-end space-y-2 mt-4">
+
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(true)}
+              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+            >
+              Change Password
+            </button>
 
 
             <div className="relative">
