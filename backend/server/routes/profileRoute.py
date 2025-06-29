@@ -21,7 +21,7 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
         with open(file_path, "wb") as f:
             f.write(await profileImage.read())
 
-        result = await collection.find_one_and_update(
+        result = collection.find_one_and_update(
             {"userId": userId},
             {"$set": {"profileImage": f"/uploads/{filename}"}},
             return_document=True
