@@ -11,6 +11,15 @@ from server.routes.passwordRoute import router as password_router
 from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
 from fastapi.staticfiles import StaticFiles
+import cloudinary
+import cloudinary.uploader
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 # Load .env from ../server/.en
 env_path = Path(__file__).resolve().parent.parent / '.env'

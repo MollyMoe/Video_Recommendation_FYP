@@ -1,13 +1,10 @@
 import os
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
-from datetime import datetime
-from pathlib import Path
+from fastapi.responses import JSONResponse
+import cloudinary
+import cloudinary.uploader
 
 router = APIRouter()
-
-# ✅ Use temp path for Render or local path for dev
-UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path("uploads")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.put("/upload/{userType}/{userId}")
 async def upload_profile_image(request: Request, userType: str, userId: str, profileImage: UploadFile = File(...)):
@@ -15,24 +12,30 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
     collection = db.admin if userType == "admin" else db.streamer
 
     try:
-        timestamp = int(datetime.utcnow().timestamp() * 1000)
-        filename = f"{timestamp}-{profileImage.filename}"
-        file_path = UPLOAD_DIR / filename
+        # Read the file content
+        contents = await profileImage.read()
 
-        with open(file_path, "wb") as f:
-            f.write(await profileImage.read())
+        # Upload to Cloudinary (replace if exists)
+        result = cloudinary.uploader.upload(
+            contents,
+            folder="profile_images",
+            public_id=f"profile_{userId}",
+            overwrite=True
+        )
 
-        result = collection.find_one_and_update(
+        # Save the secure URL in database
+        image_url = result["secure_url"]
+
+        updated = await collection.find_one_and_update(
             {"userId": userId},
-            {"$set": {"profileImage": f"/uploads/{filename}"}},
+            {"$set": {"profileImage": image_url}},
             return_document=True
         )
 
-        if not result:
+        if not updated:
             raise HTTPException(status_code=404, detail="User not found")
 
-        return {"message": "Profile image updated", "profileImage": f"/uploads/{filename}"}
+        return {"message": "Profile image updated", "profileImage": image_url}
 
     except Exception as e:
-        print("❌ Upload Error:", e)
-        raise HTTPException(status_code=500, detail="Upload failed")
+        raise HTTPException(status_code=500, detail=str(e))
