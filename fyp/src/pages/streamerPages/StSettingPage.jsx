@@ -101,6 +101,8 @@ const handleChange = async (e) => {
             updateProfileImage(imageUrl, "streamer");
             localStorage.setItem("streamer_profileImage", imageUrl);
             setPreviewImage(imageUrl); // update preview to final version
+            console.log("data.profileImage:", data.profileImage);
+            console.log("imageUrl used:", imageUrl);
           } else {
             alert("Upload failed: " + data.error);
           }

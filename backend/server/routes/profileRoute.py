@@ -1,11 +1,9 @@
 import os
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path 
 
 router = APIRouter()
-
-# ✅ Use temp path for Render or local path for dev
 UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 

@@ -15,6 +15,8 @@ from fastapi.staticfiles import StaticFiles
 # Load .env from ../server/.en
 env_path = Path(__file__).resolve().parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
+UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads")))
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load environment variables
 USER_DB_URI = os.getenv("MONGO_URI")
@@ -65,8 +67,8 @@ app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
 
 # ✅ Mount uploads folder so images can be accessed via URL
-uploads_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
-app.mount("/uploads", StaticFiles(directory=uploads_path), name="uploads")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
 
 @app.get("/")
 def read_root():
