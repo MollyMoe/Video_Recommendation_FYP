@@ -127,6 +127,7 @@ const handleChange = async (e) => {
     }),
   });
 
+
       if (!res.ok) throw new Error("Failed to update");
 
       const updated = await res.json();
@@ -245,12 +246,7 @@ const handleChange = async (e) => {
         <form onSubmit={handleSubmit} className="w-full">
           {/* Profile Image */}
           <div className="mb-5 flex items-center space-x-4">
-            <img
-              src={
-                profileImage && profileImage.trim() !== ""
-                  ? profileImage
-                  : previewImage || defaultImage
-              } className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+            <img src={profileImage || previewImage || defaultImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
             <div className="flex flex-col space-y-2">
               <input type="file" accept="image/*" name="profileImage" ref={fileInputRef} onChange={handleChange} className="hidden" />
               <button
