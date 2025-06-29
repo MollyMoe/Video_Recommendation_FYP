@@ -6,6 +6,7 @@ const API = import.meta.env.VITE_API_BASE_URL;
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchStreamers = async () => {
@@ -23,6 +24,16 @@ const AdUserTable = ({ searchQuery }) => {
 
     fetchStreamers();
   }, []);
+
+  useEffect(() => {
+  const fetchUser = async () => {
+    const res = await fetch(`${API}/api/auth/users/streamer/${user.userId}`);
+    const data = await res.json();
+    setUser(data);
+  };
+
+  fetchUser();
+}, []);
 
   const handleToggleSuspend = async (userId) => {
     const updatedUsers = users.map((user) =>

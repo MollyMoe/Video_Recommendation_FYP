@@ -61,9 +61,6 @@ function SignInPage() {
 
     setIsLoading(true);
 
-    localStorage.removeItem("streamer_profileImage");
-    localStorage.removeItem("admin_profileImage");
-
     try {
       const res = await fetch(`${API}/api/auth/signin`, {
         method: "POST",
@@ -81,6 +78,12 @@ function SignInPage() {
         setMessage({ type: "success", text: "Login successful!" });
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+
+        if (formData.userType === "streamer") {
+          localStorage.removeItem("streamer_profileImage");
+        } else if (formData.userType === "admin") {
+          localStorage.removeItem("admin_profileImage");
+        }
 
         // ✅ Fetch profile image only after successful login
         if (data.user?.userId && formData.userType) {

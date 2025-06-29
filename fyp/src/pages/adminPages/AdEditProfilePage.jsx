@@ -51,6 +51,13 @@ const AdEditProfilePage = () => {
           username: data.username || "",
           contact: data.email || ""
         }));
+          
+        // ✅ Update profileImage in context if exists
+        if (data.profileImage && data.profileImage !== "") {
+          updateProfileImage(`${API}${data.profileImage}`, "admin");
+        } else {
+          updateProfileImage(defaultImage, "admin"); // fallback
+        }
       } catch (err) {
         console.error("Failed to fetch user:", err);
       }

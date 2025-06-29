@@ -5,13 +5,14 @@ import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 const defaultImage = `${API}/uploads/profile.jpg`;
+
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
     username: "",
     contact: "",
     password: "",
     genre: "",
-    profileImage: null,
+    profileImage: "",
   });
 
   const [previewImage, setPreviewImage] = useState(null);
@@ -55,6 +56,14 @@ useEffect(() => {
         contact: data.email || "",
         genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
       }));
+
+      // ✅ Update profileImage in context if exists
+      if (data.profileImage && data.profileImage !== "") {
+        updateProfileImage(`${API}${data.profileImage}`, "streamer");
+      } else {
+        updateProfileImage(defaultImage, "streamer"); // fallback
+      }
+
     } catch (err) {
       console.error("Failed to fetch user:", err);
     }
@@ -246,7 +255,7 @@ const handleChange = async (e) => {
         <form onSubmit={handleSubmit} className="w-full">
           {/* Profile Image */}
           <div className="mb-5 flex items-center space-x-4">
-            <img src={profileImage || defaultImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+            <img src={previewImage || profileImage || defaultImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
             <div className="flex flex-col space-y-2">
               <input type="file" accept="image/*" name="profileImage" ref={fileInputRef} onChange={handleChange} className="hidden" />
               <button
