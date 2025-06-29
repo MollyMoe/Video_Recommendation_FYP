@@ -8,7 +8,6 @@ from server.routes.auth import router as auth_router
 from server.routes.genreRoute import router as genre_router
 from server.routes.movieRoute import router as movie_router
 from server.routes.passwordRoute import router as password_router
-from server.routes.editProfileRoute import router as edit_router
 
 # Load .env from ../server/.en
 env_path = Path(__file__).resolve().parent.parent / '.env'
@@ -59,7 +58,6 @@ app.include_router(auth_router, prefix="/api/auth")
 app.include_router(genre_router, prefix="/api")
 app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
-app.include_router(edit_router, prefix="/api/editProfile")
 
 @app.get("/")
 def read_root():

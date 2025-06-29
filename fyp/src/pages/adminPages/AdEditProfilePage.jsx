@@ -36,28 +36,15 @@ const AdEditProfilePage = () => {
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
 
- useEffect(() => {
-    const fetchUser = async () => {
-      const savedUser = JSON.parse(localStorage.getItem("user"));
-      if (!savedUser?.userId) return;
-  
-      try {
-        const res = await fetch(`${API}/api/auth/users/${savedUser.userId}`);
-        const data = await res.json();
-  
-        localStorage.setItem("user", JSON.stringify(data));
-  
-        setFormData((prev) => ({
-          ...prev,
-          username: data.username || "",
-          contact: data.email || ""
-        }));
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-      }
-    };
-  
-    fetchUser();
+  useEffect(() => {
+    if (savedUser) {
+      setFormData(prev => ({
+        ...prev,
+        username: savedUser.username || '',
+        contact: savedUser.email || '',
+      }));
+    }
+    setCurrentRole('admin');
   }, []);
 
   const handleChange = (e) => {
@@ -79,34 +66,12 @@ const AdEditProfilePage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const savedUser = JSON.parse(localStorage.getItem("user"));
-
-  console.log("Using ID for update:", savedUser.userId); 
-
-  const res = await fetch(`${API}/api/editProfile/admin/${savedUser.userId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: formData.username
-    }),
-  });
-
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      const updated = await res.json();
-      setSuccessMessage("Profile updated!");
-      setShowSuccessModal(true);
-      localStorage.setItem("user", JSON.stringify(updated));
-    } catch (err) {
-      console.error("Update error:", err);
-      alert("Could not update profile.");
-    }
+    console.log(formData);
+    setSuccessMessage('Changes have been saved!');
+    setRedirectAfterModal(false);
+    setShowSuccessModal(true);
   };
 
   const triggerFileInput = () => {
@@ -249,36 +214,33 @@ const AdEditProfilePage = () => {
             </div>
           </div>
 
-          {/* Form Fields */}
-          {["username", "contact"].map((field) => (
-          <div className="mb-5" key={field}>
-            <label className="block mb-2 text-sm font-medium">
-              {field === "contact" ? "Contact Info" : field.charAt(0).toUpperCase() + field.slice(1)}
-            </label>
+          <div className="mb-5">
+            <label className="block mb-2 text-sm font-medium">Username</label>
             <input
               type="text"
-              name={field}
-              value={formData[field]}
+              name="username"
+              value={formData.username}
               onChange={handleChange}
-              disabled={field === "contact"}
-              className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
-                dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
-                ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
             />
           </div>
-        ))}
 
           <div className="mb-5">
-            <button
-              type="submit"
-              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
-            >
-              Save Changes
-            </button>
+            <label className="block mb-2 text-sm font-medium">Contact Info</label>
+            <input
+              type="text"
+              name="contact"
+              value={formData.contact}
+              onChange={handleChange}
+              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+            />
           </div>
 
-          <div className="flex flex-col items-end space-y-2 mt-4">
+          <div className="mb-5">
             <button
               type="button"
               onClick={() => setShowPasswordModal(true)}
@@ -286,7 +248,15 @@ const AdEditProfilePage = () => {
             >
               Change Password
             </button>
+          </div>
 
+          <div className="flex flex-col items-end space-y-2 mt-4">
+            <button
+              type="submit"
+              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+            >
+              Save Changes
+            </button>
 
             <div className="relative">
               <button

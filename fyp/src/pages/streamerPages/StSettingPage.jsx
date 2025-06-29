@@ -88,38 +88,12 @@ useEffect(() => {
     fileInputRef.current.click();
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      const savedUser = JSON.parse(localStorage.getItem("user"));
-
-  console.log("Using ID for update:", savedUser.userId); 
-
-  const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: formData.username,
-      genre: formData.genre,
-    }),
-  });
-
-
-      if (!res.ok) throw new Error("Failed to update");
-
-      const updated = await res.json();
-      setSuccessMessage("Profile updated!");
-      setShowSuccessModal(true);
-      localStorage.setItem("user", JSON.stringify(updated));
-    } catch (err) {
-      console.error("Update error:", err);
-      alert("Could not update profile.");
-    }
+    setSuccessMessage("Changes have been saved!");
+    setRedirectAfterModal(false);
+    setShowSuccessModal(true);
   };
-
-
 
   const closeModal = () => {
     setShowSuccessModal(false);
@@ -258,14 +232,25 @@ useEffect(() => {
 
           {/* Password Modal Button */}
           <div className="mb-5">
-            <button type="submit" className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300">
-              Save Changes
+            <button
+              type="button"
+              onClick={() => {
+                setPasswordStep("verify");
+                setPasswordData({ currentPassword: "", newPassword: "", confirmNewPassword: "" });
+                setPasswordError("");
+                setShowPasswordModal(true);
+              }}
+              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+            >
+              Change Password
             </button>
           </div>
 
           {/* Submit & Delete */}
           <div className="flex flex-col items-end space-y-2 mt-4">
-
+            <button type="submit" className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300">
+              Save Changes
+            </button>
 
             <div className="relative">
               <button

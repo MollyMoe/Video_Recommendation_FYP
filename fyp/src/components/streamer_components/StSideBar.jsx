@@ -62,7 +62,23 @@ const StSideBar = () => {
           </li>
 
           <hr className="my-2 border-gray-300" />
-          
+
+          <li>
+            <a
+              href="#"
+              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              Hide Recommendations
+            </a>
+          </li>
+          <li>
+            <a
+              href="#"
+              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              Regenerate Recommendations
+            </a>
+          </li>
           <li>
             <a
               href="#"
