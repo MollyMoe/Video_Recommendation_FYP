@@ -62,7 +62,6 @@ def signup(request: Request, user: SignUpRequest):
         "status": "Active",
         "genres": [],
         "userId": user_id,
-        "profileImage": "/uploads/profile.jpg",
         "__v": 0
     }
 
