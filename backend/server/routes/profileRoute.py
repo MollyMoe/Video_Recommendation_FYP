@@ -14,20 +14,17 @@ async def upload_profile_image(
     collection = db.admin if userType == "admin" else db.streamer
 
     try:
-        # Read file contents
         contents = await profileImage.read()
 
-        # Upload to Cloudinary
         result = cloudinary.uploader.upload(
             contents,
             folder="profile_images",
-            public_id=f"profile_{userId}",  # replace existing image with same ID
+            public_id=f"profile_{userId}",
             overwrite=True
         )
 
         image_url = result["secure_url"]
 
-        # Save image URL to database
         updated = await collection.find_one_and_update(
             {"userId": userId},
             {"$set": {"profileImage": image_url}},

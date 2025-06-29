@@ -93,7 +93,7 @@ const handleChange = async (e) => {
             localStorage.setItem("streamer_profileImage", imageUrl);
             setPreviewImage(imageUrl); // update preview to final version
           } else {
-            alert("Upload failed: " + data.error);
+            alert("Upload failed: " + (data.detail || data.error || "Unknown error"));
           }
         } catch (err) {
           console.error("Upload error:", err);
