@@ -49,8 +49,14 @@ def signup(request: Request, user: SignUpRequest):
         raise HTTPException(status_code=400, detail="Username already exists")
 
     # Generate userId
-    user_count = Model.count_documents({})
-    user_id = f"U{str(user_count + 1).zfill(3)}"
+    counter = db["counters"].find_one_and_update(
+    {"_id": f"{user.userType}Id"},
+    {"$inc": {"sequence_value": 1}},
+    upsert=True,
+    return_document=True
+    )
+
+    user_id = f"U{str(counter['sequence_value']).zfill(3)}"
 
     # Build user document
     user_data = {
