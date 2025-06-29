@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BadgeCheck } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdEditProfilePage = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -34,15 +36,39 @@ const AdEditProfilePage = () => {
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
 
+  // useEffect(() => {
+  //   if (savedUser) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       username: savedUser.username || '',
+  //       contact: savedUser.email || '',
+  //     }));
+  //   }
+  //   setCurrentRole('admin');
+  // }, []);
+
   useEffect(() => {
-    if (savedUser) {
-      setFormData(prev => ({
-        ...prev,
-        username: savedUser.username || '',
-        contact: savedUser.email || '',
-      }));
-    }
-    setCurrentRole('admin');
+    const fetchUser = async () => {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      if (!savedUser?.userId) return;
+  
+      try {
+        const res = await fetch(`http://localhost:3001/api/auth/users/${savedUser.userId}`);
+        const data = await res.json();
+  
+        localStorage.setItem("user", JSON.stringify(data));
+  
+        setFormData((prev) => ({
+          ...prev,
+          username: data.username || "",
+          contact: data.email || ""
+        }));
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      }
+    };
+  
+    fetchUser();
   }, []);
 
   const handleChange = (e) => {
@@ -64,13 +90,44 @@ const AdEditProfilePage = () => {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log(formData);
-    setSuccessMessage('Changes have been saved!');
-    setRedirectAfterModal(false);
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+
+console.log("Using ID for update:", savedUser.userId); 
+
+const res = await fetch(`http://localhost:3001/api/editProfile/admin/${savedUser.userId}`, {
+  method: "PUT",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    username: formData.username,
+    genre: formData.genre,
+  }),
+});
+
+
+    if (!res.ok) throw new Error("Failed to update");
+
+    const updated = await res.json();
+    setSuccessMessage("Profile updated!");
     setShowSuccessModal(true);
-  };
+    localStorage.setItem("user", JSON.stringify(updated));
+  } catch (err) {
+    console.error("Update error:", err);
+    alert("Could not update profile.");
+  }
+};
+
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   console.log(formData);
+  //   setSuccessMessage('Changes have been saved!');
+  //   setRedirectAfterModal(false);
+  //   setShowSuccessModal(true);
+  // };
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
@@ -113,7 +170,7 @@ const AdEditProfilePage = () => {
   const verifyCurrentPassword = async () => {
     setIsVerifying(true);
     try {
-      const res = await fetch('http://localhost:3001/api/password/verify-password', {
+      const res = await fetch("http://localhost:3001/api/password/verify-password", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,7 +199,7 @@ const AdEditProfilePage = () => {
     }
 
     try {
-      const updateRes = await fetch('http://localhost:3001/api/password/update-password', {
+      const updateRes = await fetch("http://localhost:3001/api/password/update-password", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -212,48 +269,42 @@ const AdEditProfilePage = () => {
             </div>
           </div>
 
-          <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Username</label>
+          {/* Form Fields */}
+          {["username", "contact"].map((field) => (
+          <div className="mb-5" key={field}>
+            <label className="block mb-2 text-sm font-medium">
+              {field === "contact" ? "Contact Info" : field.charAt(0).toUpperCase() + field.slice(1)}
+            </label>
             <input
               type="text"
-              name="username"
-              value={formData.username}
+              name={field}
+              value={formData[field]}
               onChange={handleChange}
-              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
-              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+              disabled={field === "contact"}
+              className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+                dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
+                ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
             />
           </div>
+        ))}
 
           <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Contact Info</label>
-            <input
-              type="text"
-              name="contact"
-              value={formData.contact}
-              onChange={handleChange}
-              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
-              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-            />
+            <button
+              type="submit"
+              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+            >
+              Save Changes
+            </button>
           </div>
 
-          <div className="mb-5">
+          <div className="flex flex-col items-end space-y-2 mt-4">
             <button
               type="button"
               onClick={() => setShowPasswordModal(true)}
               className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
             >
               Change Password
-            </button>
-          </div>
-
-          <div className="flex flex-col items-end space-y-2 mt-4">
-            <button
-              type="submit"
-              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
-            >
-              Save Changes
             </button>
 
             <div className="relative">
