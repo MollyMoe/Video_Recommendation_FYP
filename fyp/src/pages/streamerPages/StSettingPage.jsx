@@ -88,12 +88,12 @@ const handleChange = async (e) => {
           );
           const data = await res.json();
           if (res.ok) {
-            const imageUrl = data.profileImage;
+            const imageUrl = `${API}` + data.profileImage;
             updateProfileImage(imageUrl, "streamer");
             localStorage.setItem("streamer_profileImage", imageUrl);
             setPreviewImage(imageUrl); // update preview to final version
           } else {
-            alert("Upload failed: " + (data.detail || data.error || "Unknown error"));
+            alert("Upload failed: " + data.error);
           }
         } catch (err) {
           console.error("Upload error:", err);
@@ -246,7 +246,7 @@ const handleChange = async (e) => {
         <form onSubmit={handleSubmit} className="w-full">
           {/* Profile Image */}
           <div className="mb-5 flex items-center space-x-4">
-            <img src={profileImage || defaultImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+            <img src={profileImage || previewImage || defaultImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
             <div className="flex flex-col space-y-2">
               <input type="file" accept="image/*" name="profileImage" ref={fileInputRef} onChange={handleChange} className="hidden" />
               <button

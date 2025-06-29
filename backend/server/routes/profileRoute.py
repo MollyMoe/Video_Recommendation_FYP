@@ -1,41 +1,38 @@
-import cloudinary.uploader
+import os
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
+from datetime import datetime
+from pathlib import Path
 
 router = APIRouter()
 
+# ✅ Use temp path for Render or local path for dev
+UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path("uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 @router.put("/upload/{userType}/{userId}")
-async def upload_profile_image(
-    request: Request,
-    userType: str,
-    userId: str,
-    profileImage: UploadFile = File(...)
-):
+async def upload_profile_image(request: Request, userType: str, userId: str, profileImage: UploadFile = File(...)):
     db = request.app.state.user_db
     collection = db.admin if userType == "admin" else db.streamer
 
     try:
-        contents = await profileImage.read()
+        timestamp = int(datetime.utcnow().timestamp() * 1000)
+        filename = f"{timestamp}-{profileImage.filename}"
+        file_path = UPLOAD_DIR / filename
 
-        result = cloudinary.uploader.upload(
-            contents,
-            folder="profile_images",
-            public_id=f"profile_{userId}",
-            overwrite=True
-        )
+        with open(file_path, "wb") as f:
+            f.write(await profileImage.read())
 
-        image_url = result["secure_url"]
-
-        updated = await collection.find_one_and_update(
+        result = collection.find_one_and_update(
             {"userId": userId},
-            {"$set": {"profileImage": image_url}},
+            {"$set": {"profileImage": f"/uploads/{filename}"}},
             return_document=True
         )
 
-        if not updated:
+        if not result:
             raise HTTPException(status_code=404, detail="User not found")
 
-        return {"message": "Profile image uploaded", "profileImage": image_url}
+        return {"message": "Profile image updated", "profileImage": f"/uploads/{filename}"}
 
     except Exception as e:
-        print("Upload error:", e)
+        print("❌ Upload Error:", e)
         raise HTTPException(status_code=500, detail="Upload failed")
