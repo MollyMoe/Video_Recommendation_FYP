@@ -66,7 +66,7 @@ app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
 
 # ✅ Mount uploads folder so images can be accessed via URL
-uploads_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+uploads_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
 app.mount("/uploads", StaticFiles(directory=uploads_path), name="uploads")
 
 @app.get("/")
