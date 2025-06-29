@@ -26,28 +26,17 @@ const StSettingPage = () => {
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!savedUser?.userId) return;
-
-    try {
-      const res = await fetch(`http://localhost:3001/api/auth/users/${savedUser.userId}`);
-      const data = await res.json();
-
-      console.log("Fetched user from backend:", data);
-
+    if (savedUser) {
       setFormData((prev) => ({
         ...prev,
         username: savedUser.username || "",
         contact: savedUser.email || "",
       }));
     }
-  };
+    setCurrentRole("streamer");
+  }, []);
 
-  fetchUser();
-  setCurrentRole("streamer");
-}, []);
-
-
-  const handleChange = (e) => {
+   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "profileImage") {
       const file = files[0];
@@ -65,16 +54,6 @@ const StSettingPage = () => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSuccessMessage("Changes have been saved!");
-    setRedirectAfterModal(false);
-    setShowSuccessModal(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,6 +81,10 @@ const StSettingPage = () => {
     } else {
       alert("Error: " + (data.error || "Server error"));
     }
+  };
+
+    const triggerFileInput = () => {
+    fileInputRef.current.click();
   };
 
   const closeModal = () => {
@@ -136,7 +119,7 @@ const StSettingPage = () => {
       setShowSuccessModal(true);
     }
   };
-
+  
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (
