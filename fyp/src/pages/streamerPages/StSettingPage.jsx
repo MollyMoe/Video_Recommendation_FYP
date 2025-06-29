@@ -88,7 +88,7 @@ const handleChange = async (e) => {
           );
           const data = await res.json();
           if (res.ok) {
-            const imageUrl = `${API}` + data.profileImage;
+            const imageUrl = data.profileImage;
             updateProfileImage(imageUrl, "streamer");
             localStorage.setItem("streamer_profileImage", imageUrl);
             setPreviewImage(imageUrl); // update preview to final version
