@@ -15,8 +15,7 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
     collection = db.admin if userType == "admin" else db.streamer
 
     try:
-        timestamp = int(datetime.utcnow().timestamp() * 1000)
-        filename = f"{timestamp}-{profileImage.filename}"
+        filename = f"{profileImage.filename}"
         file_path = UPLOAD_DIR / filename
 
         with open(file_path, "wb") as f:
