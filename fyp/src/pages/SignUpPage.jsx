@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 
 const API = import.meta.env.VITE_API_BASE_URL;
+console.log("API =", API); 
+const defaultImage = `${API}/uploads/profile.jpg`;
 
 function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -90,10 +92,6 @@ function SignUpPage() {
 
         localStorage.setItem("user", JSON.stringify(data));
 
-        // Clear previously stored profile image
-        localStorage.removeItem("streamer_profileImage");
-        localStorage.removeItem("admin_profileImage");
-
         // Reset form
         setFormData({
           email: "",
@@ -106,11 +104,10 @@ function SignUpPage() {
 
         // Navigate only if successful
         if (formData.userType === "streamer") {
-          localStorage.setItem("user", JSON.stringify({ username: data.username })); 
-          localStorage.setItem("streamer_profileImage", defaultImage);
+          localStorage.removeItem("streamer_profileImage");
           navigate("/inputgenre");
         } else if (formData.userType === "admin") {
-          localStorage.setItem("admin_profileImage", defaultImage);
+          localStorage.removeItem("admin_profileImage");
           navigate("/signin");
         }
       } else {

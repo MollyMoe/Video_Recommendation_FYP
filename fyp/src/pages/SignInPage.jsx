@@ -61,6 +61,9 @@ function SignInPage() {
 
     setIsLoading(true);
 
+    localStorage.removeItem("streamer_profileImage");
+    localStorage.removeItem("admin_profileImage");
+
     try {
       const res = await fetch(`${API}/api/auth/signin`, {
         method: "POST",
@@ -76,23 +79,43 @@ function SignInPage() {
 
       if (res.ok) {
         setMessage({ type: "success", text: "Login successful!" });
-        localStorage.setItem("token", data.token); 
+        localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
+        // ✅ Fetch profile image only after successful login
+        if (data.user?.userId && formData.userType) {
+          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
+          try {
+            const imageRes = await fetch(endpoint);
+            const userInfo = await imageRes.json();
 
-        if (formData.userType === "admin") {
-          navigate("/admin");
-        } else if (formData.userType === "streamer") {
-          navigate("/home");
-        } else {
-          navigate("/home"); // Fallback
+            if (userInfo.profileImage) {
+              const key = `${formData.userType.toLowerCase()}_profileImage`;
+              localStorage.setItem(key, userInfo.profileImage);
+            }
+          } catch (error) {
+            console.warn("⚠️ Could not fetch profile image:", error);
+          }
         }
-      } else if (res.status === 403 && data.detail?.toLowerCase().includes("suspend")) {
+
+      // Navigate based on user type
+      if (formData.userType === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/home");
+      }
+      } else if (
+        res.status === 403 &&
+        data.detail?.toLowerCase().includes("suspend")
+      ) {
         setMessage({
           type: "error",
           text: "Your account is suspended. Please contact support.",
         });
-      } else if (res.status === 400 && data.detail?.toLowerCase().includes("invalid")) {
+      } else if (
+        res.status === 400 &&
+        data.detail?.toLowerCase().includes("invalid")
+      ) {
         setMessage({
           type: "error",
           text: "Invalid username or password.",

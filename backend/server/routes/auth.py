@@ -43,6 +43,7 @@ def get_streamers(request: Request):
 def signup(request: Request, user: SignUpRequest):
     db = request.app.state.user_db
     Model = db["admin"] if user.userType == "admin" else db["streamer"]
+    DEFAULT_IMAGE_URL = "/uploads/profile.jpg"
 
     # Check if user already exists
     if Model.find_one({"username": user.username}):
@@ -50,10 +51,10 @@ def signup(request: Request, user: SignUpRequest):
 
     # Generate userId
     counter = db["counters"].find_one_and_update(
-    {"_id": f"{user.userType}Id"},
-    {"$inc": {"sequence_value": 1}},
-    upsert=True,
-    return_document=True
+        {"_id": f"{user.userType}Id"},
+        {"$inc": {"sequence_value": 1}},
+        upsert=True,
+        return_document=True
     )
 
     user_id = f"U{str(counter['sequence_value']).zfill(3)}"
@@ -68,6 +69,7 @@ def signup(request: Request, user: SignUpRequest):
         "status": "Active",
         "genres": [],
         "userId": user_id,
+        "profileImage": DEFAULT_IMAGE_URL,
         "__v": 0
     }
 
