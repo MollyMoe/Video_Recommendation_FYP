@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
-import defaultImage from "../../images/User-profile.png";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
+const defaultImage = `${API}/uploads/profile.jpg`;
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
