@@ -9,53 +9,47 @@ const API = import.meta.env.VITE_API_BASE_URL;
 function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
-  const [selectedMovie, setSelectedMovie] = useState(null); 
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
 const savedUser = JSON.parse(localStorage.getItem("user"));
 const username = savedUser?.username;
 
   // Fetch user preferred genres
-useEffect(() => {
-  if (!username) return;
-
-  axios
-    .get(`${API}/api/auth/by-username/${username}`)
-    .then((res) => {
-       console.log("Genres fetched for user:", res.data.genres);
-      setPreferredGenres(res.data.genres || []);
-    })
-    .catch((err) => {
-      console.error("Failed to fetch user preferences", err);
-      console.error("Failed to fetch user preferences", err);
-      setPreferredGenres([]);
-    });
-}, [username]);
-
-  // Fetch all movies and filter based on preferredGenres
   useEffect(() => {
-    axios
-      .get(`${API}/api/movies/all`)
-      .then((res) => {
-        console.log("Raw API response:", res.data);
-        const validMovies = res.data.filter(
-          (movie) =>
-            movie.poster_url &&
-            movie.trailer_url &&
-            typeof movie.poster_url === "string" &&
-            typeof movie.trailer_url === "string" &&
-            movie.poster_url.toLowerCase() !== "nan" &&
-            movie.trailer_url.toLowerCase() !== "nan" &&
-            movie.poster_url.trim() !== "" &&
-            movie.trailer_url.trim() !== ""
-        )
-        .map((movie) => {
-          if (typeof movie.genres === "string") {
-            movie.genres = movie.genres
-              .split(/[,|]/)   
-              .map((g) => g.trim());
-          }
-          return movie;
-        });
+    const fetchUserAndMovies = async () => {
+      if (!username) return;
+
+      setIsLoading(true); // start loading at the very beginning
+
+      try {
+        // Step 1: Fetch user preferred genres //connect with backend
+        const userRes = await axios.get(`${API}/api/auth/users/${savedUser.userId}`);
+        const userGenres = userRes.data.genres || [];
+        console.log("Genres fetched for user:", userGenres);
+        setPreferredGenres(userGenres);
+
+        // Step 2: Fetch moviess //connect with backend
+        const movieRes = await axios.get(`${API}/api/movies/all`);
+
+        const validMovies = movieRes.data
+          .filter(
+            (movie) =>
+              movie.poster_url &&
+              movie.trailer_url &&
+              typeof movie.poster_url === "string" &&
+              typeof movie.trailer_url === "string" &&
+              movie.poster_url.toLowerCase() !== "nan" &&
+              movie.trailer_url.toLowerCase() !== "nan" &&
+              movie.poster_url.trim() !== "" &&
+              movie.trailer_url.trim() !== ""
+          )
+          .map((movie) => {
+            if (typeof movie.genres === "string") {
+              movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+            }
+            return movie;
+          });
 
         const uniqueMovies = [];
         const seenTitles = new Set();
@@ -66,29 +60,38 @@ useEffect(() => {
             uniqueMovies.push(movie);
           }
         }
-        
-      console.log("All unique movies loaded:", uniqueMovies.length);
-      console.log("Preferred genres:", preferredGenres);
 
-        if (preferredGenres.length === 0) {
-          setMovies(uniqueMovies); // no preference → show all
+        console.log("All unique movies loaded:", uniqueMovies.length);
+        console.log("Preferred genres:", userGenres);
+
+        if (userGenres.length === 0) {
+          setMovies(uniqueMovies); // no filtering
         } else {
-          const filteredMovies = uniqueMovies.filter((movie) =>
-           movie.genres?.some((genre) =>
-           preferredGenres.some((pref) =>
-            genre.toLowerCase().includes(pref.toLowerCase())
-           )
-         )
-       );
+                    const normalizedPreferred = userGenres.map(g => g.toLowerCase().trim());
 
-          console.log("Filtered movies by genre:", filteredMovies.length);
-          setMovies(filteredMovies);
+  const filtered = uniqueMovies.filter((movie) =>
+    Array.isArray(movie.genres) &&
+    movie.genres.some((genre) => {
+      const g = genre.toLowerCase().trim();
+      return normalizedPreferred.some((pref) => g.includes(pref));
+    })
+  );
+
+  console.log("Filtered movies by genre:", filtered.length);
+  setMovies(filtered);
+
         }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch movies", err);
-      });
-  }, [preferredGenres]);
+      } catch (err) {
+        console.error("Error fetching user or movies:", err);
+        setPreferredGenres([]);
+        setMovies([]);
+      } finally {
+        setIsLoading(false); // loading ends only after both are done
+      }
+    };
+
+    fetchUserAndMovies();
+  }, [username]);
   
   return (
     <div className=" min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
@@ -134,7 +137,7 @@ useEffect(() => {
       </div>
 
       {/* Dialog Modal */}
-      <Dialog
+        <Dialog
         open={!!selectedMovie}
         onClose={() => setSelectedMovie(null)}
         className="relative z-50"
@@ -149,39 +152,16 @@ useEffect(() => {
                 className="rounded-lg w-40 h-auto object-cover"
               />
               <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-3xl font-semibold mb-10">{selectedMovie?.title}</h2>
-                <p className="text-sm text-gray-700 mb-2">
+                <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
+                <p className="text-sm text-gray-700">
                   {selectedMovie?.genres?.join(", ")}
                 </p>
-                {/* Show rating in modal*/}
-                <p className="text-sm text-gray-700 mb-20">
-                  Predicted Rating: ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
+                <p className="text-sm text-gray-700">
+                  Predicted Rating: ⭐️{" "}
+                  {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                 </p>
-                <div className="flex space-x-2 mb-10">
-                  <button className="bg-white text-black text-sm px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-black rounded-full p-0.5">
-                        <Play className="w-3 h-3 fill-white" />
-                      </div>
-                      <span>Play</span>
-                    </div>
-                  </button>
-                  <button className="bg-white text-black text-sm px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <Heart className="w-4 h-4 fill-black" />
-                      <span>Like</span>
-                    </div>
-                  </button>
-                  <button className="bg-white text-black text-sm px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <Bookmark className="w-4 h-4 fill-black" />
-                      <span>Save</span>
-                    </div>
-                  </button>
-                </div>
               </div>
             </div>
-<<<<<<< HEAD
 
             {/* Action Buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
@@ -197,6 +177,10 @@ useEffect(() => {
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
                 Save
               </button>
+              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+                <Trash2 className="w-4 h-4 mr-1 stroke-black" />
+              Remove
+              </button>
             </div>
 
             {/* Close Button BELOW action buttons */}
@@ -208,14 +192,6 @@ useEffect(() => {
                 Close
               </button>
             </div>
-=======
-            <button
-              onClick={() => setSelectedMovie(null)}
-              className="w-15 border border-gray-400 text-gray-800 py-2 rounded-xl hover:bg-gray-100"
-            >
-              Close
-            </button>
->>>>>>> parent of 3560d3b (Update the editing function)
           </Dialog.Panel>
         </div>
       </Dialog>
