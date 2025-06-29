@@ -65,7 +65,6 @@ const StSettingPage = () => {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-<<<<<<< HEAD
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
@@ -76,7 +75,7 @@ const StSettingPage = () => {
     setSuccessMessage("Changes have been saved!");
     setRedirectAfterModal(false);
     setShowSuccessModal(true);
-=======
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -103,7 +102,6 @@ const StSettingPage = () => {
     } else {
       alert("Error: " + (data.error || "Server error"));
     }
->>>>>>> Clara
   };
 
   const closeModal = () => {
@@ -164,29 +162,10 @@ if (previewImage) {
     : `http://localhost:3001${profileImage}`;
 }
 
-<<<<<<< HEAD
-=======
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-
-  let imageUrl = defaultImage;
-if (previewImage) {
-  imageUrl = previewImage;
-} else if (profileImage) {
-  imageUrl = profileImage.startsWith("http")
-    ? profileImage
-    : `http://localhost:3001${profileImage}`;
-}
-
->>>>>>> Clara
   return (
     <div className="min-h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800">
       <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
-<<<<<<< HEAD
-          {/* Profile Image */}
-          <div className="mb-5 flex items-center space-x-4">
-            <img src={profileImage || previewImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
-=======
           {/* Profile Image Section */}
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
@@ -198,7 +177,6 @@ if (previewImage) {
               className="w-32 h-32 rounded-full shadow-lg border border-gray-300"
               alt="Profile"
             />
->>>>>>> Clara
             <div className="flex flex-col space-y-2">
               <input
                 type="file"
@@ -239,8 +217,6 @@ if (previewImage) {
 
           {/* Genre */}
           <div className="mb-5">
-<<<<<<< HEAD
-=======
             <label className="block mb-2 text-sm font-medium">
               Contact Info
             </label>
@@ -288,7 +264,6 @@ if (previewImage) {
           </div>
 
           <div className="flex flex-col items-end space-y-2 mt-4">
->>>>>>> Clara
             <button
               type="submit"
               className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
