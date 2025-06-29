@@ -4,7 +4,7 @@ import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-
+const defaultImage = `${API}/uploads/profile.jpg`;
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -65,19 +65,40 @@ useEffect(() => {
 }, []);
 
 
-  const handleChange = (e) => {
+const handleChange = async (e) => {
     const { name, value, files } = e.target;
+    const user = JSON.parse(localStorage.getItem("user"));
+  
     if (name === "profileImage") {
       const file = files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result;
-          updateProfileImage(base64, "streamer");
-          setPreviewImage(base64);
-          setFormData((prev) => ({ ...prev, profileImage: file }));
-        };
-        reader.readAsDataURL(file);
+      if (file && user) {
+        setPreviewImage(URL.createObjectURL(file)); // immediate preview
+        setFormData((prev) => ({ ...prev, profileImage: file }));
+  
+        const formDataToSend = new FormData();
+        formDataToSend.append("profileImage", file);
+  
+        try {
+          const res = await fetch(
+            `${API}/api/profile/upload/streamer/${user.userId}`, //backend connect
+            {
+              method: "PUT",
+              body: formDataToSend,
+            }
+          );
+          const data = await res.json();
+          if (res.ok) {
+            const imageUrl = `${API}` + data.profileImage;
+            updateProfileImage(imageUrl, "streamer");
+            localStorage.setItem("streamer_profileImage", imageUrl);
+            setPreviewImage(imageUrl); // update preview to final version
+          } else {
+            alert("Upload failed: " + data.error);
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          alert("Something went wrong.");
+        }
       }
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -225,7 +246,7 @@ useEffect(() => {
         <form onSubmit={handleSubmit} className="w-full">
           {/* Profile Image */}
           <div className="mb-5 flex items-center space-x-4">
-            <img src={profileImage || previewImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+            <img src={profileImage || defaultImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
             <div className="flex flex-col space-y-2">
               <input type="file" accept="image/*" name="profileImage" ref={fileInputRef} onChange={handleChange} className="hidden" />
               <button

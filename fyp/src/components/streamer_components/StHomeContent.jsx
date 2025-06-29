@@ -5,7 +5,6 @@ import { Play, Heart, Bookmark } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-
 function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
@@ -24,7 +23,7 @@ const username = savedUser?.username;
 
       try {
         // Step 1: Fetch user preferred genres //connect with backend
-        const userRes = await axios.get(`${API}/api/auth/users/${savedUser.userId}`);
+        const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
         const userGenres = userRes.data.genres || [];
         console.log("Genres fetched for user:", userGenres);
         setPreferredGenres(userGenres);

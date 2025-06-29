@@ -33,6 +33,7 @@ const AdEditProfilePage = () => {
   const navigate = useNavigate();
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
   const savedUser = JSON.parse(localStorage.getItem('user'));
+  const defaultImage = `${API}/uploads/profile.jpg`;
 
  useEffect(() => {
     const fetchUser = async () => {
@@ -59,22 +60,43 @@ const AdEditProfilePage = () => {
     setCurrentRole("admin");
   }, []);
 
-  const handleChange = (e) => {
+const handleChange = async (e) => {
     const { name, value, files } = e.target;
-    if (name === 'profileImage') {
+    const user = JSON.parse(localStorage.getItem("user"));
+  
+    if (name === "profileImage") {
       const file = files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result;
-          updateProfileImage(base64, 'admin');
-          setPreviewImage(base64);
-          setFormData(prev => ({ ...prev, profileImage: file }));
-        };
-        reader.readAsDataURL(file);
+      if (file && user) {
+        setPreviewImage(URL.createObjectURL(file)); // immediate preview
+        setFormData((prev) => ({ ...prev, profileImage: file }));
+  
+        const formDataToSend = new FormData();
+        formDataToSend.append("profileImage", file);
+  
+        try {
+          const res = await fetch(
+            `${API}/api/profile/upload/admin/${user.userId}`, //backend connect
+            {
+              method: "PUT",
+              body: formDataToSend,
+            }
+          );
+          const data = await res.json();
+          if (res.ok) {
+            const imageUrl = `${API}` + data.profileImage;
+            updateProfileImage(imageUrl, "admin");
+            localStorage.setItem("streamer_profileImage", imageUrl);
+            setPreviewImage(imageUrl); // update preview to final version
+          } else {
+            alert("Upload failed: " + data.error);
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          alert("Something went wrong.");
+        }
       }
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -225,7 +247,7 @@ const AdEditProfilePage = () => {
         <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
-              src={profileImage || previewImage}
+              src={profileImage|| defaultImage}
               className="w-32 h-32 rounded-full shadow-lg border border-gray-300"
             />
             <div className="flex flex-col space-y-2">

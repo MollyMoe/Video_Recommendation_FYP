@@ -9,6 +9,8 @@ from server.routes.genreRoute import router as genre_router
 from server.routes.movieRoute import router as movie_router
 from server.routes.passwordRoute import router as password_router
 from server.routes.editProfileRoute import router as edit_router
+from server.routes.profileRoute import router as profile_router
+from fastapi.staticfiles import StaticFiles
 
 # Load .env from ../server/.en
 env_path = Path(__file__).resolve().parent.parent / '.env'
@@ -37,6 +39,7 @@ app = FastAPI()
 # ✅ Replace with the actual frontend URL you're using
 origins = [
     "http://localhost:3000",  # React dev server
+    "http://localhost:3001",
     "https://cineit-frontend.onrender.com",
 ]
 
@@ -60,6 +63,10 @@ app.include_router(genre_router, prefix="/api")
 app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
+app.include_router(profile_router, prefix="/api/profile")
+
+# ✅ Mount uploads folder so images can be accessed via URL
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def read_root():

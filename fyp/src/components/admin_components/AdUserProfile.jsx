@@ -1,19 +1,46 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
-import defaultImage from "../../images/User-profile.png";
 import { Link } from "react-router-dom";
+
+const API = import.meta.env.VITE_API_BASE_URL;
+const defaultImage = `${API}/uploads/profile.png`;
 
 function AdUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  const { profileImage, setCurrentRole } = useUser();
+  const { profileImage, updateProfileImage, setCurrentRole } = useUser();
 
   useEffect(() => {
-    setCurrentRole("admin");
-  }, []);
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user?._id || user.userType !== "admin") return;
+    
+      setCurrentRole("admin");
+    
+      // ✅ Restore from localStorage first
+      const stored = localStorage.getItem("admin_profileImage");
+      if (stored) {
+        updateProfileImage(stored, "admin");
+      } else {
+        updateProfileImage(defaultImage, "admin");
+      }
+    
+      // ✅ Fetch latest from backend
+      fetch(`${API}/api/profile/admin/${user.userId}`) //backend connect
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.profileImage && data.profileImage !== "") {
+            const fullPath = `${API}` + data.profileImage;
+            updateProfileImage(fullPath, "admin");
+            localStorage.setItem("admin_profileImage", fullPath); // ✅ Persist
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch admin profile image:", err);
+        });
+    }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
