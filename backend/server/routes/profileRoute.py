@@ -1,5 +1,5 @@
 import cloudinary.uploader
-from fastapi import UploadFile, File, Request, APIRouter, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 
 router = APIRouter()
 
@@ -14,19 +14,20 @@ async def upload_profile_image(
     collection = db.admin if userType == "admin" else db.streamer
 
     try:
+        # Read file contents
         contents = await profileImage.read()
 
         # Upload to Cloudinary
         result = cloudinary.uploader.upload(
             contents,
             folder="profile_images",
-            public_id=f"profile_{userId}",
+            public_id=f"profile_{userId}",  # replace existing image with same ID
             overwrite=True
         )
 
         image_url = result["secure_url"]
 
-        # Save URL to database
+        # Save image URL to database
         updated = await collection.find_one_and_update(
             {"userId": userId},
             {"$set": {"profileImage": image_url}},
@@ -39,5 +40,5 @@ async def upload_profile_image(
         return {"message": "Profile image uploaded", "profileImage": image_url}
 
     except Exception as e:
-        print("Upload failed:", str(e))
+        print("Upload error:", e)
         raise HTTPException(status_code=500, detail="Upload failed")
