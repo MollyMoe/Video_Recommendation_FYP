@@ -2,10 +2,19 @@ import os
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from datetime import datetime
 from pathlib import Path 
+import cloudinary
+import cloudinary.uploader
+from dotenv import load_dotenv
+import os
 
 router = APIRouter()
-UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path("uploads")
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+load_dotenv()
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
 
 @router.put("/upload/{userType}/{userId}")
 async def upload_profile_image(request: Request, userType: str, userId: str, profileImage: UploadFile = File(...)):
@@ -13,11 +22,15 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
     collection = db.admin if userType == "admin" else db.streamer
 
     try:
-        filename = f"{profileImage.filename}"
-        file_path = UPLOAD_DIR / filename
+        # Upload to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            profileImage.file,
+            folder=f"CineIt/{userType}/{userId}",
+            public_id="profile",  # always replace old profile picture
+            overwrite=True,
+        )
 
-        with open(file_path, "wb") as f:
-            f.write(await profileImage.read())
+        image_url = upload_result["secure_url"]
 
         result = collection.find_one_and_update(
             {"userId": userId},

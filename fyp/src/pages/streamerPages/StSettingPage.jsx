@@ -4,7 +4,7 @@ import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage = `${API}/uploads/profile.jpg`;
+const defaultImage = `/uploads/profile.jpg`;
 
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
@@ -39,40 +39,41 @@ const StSettingPage = () => {
   });
   const [passwordError, setPasswordError] = useState("");
 
-useEffect(() => {
-  const fetchUser = async () => {
+  useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!savedUser?.userId) return;
 
-    try {
-      const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-      const data = await res.json();
+    setCurrentRole("streamer");
 
-      console.log("Fetched user from backend:", data);
+    // Step 1: Use cached image or fallback first
+    const cachedImage = localStorage.getItem("streamer_profileImage");
+    const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
+    updateProfileImage(fallbackImage, "streamer");
 
-      setFormData((prev) => ({
-        ...prev,
-        username: data.username || "",
-        contact: data.email || "",
-        genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
-      }));
+    // Step 2: Try fetching latest from backend
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+        const data = await res.json();
 
-      // ✅ Update profileImage in context if exists
-      if (data.profileImage && data.profileImage !== "") {
-        updateProfileImage(`${API}${data.profileImage}`, "streamer");
-      } else {
-        updateProfileImage(defaultImage, "streamer"); // fallback
+        setFormData((prev) => ({
+          ...prev,
+          username: data.username || "",
+          contact: data.email || "",
+          genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
+        }));
+
+        if (data.profileImage) {
+          updateProfileImage(data.profileImage, "streamer");
+          localStorage.setItem("streamer_profileImage", data.profileImage);
+        }
+      } catch (err) {
+        console.warn("⚠️ Offline or failed to fetch profile:", err);
       }
+    };
 
-    } catch (err) {
-      console.error("Failed to fetch user:", err);
-    }
-  };
-
-  fetchUser();
-  setCurrentRole("streamer");
-}, []);
-
+    fetchUser();
+  }, []);
 
 const handleChange = async (e) => {
     const { name, value, files } = e.target;
@@ -97,9 +98,9 @@ const handleChange = async (e) => {
           );
           const data = await res.json();
           if (res.ok) {
-            const imageUrl = `${API}` + data.profileImage;
+            const imageUrl = data.profileImage;
             updateProfileImage(imageUrl, "streamer");
-            localStorage.setItem("streamer_profileImage", imageUrl);
+            localStorage.setItem("streamer_profileImage", imageUrl);  
             setPreviewImage(imageUrl); // update preview to final version
             console.log("data.profileImage:", data.profileImage);
             console.log("imageUrl used:", imageUrl);

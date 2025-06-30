@@ -14,36 +14,32 @@ function StUserProfile({ userProfile }) {
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
 
   useEffect(() => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || user.userType !== "streamer") return;
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.userType !== "streamer") return;
 
-  setCurrentRole("streamer");
+    setCurrentRole("streamer");
 
-  const stored = localStorage.getItem("streamer_profileImage");
-  if (stored) {
-    updateProfileImage(stored, "streamer");
-  } else if (user.profileImage) {
-    updateProfileImage(user.profileImage, "streamer");
-    localStorage.setItem("streamer_profileImage", user.profileImage);
-  } else {
-    updateProfileImage(defaultImage, "streamer");
-    localStorage.setItem("streamer_profileImage", defaultImage);
-  }
+    const cached = localStorage.getItem("streamer_profileImage");
+    const defaultImage = "uploads/profile.jpg";
 
-  // always try backend fetch in case profile image changed recently
-  fetch(`${API}/api/auth/users/streamer/${user.userId}`)
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.profileImage && data.profileImage !== "") {
-        const fullPath = `${API}${data.profileImage}`;
-        updateProfileImage(fullPath, "streamer");
-        localStorage.setItem("streamer_profileImage", fullPath);
-      }
-    })
-    .catch((err) => {
-      console.error("Failed to fetch profile image:", err);
-    });
-}, [localStorage.getItem("user")]);
+    // 1. Fallback to cached or default immediately
+    const fallbackImage = cached || user.profileImage || defaultImage;
+    updateProfileImage(fallbackImage, "streamer");
+
+    // 2. Try fetching latest from backend (if online)
+    fetch(`${API}/api/auth/users/streamer/${user.userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.profileImage) {
+          updateProfileImage(data.profileImage, "streamer");
+          localStorage.setItem("streamer_profileImage", data.profileImage);
+        }
+      })
+      .catch((err) => {
+        console.warn("Offline or failed to fetch image:", err);
+      });
+  }, []);
+
 
 
   useEffect(() => {
