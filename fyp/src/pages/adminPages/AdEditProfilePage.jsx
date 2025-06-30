@@ -33,7 +33,7 @@ const AdEditProfilePage = () => {
   const navigate = useNavigate();
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
   const savedUser = JSON.parse(localStorage.getItem('user'));
-  const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751265915/beff3b453bc8afd46a3c487a3a7f347b_itfznz.jpg";
+  const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
   useEffect(() => {
     const fetchUser = async () => {
