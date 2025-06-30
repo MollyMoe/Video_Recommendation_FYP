@@ -9,10 +9,12 @@ function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
+
+
   const [isLoading, setIsLoading] = useState(true);
 
-const savedUser = JSON.parse(localStorage.getItem("user"));
-const username = savedUser?.username;
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const username = savedUser?.username;
 
   // Fetch user preferred genres
   useEffect(() => {
@@ -50,15 +52,17 @@ const username = savedUser?.username;
             return movie;
           });
 
-        const uniqueMovies = [];
-        const seenTitles = new Set();
 
-        for (const movie of validMovies) {
-          if (!seenTitles.has(movie.title)) {
-            seenTitles.add(movie.title);
-            uniqueMovies.push(movie);
-          }
+      const uniqueMovies = [];
+      const seenTitles = new Set();
+
+      for (const movie of validMovies) {
+        if (!seenTitles.has(movie.title)) {
+          seenTitles.add(movie.title);
+          uniqueMovies.push(movie);
         }
+      }
+
 
         console.log("All unique movies loaded:", uniqueMovies.length);
         console.log("Preferred genres:", userGenres);
@@ -93,7 +97,7 @@ const username = savedUser?.username;
   }, [username]);
   
   return (
-    <div className=" min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
           {movies.map((movie) => (
@@ -190,6 +194,15 @@ const username = savedUser?.username;
           </Dialog.Panel>
         </div>
       </Dialog>
+      {isLoading && (
+      <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+          <p className="text-lg font-semibold">Loading movies...</p>
+          <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+        </div>
+      </div>
+    )}
+
     </div>
   );
 }

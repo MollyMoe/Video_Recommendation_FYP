@@ -50,6 +50,7 @@ const StSettingPage = () => {
     const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
     updateProfileImage(fallbackImage, "streamer");
 
+
     // Step 2: Try fetching latest from backend
     const fetchUser = async () => {
       try {
@@ -76,6 +77,7 @@ const StSettingPage = () => {
   }, []);
 
 const handleChange = async (e) => {
+
     const { name, value, files } = e.target;
     const user = JSON.parse(localStorage.getItem("user"));
   
@@ -151,8 +153,6 @@ const handleChange = async (e) => {
       alert("Could not update profile.");
     }
   };
-
-
 
   const closeModal = () => {
     setShowSuccessModal(false);
@@ -273,26 +273,30 @@ const handleChange = async (e) => {
 
           {/* Form Fields */}
           {["username", "contact", "genre"].map((field) => (
-            <div className="mb-5" key={field}>
-              <label className="block mb-2 text-sm font-medium">{field === "contact" ? "Contact Info" : field.charAt(0).toUpperCase() + field.slice(1)}</label>
-              <input
-                type="text"
-                name={field}
-                value={formData[field]}
-                onChange={handleChange}
-                disabled={field === "contact"}
-                className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+          <div className="mb-5" key={field}>
+            <label className="block mb-2 text-sm font-medium">
+              {field === "contact" ? "Contact Info" : field.charAt(0).toUpperCase() + field.slice(1)}
+            </label>
+            <input
+              type="text"
+              name={field}
+              value={formData[field]}
+              onChange={handleChange}
+              disabled={field === "contact"}
+              className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
                 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
                 ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
-              />
-            </div>
-          ))}
+            />
+          </div>
+        ))}
+
 
           {/* Password Modal Button */}
           <div className="mb-5">
             <button type="submit" className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300">
               Save Changes
+
             </button>
           </div>
 
@@ -306,7 +310,6 @@ const handleChange = async (e) => {
             >
               Change Password
             </button>
-
 
             <div className="relative">
               <button

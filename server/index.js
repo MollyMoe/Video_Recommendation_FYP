@@ -37,6 +37,7 @@ app.use("/api/profile", require("./routes/profileRoute"));
 
 app.use("/api/password", require("./routes/passwordRoute"));
 app.use("/api/preference", require("./routes/genreRoute"));
+app.use("/api/editProfile", require("./routes/editProfileRoute"));
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running at http://localhost:${process.env.PORT}`);

@@ -35,6 +35,17 @@ const AdEditProfilePage = () => {
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
+  // useEffect(() => {
+  //   if (savedUser) {
+  //     setFormData(prev => ({
+  //       ...prev,
+  //       username: savedUser.username || '',
+  //       contact: savedUser.email || '',
+  //     }));
+  //   }
+  //   setCurrentRole('admin');
+  // }, []);
+
   useEffect(() => {
     const fetchUser = async () => {
       const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -57,6 +68,7 @@ const AdEditProfilePage = () => {
           contact: data.email || ""
         }));
 
+
         // ✅ Directly use profileImage if it's a full Cloudinary URL
         if (data.profileImage && data.profileImage !== "") {
           updateProfileImage(data.profileImage, "admin");
@@ -71,6 +83,8 @@ const AdEditProfilePage = () => {
 
     fetchUser();
     setCurrentRole("admin");
+
+
   }, []);
 
 const handleChange = async (e) => {
@@ -213,6 +227,7 @@ const handleChange = async (e) => {
     }
 
     try {
+
       const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -320,7 +335,6 @@ const handleChange = async (e) => {
             >
               Change Password
             </button>
-
 
             <div className="relative">
               <button
