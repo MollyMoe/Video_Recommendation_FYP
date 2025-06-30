@@ -4,7 +4,7 @@ import { useUser } from "../../context/UserContext";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751263974/profile_gjuj0s.jpg";
+const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751265915/beff3b453bc8afd46a3c487a3a7f347b_itfznz.jpg";
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
@@ -20,7 +20,6 @@ function StUserProfile({ userProfile }) {
     setCurrentRole("streamer");
 
     const cached = localStorage.getItem("streamer_profileImage");
-    const defaultImage = "uploads/profile.jpg";
 
     // 1. Fallback to cached or default immediately
     const fallbackImage = cached || user.profileImage || defaultImage;

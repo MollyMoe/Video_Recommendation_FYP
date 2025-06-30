@@ -33,36 +33,42 @@ const AdEditProfilePage = () => {
   const navigate = useNavigate();
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
   const savedUser = JSON.parse(localStorage.getItem('user'));
-  const defaultImage = `${API}/uploads/profile.jpg`;
+  const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751263974/profile_gjuj0s.jpg";
 
- useEffect(() => {
+  useEffect(() => {
     const fetchUser = async () => {
       const savedUser = JSON.parse(localStorage.getItem("user"));
       if (!savedUser?.userId) return;
-  
+
+      // Step 1: Use cached image or fallback first
+      const cachedImage = localStorage.getItem("admin_profileImage");
+      const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
+      updateProfileImage(fallbackImage, "admin");
+
       try {
         const res = await fetch(`${API}/api/auth/users/admin/${savedUser.userId}`);
         const data = await res.json();
-  
+
         console.log("Fetched user from backend:", data);
-  
+
         setFormData((prev) => ({
           ...prev,
           username: data.username || "",
           contact: data.email || ""
         }));
-          
-        // ✅ Update profileImage in context if exists
+
+        // ✅ Directly use profileImage if it's a full Cloudinary URL
         if (data.profileImage && data.profileImage !== "") {
-          updateProfileImage(`${API}${data.profileImage}`, "admin");
+          updateProfileImage(data.profileImage, "admin");
+          localStorage.setItem("admin_profileImage", data.profileImage);
         } else {
-          updateProfileImage(defaultImage, "admin"); // fallback
+          updateProfileImage(defaultImage, "admin");
         }
       } catch (err) {
         console.error("Failed to fetch user:", err);
       }
     };
-  
+
     fetchUser();
     setCurrentRole("admin");
   }, []);
@@ -90,9 +96,9 @@ const handleChange = async (e) => {
           );
           const data = await res.json();
           if (res.ok) {
-            const imageUrl = `${API}` + data.profileImage;
+            const imageUrl = data.profileImage;
             updateProfileImage(imageUrl, "admin");
-            localStorage.setItem("streamer_profileImage", imageUrl);
+            localStorage.setItem("admin_profileImage", imageUrl);
             setPreviewImage(imageUrl); // update preview to final version
           } else {
             alert("Upload failed: " + data.error);

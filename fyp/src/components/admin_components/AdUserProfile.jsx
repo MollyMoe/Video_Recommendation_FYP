@@ -4,7 +4,7 @@ import { useUser } from "../../context/UserContext";
 import { Link, useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage = `${API}/uploads/profile.jpg`;
+const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751263974/profile_gjuj0s.jpg";
 
 function AdUserProfile() {
   const [open, setOpen] = useState(false);
@@ -20,32 +20,25 @@ function AdUserProfile() {
 
     setCurrentRole("admin");
 
-    // 1. Load from localStorage
-    const stored = localStorage.getItem("admin_profileImage");
-    if (stored) {
-      updateProfileImage(stored, "admin");
-    } else if (user.profileImage) {
-      updateProfileImage(user.profileImage, "admin");
-      localStorage.setItem("admin_profileImage", user.profileImage);
-    } else {
-      updateProfileImage(defaultImage, "admin");
-      localStorage.setItem("admin_profileImage", defaultImage);
-    }
+    const cached = localStorage.getItem("admin_profileImage");
 
-    // 2. Fetch latest image from backend
+    // 1. Fallback to cached or default immediately
+    const fallbackImage = cached || user.profileImage || defaultImage;
+    updateProfileImage(fallbackImage, "admin");
+
+    // 2. Try fetching latest from backend (if online)
     fetch(`${API}/api/auth/users/admin/${user.userId}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.profileImage && data.profileImage !== "") {
-          const fullPath = `${API}${data.profileImage}`;
-          updateProfileImage(fullPath, "admin");
-          localStorage.setItem("admin_profileImage", fullPath);
+        if (data.profileImage) {
+          updateProfileImage(data.profileImage, "admin");
+          localStorage.setItem("admin_profileImage", data.profileImage);
         }
       })
       .catch((err) => {
-        console.error("Failed to fetch admin profile image:", err);
+        console.warn("Offline or failed to fetch image:", err);
       });
-  }, []); // ← no need to add localStorage.getItem here
+  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");

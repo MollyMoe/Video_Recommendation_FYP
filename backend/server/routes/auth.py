@@ -199,7 +199,6 @@ def update_preferences(request: Request, body: dict):
     if not updated:
         updated = db.admin.find_one_and_update(
             {"userId": user_id},
-            {"$set": {"genres": genres}},
             return_document=ReturnDocument.AFTER
         )
 
