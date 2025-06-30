@@ -4,7 +4,7 @@ import { useUser } from "../../context/UserContext";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage = `${API}/uploads/profile.jpg`;
+const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751263974/profile_gjuj0s.jpg";
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);

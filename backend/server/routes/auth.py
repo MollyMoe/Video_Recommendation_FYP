@@ -43,7 +43,7 @@ def get_streamers(request: Request):
 def signup(request: Request, user: SignUpRequest):
     db = request.app.state.user_db
     Model = db["admin"] if user.userType == "admin" else db["streamer"]
-    DEFAULT_IMAGE_URL = "/uploads/profile.jpg"
+    DEFAULT_IMAGE_URL = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751263974/profile_gjuj0s.jpg"
 
     # Check if user already exists
     if Model.find_one({"username": user.username}):

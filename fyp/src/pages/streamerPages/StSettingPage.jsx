@@ -4,7 +4,7 @@ import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage = `/uploads/profile.jpg`;
+const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751263974/profile_gjuj0s.jpg";
 
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
