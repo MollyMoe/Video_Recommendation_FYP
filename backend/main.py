@@ -66,9 +66,6 @@ app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
 
-# ✅ Mount uploads folder so images can be accessed via URL
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
 
 @app.get("/")
 def read_root():

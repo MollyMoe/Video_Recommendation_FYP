@@ -34,14 +34,14 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
 
         result = collection.find_one_and_update(
             {"userId": userId},
-            {"$set": {"profileImage": f"/uploads/{filename}"}},
+            {"$set": {"profileImage": image_url}},
             return_document=True
         )
 
         if not result:
             raise HTTPException(status_code=404, detail="User not found")
 
-        return {"message": "Profile image updated", "profileImage": f"/uploads/{filename}"}
+        return {"message": "Profile image updated", "profileImage": image_url}
 
     except Exception as e:
         print("❌ Upload Error:", e)
