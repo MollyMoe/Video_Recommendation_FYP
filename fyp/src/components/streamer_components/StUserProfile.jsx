@@ -1,45 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
-import { Link } from "react-router-dom";
 
-const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
+
+// import defaultImage from "../../images/profile.png";
+
+const defaultImage = "http://localhost:3001/uploads/profile.png";
 
 function StUserProfile({ userProfile }) {
+  
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
+  const { updateProfileImage, setCurrentRole } = useUser();
+  const [profileImage, setProfileImage] = useState(defaultImage);
 
-  const { profileImage, updateProfileImage, setCurrentRole } = useUser();
+  const { updateProfileImage, setCurrentRole } = useUser();
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || user.userType !== "streamer") return;
-
-    setCurrentRole("streamer");
-
-    const cached = localStorage.getItem("streamer_profileImage");
-
-    // 1. Fallback to cached or default immediately
-    const fallbackImage = cached || user.profileImage || defaultImage;
-    updateProfileImage(fallbackImage, "streamer");
-
-    // 2. Try fetching latest from backend (if online)
-    fetch(`${API}/api/auth/users/streamer/${user.userId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.profileImage) {
-          updateProfileImage(data.profileImage, "streamer");
-          localStorage.setItem("streamer_profileImage", data.profileImage);
-        }
-      })
-      .catch((err) => {
-        console.warn("Offline or failed to fetch image:", err);
-      });
-  }, []);
-
-
+  const [profileImage, setProfileImage] = useState(defaultImage);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
@@ -49,7 +27,23 @@ function StUserProfile({ userProfile }) {
   }, []);
 
   useEffect(() => {
-    setCurrentRole("streamer");
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user?._id || user.userType !== "streamer") return;
+
+    fetch(`http://localhost:3001/api/profile/streamers/${user._id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.profileImage && data.profileImage !== "") {
+          const fullPath = "http://localhost:3001" + data.profileImage;
+          setProfileImage(fullPath); // local state
+          updateProfileImage(fullPath, "streamer"); // ✅ sync with global context
+        } else {
+          updateProfileImage("", "streamer"); // ✅ clear global if user has no image
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch streamer profile image:", err);
+      });
   }, []);
 
   useEffect(() => {
