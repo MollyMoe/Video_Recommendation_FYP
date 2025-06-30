@@ -43,11 +43,8 @@ def get_streamers(request: Request):
 def signup(request: Request, user: SignUpRequest):
     db = request.app.state.user_db
     Model = db["admin"] if user.userType == "admin" else db["streamer"]
-    DEFAULT_STREAMER_IMAGE_URL = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751263974/profile_gjuj0s.jpg"
-    DEFAULT_ADMIN_IMAGE_URL = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751265914/405235fe31661005e9db369db4f732b7_fkrxml.jpg"
-
-    default_image = DEFAULT_ADMIN_IMAGE_URL if user.userType == "admin" else DEFAULT_STREAMER_IMAGE_URL
-
+    DEFAULT_IMAGE_URL = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751265915/beff3b453bc8afd46a3c487a3a7f347b_itfznz.jpg"
+    
     # Check if user already exists
     if Model.find_one({"username": user.username}):
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -72,7 +69,7 @@ def signup(request: Request, user: SignUpRequest):
         "status": "Active",
         "genres": [],
         "userId": user_id,
-        "profileImage": default_image,
+        "profileImage": DEFAULT_IMAGE_URL,
         "__v": 0
     }
 
