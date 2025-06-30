@@ -4,7 +4,8 @@ import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
+const defaultImage =
+  "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
 const StSettingPage = () => {
   const [formData, setFormData] = useState({
@@ -53,7 +54,9 @@ const StSettingPage = () => {
     // Step 2: Try fetching latest from backend
     const fetchUser = async () => {
       try {
-        const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+        const res = await fetch(
+          `${API}/api/auth/users/streamer/${savedUser.userId}`
+        );
         const data = await res.json();
 
         setFormData((prev) => ({
@@ -75,19 +78,19 @@ const StSettingPage = () => {
     fetchUser();
   }, []);
 
-const handleChange = async (e) => {
+  const handleChange = async (e) => {
     const { name, value, files } = e.target;
     const user = JSON.parse(localStorage.getItem("user"));
-  
+
     if (name === "profileImage") {
       const file = files[0];
       if (file && user) {
         setPreviewImage(URL.createObjectURL(file)); // immediate preview
         setFormData((prev) => ({ ...prev, profileImage: file }));
-  
+
         const formDataToSend = new FormData();
         formDataToSend.append("profileImage", file);
-  
+
         try {
           const res = await fetch(
             `${API}/api/profile/upload/streamer/${user.userId}`, //backend connect
@@ -100,7 +103,7 @@ const handleChange = async (e) => {
           if (res.ok) {
             const imageUrl = data.profileImage;
             updateProfileImage(imageUrl, "streamer");
-            localStorage.setItem("streamer_profileImage", imageUrl);  
+            localStorage.setItem("streamer_profileImage", imageUrl);
             setPreviewImage(imageUrl); // update preview to final version
             console.log("data.profileImage:", data.profileImage);
             console.log("imageUrl used:", imageUrl);
@@ -126,19 +129,21 @@ const handleChange = async (e) => {
     try {
       const savedUser = JSON.parse(localStorage.getItem("user"));
 
-  console.log("Using ID for update:", savedUser.userId); 
+      console.log("Using ID for update:", savedUser.userId);
 
-  const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: formData.username,
-      genre: formData.genre,
-    }),
-  });
-
+      const res = await fetch(
+        `${API}/api/editProfile/streamer/${savedUser.userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: formData.username,
+            genre: formData.genre,
+          }),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to update");
 
@@ -152,8 +157,6 @@ const handleChange = async (e) => {
     }
   };
 
-
-
   const closeModal = () => {
     setShowSuccessModal(false);
     if (redirectAfterModal) navigate("/signin");
@@ -161,12 +164,19 @@ const handleChange = async (e) => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(`${API}/api/auth/delete/${userType}/${username}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `${API}/api/auth/delete/${userType}/${username}`,
+        {
+          method: "DELETE",
+        }
+      );
       const data = await res.json();
       localStorage.removeItem("user");
-      setSuccessMessage(res.ok ? "Account deleted successfully!" : data.error || "Something went wrong.");
+      setSuccessMessage(
+        res.ok
+          ? "Account deleted successfully!"
+          : data.error || "Something went wrong."
+      );
       setRedirectAfterModal(res.ok);
       setShowSuccessModal(true);
     } catch (err) {
@@ -234,7 +244,11 @@ const handleChange = async (e) => {
       } else {
         setShowPasswordModal(false);
         setPasswordStep("verify");
-        setPasswordData({ currentPassword: "", newPassword: "", confirmNewPassword: "" });
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmNewPassword: "",
+        });
         setPasswordSuccess("Password updated successfully!");
       }
     } catch {
@@ -244,7 +258,11 @@ const handleChange = async (e) => {
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (showConfirm && modalRef.current && !modalRef.current.contains(e.target)) {
+      if (
+        showConfirm &&
+        modalRef.current &&
+        !modalRef.current.contains(e.target)
+      ) {
         setShowConfirm(false);
       }
     };
@@ -258,9 +276,19 @@ const handleChange = async (e) => {
         <form onSubmit={handleSubmit} className="w-full">
           {/* Profile Image */}
           <div className="mb-5 flex items-center space-x-4">
-            <img src={previewImage || profileImage || defaultImage} className="w-32 h-32 rounded-full shadow-lg border border-gray-300" />
+            <img
+              src={previewImage || profileImage || defaultImage}
+              className="w-32 h-32 rounded-full shadow-lg border border-gray-300"
+            />
             <div className="flex flex-col space-y-2">
-              <input type="file" accept="image/*" name="profileImage" ref={fileInputRef} onChange={handleChange} className="hidden" />
+              <input
+                type="file"
+                accept="image/*"
+                name="profileImage"
+                ref={fileInputRef}
+                onChange={handleChange}
+                className="hidden"
+              />
               <button
                 type="button"
                 onClick={triggerFileInput}
@@ -274,7 +302,11 @@ const handleChange = async (e) => {
           {/* Form Fields */}
           {["username", "contact", "genre"].map((field) => (
             <div className="mb-5" key={field}>
-              <label className="block mb-2 text-sm font-medium">{field === "contact" ? "Contact Info" : field.charAt(0).toUpperCase() + field.slice(1)}</label>
+              <label className="block mb-2 text-sm font-medium">
+                {field === "contact"
+                  ? "Contact Info"
+                  : field.charAt(0).toUpperCase() + field.slice(1)}
+              </label>
               <input
                 type="text"
                 name={field}
@@ -284,21 +316,27 @@ const handleChange = async (e) => {
                 className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
                 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
-                ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
+                ${
+                  field === "contact"
+                    ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                    : ""
+                }`}
               />
             </div>
           ))}
 
           {/* Password Modal Button */}
           <div className="mb-5">
-            <button type="submit" className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300">
+            <button
+              type="submit"
+              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+            >
               Save Changes
             </button>
           </div>
 
           {/* Submit & Delete */}
           <div className="flex flex-col items-end space-y-2 mt-4">
-
             <button
               type="button"
               onClick={() => setShowPasswordModal(true)}
@@ -306,7 +344,6 @@ const handleChange = async (e) => {
             >
               Change Password
             </button>
-
 
             <div className="relative">
               <button
@@ -321,15 +358,26 @@ const handleChange = async (e) => {
               {/* Confirm Delete */}
               {showConfirm && (
                 <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-                  <div ref={modalRef} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg max-w-sm w-full">
-                    <h2 className="text-lg font-semibold mb-4">Are you sure you want to delete the account?</h2>
+                  <div
+                    ref={modalRef}
+                    className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg max-w-sm w-full"
+                  >
+                    <h2 className="text-lg font-semibold mb-4">
+                      Are you sure you want to delete the account?
+                    </h2>
                     <div className="flex justify-end space-x-4">
-                      <button onClick={() => setShowConfirm(false)} className="px-4 py-2 rounded-md text-sm border text-gray-700 dark:text-gray-200">
+                      <button
+                        onClick={() => setShowConfirm(false)}
+                        className="px-4 py-2 rounded-md text-sm border text-gray-700 dark:text-gray-200"
+                      >
                         Cancel
                       </button>
                       <button
                         onClick={() => {
-                          handleDelete(savedUser?.userType, savedUser?.username);
+                          handleDelete(
+                            savedUser?.userType,
+                            savedUser?.username
+                          );
                           setShowConfirm(false);
                         }}
                         className="px-4 py-2 rounded-md text-sm text-white bg-red-600 hover:bg-red-700"
@@ -349,7 +397,9 @@ const handleChange = async (e) => {
           <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-lg">
               <h2 className="text-lg font-semibold mb-4 text-black dark:text-white">
-                {passwordStep === "verify" ? "Verify Current Password" : "Set New Password"}
+                {passwordStep === "verify"
+                  ? "Verify Current Password"
+                  : "Set New Password"}
               </h2>
 
               <div className="space-y-3">
@@ -363,12 +413,21 @@ const handleChange = async (e) => {
                       placeholder="Current Password"
                       className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
                     />
-                    {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
+                    {passwordError && (
+                      <p className="text-red-600 text-sm">{passwordError}</p>
+                    )}
                     <div className="flex justify-end space-x-3 pt-2">
-                      <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 rounded-md border text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <button
+                        onClick={() => setShowPasswordModal(false)}
+                        className="px-4 py-2 rounded-md border text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
                         Cancel
                       </button>
-                      <button onClick={verifyCurrentPassword} disabled={isVerifying} className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                      <button
+                        onClick={verifyCurrentPassword}
+                        disabled={isVerifying}
+                        className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                      >
                         {isVerifying ? "Verifying..." : "Next"}
                       </button>
                     </div>
@@ -391,12 +450,20 @@ const handleChange = async (e) => {
                       placeholder="Confirm New Password"
                       className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white"
                     />
-                    {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
+                    {passwordError && (
+                      <p className="text-red-600 text-sm">{passwordError}</p>
+                    )}
                     <div className="flex justify-end space-x-3 pt-2">
-                      <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 rounded-md border text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <button
+                        onClick={() => setShowPasswordModal(false)}
+                        className="px-4 py-2 rounded-md border text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
                         Cancel
                       </button>
-                      <button onClick={handlePasswordSubmit} className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                      <button
+                        onClick={handlePasswordSubmit}
+                        className="px-4 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                      >
                         Submit
                       </button>
                     </div>
@@ -409,13 +476,20 @@ const handleChange = async (e) => {
 
         {/* Success Modals */}
         {showSuccessModal && (
-          <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50" aria-modal="true" role="dialog">
+          <div
+            className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50"
+            aria-modal="true"
+            role="dialog"
+          >
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-lg text-center z-60">
               <div className="flex items-center justify-center space-x-2 mb-6 text-black dark:text-white">
                 <p>{successMessage}</p>
                 <BadgeCheck className="w-4 h-4 stroke-black dark:stroke-white" />
               </div>
-              <button onClick={closeModal} className="bg-white text-black text-sm px-4 py-1 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300">
+              <button
+                onClick={closeModal}
+                className="bg-white text-black text-sm px-4 py-1 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+              >
                 Ok
               </button>
             </div>
@@ -429,7 +503,10 @@ const handleChange = async (e) => {
                 <p>{passwordSuccess}</p>
                 <BadgeCheck className="w-4 h-4 stroke-black dark:stroke-white" />
               </div>
-              <button onClick={() => setPasswordSuccess("")} className="bg-white text-black text-sm px-4 py-1 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300">
+              <button
+                onClick={() => setPasswordSuccess("")}
+                className="bg-white text-black text-sm px-4 py-1 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+              >
                 Ok
               </button>
             </div>
