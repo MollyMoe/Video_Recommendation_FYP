@@ -35,39 +35,42 @@ const AdEditProfilePage = () => {
   const savedUser = JSON.parse(localStorage.getItem('user'));
   const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
-  // useEffect(() => {
-  //   if (savedUser) {
-  //     setFormData(prev => ({
-  //       ...prev,
-  //       username: savedUser.username || '',
-  //       contact: savedUser.email || '',
-  //     }));
-  //   }
-  //   setCurrentRole('admin');
-  // }, []);
-
   useEffect(() => {
     const fetchUser = async () => {
       const savedUser = JSON.parse(localStorage.getItem("user"));
       if (!savedUser?.userId) return;
-  
+
+      // Step 1: Use cached image or fallback first
+      const cachedImage = localStorage.getItem("admin_profileImage");
+      const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
+      updateProfileImage(fallbackImage, "admin");
+
       try {
-        const res = await fetch(`http://localhost:3001/api/auth/users/${savedUser.userId}`);
+        const res = await fetch(`${API}/api/auth/users/admin/${savedUser.userId}`);
         const data = await res.json();
-  
-        localStorage.setItem("user", JSON.stringify(data));
-  
+
+        console.log("Fetched user from backend:", data);
+
         setFormData((prev) => ({
           ...prev,
           username: data.username || "",
           contact: data.email || ""
         }));
+
+        // ✅ Directly use profileImage if it's a full Cloudinary URL
+        if (data.profileImage && data.profileImage !== "") {
+          updateProfileImage(data.profileImage, "admin");
+          localStorage.setItem("admin_profileImage", data.profileImage);
+        } else {
+          updateProfileImage(defaultImage, "admin");
+        }
       } catch (err) {
         console.error("Failed to fetch user:", err);
       }
     };
-  
+
     fetchUser();
+    setCurrentRole("admin");
   }, []);
 
 const handleChange = async (e) => {
@@ -111,43 +114,34 @@ const handleChange = async (e) => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
+    e.preventDefault();
+    try {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
 
-console.log("Using ID for update:", savedUser.userId); 
+  console.log("Using ID for update:", savedUser.userId); 
 
-const res = await fetch(`http://localhost:3001/api/editProfile/admin/${savedUser.userId}`, {
-  method: "PUT",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    username: formData.username,
-    genre: formData.genre,
-  }),
-});
+  const res = await fetch(`${API}/api/editProfile/admin/${savedUser.userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username: formData.username
+    }),
+  });
 
 
-    if (!res.ok) throw new Error("Failed to update");
+      if (!res.ok) throw new Error("Failed to update");
 
-    const updated = await res.json();
-    setSuccessMessage("Profile updated!");
-    setShowSuccessModal(true);
-    localStorage.setItem("user", JSON.stringify(updated));
-  } catch (err) {
-    console.error("Update error:", err);
-    alert("Could not update profile.");
-  }
-};
-
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   console.log(formData);
-  //   setSuccessMessage('Changes have been saved!');
-  //   setRedirectAfterModal(false);
-  //   setShowSuccessModal(true);
-  // };
+      const updated = await res.json();
+      setSuccessMessage("Profile updated!");
+      setShowSuccessModal(true);
+      localStorage.setItem("user", JSON.stringify(updated));
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Could not update profile.");
+    }
+  };
 
   const triggerFileInput = () => {
     fileInputRef.current.click();
@@ -191,7 +185,6 @@ const res = await fetch(`http://localhost:3001/api/editProfile/admin/${savedUser
     setIsVerifying(true);
     try {
       const res = await fetch(`${API}/api/password/verify-password`, {
-      const res = await fetch("http://localhost:3001/api/password/verify-password", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -221,7 +214,6 @@ const res = await fetch(`http://localhost:3001/api/editProfile/admin/${savedUser
 
     try {
       const updateRes = await fetch(`${API}/api/password/update-password`, {
-      const updateRes = await fetch("http://localhost:3001/api/password/update-password", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -328,6 +320,7 @@ const res = await fetch(`http://localhost:3001/api/editProfile/admin/${savedUser
             >
               Change Password
             </button>
+
 
             <div className="relative">
               <button
