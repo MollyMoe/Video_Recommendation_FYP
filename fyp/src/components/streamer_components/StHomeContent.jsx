@@ -225,7 +225,7 @@ function StHomeContent({ userId }) {
       setPreferredGenres(userGenres);
 
       const res = await axios.get(`${API}/api/movies/recommendations`, {
-        params: { user_id: savedUser.userId }
+        params: { userId: savedUser.userId }
       });
       const moviesData = res.data;
       console.log("Raw movie data fetched:", moviesData);

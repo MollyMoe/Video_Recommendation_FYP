@@ -37,47 +37,68 @@ async def get_recommendations(userId: str, request: Request):
         user_db = request.app.state.user_db
         movie_db = request.app.state.movie_db
 
-        # 1. Get the user's preferred genres
+        # 1. Fetch the user and genres
         user = user_db["streamer"].find_one({"userId": userId})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         preferred_genres = user.get("genres", [])
         if not preferred_genres:
-            return []
+            return JSONResponse(content=[])
 
-        # 2. Query movies that match any of the user's preferred genres
-        movies = list(movie_db["hybridRecommendation2"].find({
-            "genres": {"$in": preferred_genres}
-        }))
+        # 2. Fetch all movies (we’ll filter manually in Python)
+        all_movies = list(movie_db["hybridRecommendation2"].find())
+        filtered_movies = []
 
-        # 3. Normalize movie fields
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
-            movie["genres"] = (
-                [g.strip() for g in movie.get("genres", "").split("|")] if isinstance(movie.get("genres"), str)
-                else movie.get("genres", [])
+        for movie in all_movies:
+            # Normalize genres field
+            raw_genres = movie.get("genres", "")
+            genres = (
+                [g.strip() for g in raw_genres.split("|")]
+                if isinstance(raw_genres, str)
+                else raw_genres
             )
-            movie["actors"] = (
-                [a.strip() for a in movie.get("actors", "").split(",")] if isinstance(movie.get("actors"), str)
-                else movie.get("actors", [])
-            )
-            movie["producers"] = (
-                [p.strip() for p in movie.get("producers", "").split(",")] if isinstance(movie.get("producers"), str)
-                else movie.get("producers", [])
-            )
-            movie["director"] = movie.get("director", "N/A").strip()
-            movie["overview"] = movie.get("overview", "N/A").strip()
 
-        return JSONResponse(content=movies)
+            # Match preferred genres
+            if any(g in genres for g in preferred_genres):
+                movie["_id"] = str(movie["_id"])
+                movie["genres"] = genres
+
+                # Normalize other fields
+                movie["actors"] = (
+                    [a.strip() for a in movie.get("actors", "").split(",")]
+                    if isinstance(movie.get("actors"), str)
+                    else movie.get("actors", [])
+                )
+                movie["producers"] = (
+                    [p.strip() for p in movie.get("producers", "").split(",")]
+                    if isinstance(movie.get("producers"), str)
+                    else movie.get("producers", [])
+                )
+                movie["director"] = movie.get("director", "N/A").strip()
+                movie["overview"] = movie.get("overview", "N/A").strip()
+
+                filtered_movies.append(movie)
+
+        return JSONResponse(content=filtered_movies)
 
     except Exception as e:
         print("❌ Failed to fetch recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
+
 @router.get("/debug-movies")
 def get_debug_movies(request: Request):
-    sample = list(request.app.state.movie_db["hybridRecommendation2"].find({"userId": 833}).limit(3))
-    for m in sample:
-        m["_id"] = str(m["_id"])
-    return sample
+    try:
+        sample = list(
+            request.app.state.movie_db["hybridRecommendation2"]
+            .find({"userId": 833})
+            .limit(3)
+        )
+        for m in sample:
+            m["_id"] = str(m["_id"])
+        return sample
+    except Exception as e:
+        print("❌ Debug error:", e)
+        raise HTTPException(status_code=500, detail="Debug route failed")
+
