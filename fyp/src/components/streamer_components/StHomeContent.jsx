@@ -244,7 +244,7 @@ const handleHide = async (movieId) => {
             </button>
 
             <button
-              onClick={() => handleHide(movies._id)}
+              onClick={() => movie?._id && handleHide(movies._id)}
               className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
             >
               <Trash2 className="w-4 h-4 mr-1 fill-black" />
