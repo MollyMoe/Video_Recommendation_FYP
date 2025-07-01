@@ -218,32 +218,36 @@ function StHomeContent({ userId }) {
       if (!username) return;
       setIsLoading(true);
 
-      try {
-        const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-        const userGenres = userRes.data.genres || [];
-        console.log("Genres fetched for user:", userGenres);
-        setPreferredGenres(userGenres);
-        
-        const movieRes = await axios.get(`${API}/api/movie/recommendations/${savedUser.userId}`);
-        console.log("Raw movie data fetched:", movieRes.data);
-        const validMovies = movieRes.data
-          .filter(
-            (movie) =>
-              movie.poster_url &&
-              movie.trailer_url &&
-              typeof movie.poster_url === "string" &&
-              typeof movie.trailer_url === "string" &&
-              movie.poster_url.toLowerCase() !== "nan" &&
-              movie.trailer_url.toLowerCase() !== "nan" &&
-              movie.poster_url.trim() !== "" &&
-              movie.trailer_url.trim() !== ""
-          )
-          .map((movie) => {
-            if (typeof movie.genres === "string") {
-              movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-            }
-            return movie;
-          });
+    try {
+      const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+      const userGenres = userRes.data.genres || [];
+      console.log("Genres fetched for user:", userGenres);
+      setPreferredGenres(userGenres);
+
+      const res = await axios.get(`${API}/api/movies/recommendations`, {
+        params: { user_id: savedUser.userId }
+      });
+      const moviesData = res.data;
+      console.log("Raw movie data fetched:", moviesData);
+
+      const validMovies = moviesData
+        .filter(
+          (movie) =>
+            movie.poster_url &&
+            movie.trailer_url &&
+            typeof movie.poster_url === "string" &&
+            typeof movie.trailer_url === "string" &&
+            movie.poster_url.toLowerCase() !== "nan" &&
+            movie.trailer_url.toLowerCase() !== "nan" &&
+            movie.poster_url.trim() !== "" &&
+            movie.trailer_url.trim() !== ""
+        )
+        .map((movie) => {
+          if (typeof movie.genres === "string") {
+            movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+          }
+          return movie;
+        });
 
         console.log("Filtered validMovies:", validMovies);
         const uniqueMovies = [];

@@ -31,14 +31,14 @@ from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
-@router.get("/recommendations/{userId}")
-async def get_recommendations(user_id: str, request: Request):
+@router.get("/recommendations")
+async def get_recommendations(userId: str, request: Request):
     try:
         user_db = request.app.state.user_db
         movie_db = request.app.state.movie_db
 
         # 1. Get the user's preferred genres
-        user = user_db["streamer"].find_one({"userId": user_id})
+        user = user_db["streamer"].find_one({"userId": userId})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
