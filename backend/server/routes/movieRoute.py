@@ -108,7 +108,7 @@ async def delete_movie(movie_id: str, request: Request):
     raise HTTPException(status_code=404, detail="Movie not found")
 
 # For History Page
-@router.get("/movies/history/{user_id}")
+@router.get("/history/{user_id}")
 async def get_user_history(user_id: str, request: Request):
     db = request.app.state.movie_db
     user = await db.users.find_one({"userId": user_id})
@@ -143,23 +143,22 @@ async def get_user_history(user_id: str, request: Request):
 #         movie["_id"] = str(movie["_id"])
 
 #     return movies
-@router.get("/movies/liked/{user_id}")
+@router.get("/liked/{user_id}")
 async def get_liked_movies(user_id: str, request: Request):
     db = request.app.state.movie_db
     user = await db.users.find_one({"userId": user_id})
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    liked_ids = user.get("likedMovies", [])
-    object_ids = [to_objectid_safe(mid) for mid in liked_ids if to_objectid_safe(mid)]
-
-    movies = await db.hybridRecommendation.find(
-        {"_id": {"$in": object_ids}}
-    ).to_list(length=100)
+    liked_ids = user.get("liked", [])
+    movies = await db.hybridRecommendation.find({"_id": {"$in": [ObjectId(mid) for mid in liked_ids]}}).to_list(100)
 
     for movie in movies:
         movie["_id"] = str(movie["_id"])
+
     return movies
+
 
 # For Watch Later Page
 # @router.get("/movies/saved/{user_id}")
@@ -179,7 +178,7 @@ async def get_liked_movies(user_id: str, request: Request):
 
 #     return movies
 
-@router.get("/movies/saved/{user_id}")
+@router.get("/saved/{user_id}")
 async def get_saved_movies(user_id: str, request: Request):
     db = request.app.state.movie_db
     user = await db.users.find_one({"userId": user_id})

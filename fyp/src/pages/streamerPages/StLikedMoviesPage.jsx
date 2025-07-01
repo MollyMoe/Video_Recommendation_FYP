@@ -9,7 +9,7 @@ const StLikedMoviesPage = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`${API}/movies/liked/${savedUser.userId}`);
+        const res = await fetch(`${API}/api/movies/liked/${savedUser.userId}`);
         const data = await res.json();
         setMovies(data);
       } catch (err) {
