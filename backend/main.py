@@ -42,6 +42,7 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",  # React dev server
     "https://cineit-frontend.onrender.com",
+    "https://cineit.onrender.com",
 ]
 
 
