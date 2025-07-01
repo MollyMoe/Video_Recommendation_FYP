@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Dialog } from "@headlessui/react";
-import { Play, Heart, Bookmark } from "lucide-react";
+import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -96,6 +96,57 @@ function StHomeContent({ userId }) {
     fetchUserAndMovies();
   }, [username]);
   
+
+const handlePlay = async (movieId) => {
+  try {
+    await fetch(`${API}/api/movies/history`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: savedUser.userId, movieId }),
+    });
+    // Navigate to watch page if needed
+    // navigate(`/watch/${movieId}`);
+  } catch (err) {
+    console.error("Error adding to history:", err);
+  }
+};
+
+const handleLike = async (movieId) => {
+  try {
+    await fetch(`${API}/api/movies/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: savedUser.userId, movieId }),
+    });
+  } catch (err) {
+    console.error("Error liking movie:", err);
+  }
+};
+
+const handleSave = async (movieId) => {
+  try {
+    await fetch(`${API}/api/movies/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: savedUser.userId, movieId }),
+    });
+  } catch (err) {
+    console.error("Error saving movie:", err);
+  }
+};
+
+const handleHide = async (movieId) => {
+  try {
+    await fetch(`${API}/api/movies/${movieId}`, {
+      method: "DELETE",
+    });
+  } catch (err) {
+    console.error("Error hiding movie:", err);
+  }
+};
+
+  
+
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
@@ -168,19 +219,39 @@ function StHomeContent({ userId }) {
 
             {/* Action Buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
-                <Play className="w-3 h-3 mr-1 fill-black" />
-                Play
-              </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
-                <Heart className="w-4 h-4 mr-1 fill-black" />
-                Like
-              </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
-                <Bookmark className="w-4 h-4 mr-1 fill-black" />
-                Save
-              </button>s
-            </div>
+            <button
+              onClick={() => handlePlay(movies._id?.$oid || movies._id)}
+              className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+            >
+              <Play className="w-3 h-3 mr-1 fill-black" />
+              Play
+            </button>
+
+            <button
+              onClick={() => handleLike(movies._id?.$oid || movies._id)}
+              className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+            >
+              <Heart className="w-4 h-4 mr-1 fill-black" />
+              Like
+            </button>
+
+            <button
+              onClick={() => handleSave(movies._id?.$oid || movies._id)}
+              className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+            >
+              <Bookmark className="w-4 h-4 mr-1 fill-black" />
+              Save
+            </button>
+
+            <button
+              onClick={() => handleHide(movies._id)}
+              className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+            >
+              <Trash2 className="w-4 h-4 mr-1 fill-black" />
+              Hide
+            </button>
+          </div>
+
 
             {/* Close Button BELOW action buttons */}
             <div className="flex justify-end pt-4">
