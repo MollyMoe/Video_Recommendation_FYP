@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Dialog } from "@headlessui/react";
-import { Play, Heart, Bookmark } from "lucide-react";
+import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 
 function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
@@ -11,7 +11,7 @@ function StHomeContent({ userId }) {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
 
-  // Fetch preferred genres
+  // Fetch user preferred genres
   useEffect(() => {
     if (!username) return;
 
@@ -27,7 +27,7 @@ function StHomeContent({ userId }) {
       });
   }, [username]);
 
-  // Fetch all movies and normalize fields
+  // Fetch all movies and filter based on preferredGenres
   useEffect(() => {
     axios
       .get("http://localhost:3001/api/movies/all")
@@ -48,18 +48,15 @@ function StHomeContent({ userId }) {
             if (typeof movie.genres === "string") {
               movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
             }
-            if (typeof movie.actors === "string") {
-              movie.actors = movie.actors.split(",").map((a) => a.trim());
+
+            // Extract trailer key
+            if (movie.trailer_url && typeof movie.trailer_url === "string") {
+              const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+              movie.trailer_key = match ? match[1] : null;
+            } else {
+              movie.trailer_key = null;
             }
-            if (typeof movie.producers === "string") {
-              movie.producers = movie.producers.split(",").map((p) => p.trim());
-            }
-            if (typeof movie.director === "string") {
-              movie.director = movie.director.trim();
-            }
-            if (typeof movie.overview === "string") {
-              movie.overview = movie.overview.trim();
-            }
+
             return movie;
           });
 
@@ -114,27 +111,27 @@ function StHomeContent({ userId }) {
               </div>
 
               {/* Hover Preview */}
-              <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
-                <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
-                    frameBorder="0"
-                    allow="autoplay; encrypted-media"
-                    allowFullScreen
-                    className="w-full h-full object-cover"
-                    title={movie.title}
-                  ></iframe>
-                </div>
+              {movie.trailer_key && (
+                <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
+                  <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
+                      frameBorder="0"
+                      allow="autoplay; encrypted-media"
+                      allowFullScreen
+                      className="w-full h-full object-cover"
+                      title={movie.title}
+                    ></iframe>
+                  </div>
 
-                <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
-                  <div><strong>Genres:</strong> {movie.genres?.join(", ")}</div>
-                  <div><strong>Director:</strong> {movie.director || "Unknown"}</div>
-                  <div className="line-clamp-2"><strong>Overview:</strong> {movie.overview || "No description available."}</div>
-                  <div className="font-semibold text-sm">
-                    ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
+                  <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
+                    <div>{movie.genres?.join(", ")}</div>
+                    <div className="font-semibold text-sm">
+                      ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           ))}
         </div>
@@ -157,17 +154,16 @@ function StHomeContent({ userId }) {
               />
               <div className="flex flex-col justify-center space-y-3 flex-grow">
                 <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
-                <p className="text-sm text-gray-700"><strong>Genres:</strong> {selectedMovie?.genres?.join(", ")}</p>
+                <p className="text-sm text-gray-700">{selectedMovie?.genres?.join(", ")}</p>
                 <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
-                <p className="text-sm text-gray-700"><strong>Producers:</strong> {Array.isArray(selectedMovie?.producers) ? selectedMovie.producers.join(", ") : "N/A"}</p>
-                <p className="text-sm text-gray-700"><strong>Actors:</strong> {Array.isArray(selectedMovie?.actors) ? selectedMovie.actors.join(", ") : "N/A"}</p>
+                <p className="text-sm text-gray-700"><strong>Producers:</strong> {selectedMovie?.producers || "N/A"}</p>
+                <p className="text-sm text-gray-700"><strong>Actors:</strong> {selectedMovie?.actors || "N/A"}</p>
                 <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview || "N/A"}</p>
-                <p className="text-sm text-gray-700">
-                  Predicted Rating: ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
-                </p>
+                <p className="text-sm text-gray-700">⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}</p>
               </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
                 <Play className="w-3 h-3 mr-1 fill-black" />
@@ -181,8 +177,13 @@ function StHomeContent({ userId }) {
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
                 Save
               </button>
+              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+                <Trash2 className="w-4 h-4 mr-1 text-black" />
+                Delete
+              </button>
             </div>
 
+            {/* Close Button */}
             <div className="flex justify-end pt-4">
               <button
                 onClick={() => setSelectedMovie(null)}
