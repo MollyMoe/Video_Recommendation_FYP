@@ -10,7 +10,11 @@ const MovieSchema = new mongoose.Schema({
   poster_url: String,
   trailer_key: String,
   trailer_url: String,
+  overview: String,
+  director: String,
+  producers: String,
+  actors: String,
 }, { timestamps: true });
 
 
-module.exports = (conn) => conn.model('Movie', MovieSchema, 'hybridRecommendation');
+module.exports = (conn) => conn.model('Movie', MovieSchema, 'hybridRecommendation2');

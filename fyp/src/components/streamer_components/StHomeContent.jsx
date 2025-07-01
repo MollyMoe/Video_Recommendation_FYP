@@ -139,52 +139,71 @@ useEffect(() => {
         <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="bg-white p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
-            <div className="flex space-x-6">
-              <img
-                src={selectedMovie?.poster_url}
-                alt={selectedMovie?.title}
-                className="rounded-lg w-40 h-auto object-cover"
-              />
-              <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-3xl font-semibold mb-10">{selectedMovie?.title}</h2>
-                <p className="text-sm text-gray-700 mb-2">
-                  {selectedMovie?.genres?.join(", ")}
-                </p>
-                {/* Show rating in modal*/}
-                <p className="text-sm text-gray-700 mb-20">
-                  Predicted Rating: ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
-                </p>
-                <div className="flex space-x-2 mb-10">
-                  <button className="bg-white text-black text-sm px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <div className="bg-black rounded-full p-0.5">
-                        <Play className="w-3 h-3 fill-white" />
-                      </div>
-                      <span>Play</span>
-                    </div>
-                  </button>
-                  <button className="bg-white text-black text-sm px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <Heart className="w-4 h-4 fill-black" />
-                      <span>Like</span>
-                    </div>
-                  </button>
-                  <button className="bg-white text-black text-sm px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-                    <div className="flex items-center space-x-2">
-                      <Bookmark className="w-4 h-4 fill-black" />
-                      <span>Save</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
+          <div className="flex space-x-6">
+            {/* Poster Image */}
+            <img
+              src={selectedMovie?.poster_url}
+              alt={selectedMovie?.title}
+              className="rounded-lg w-40 h-auto object-cover"
+            />
+
+            {/* Movie Info */}
+            <div className="flex flex-col justify-center space-y-3 flex-grow">
+              <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
+
+              <p className="text-sm text-gray-700">
+                <strong>Genres:</strong> {selectedMovie?.genres?.join(", ") || "N/A"}
+              </p>
+
+              <p className="text-sm text-gray-700">
+                <strong>Director:</strong> {selectedMovie?.director || "Unknown"}
+              </p>
+
+              <p className="text-sm text-gray-700">
+                <strong>Actors:</strong>{" "}
+                {Array.isArray(selectedMovie?.actors)
+                  ? selectedMovie.actors.join(", ")
+                  : "N/A"}
+              </p>
+
+              <p className="text-sm text-gray-700">
+                <strong>Overview:</strong>{" "}
+                {selectedMovie?.overview || "No overview available."}
+              </p>
+
+              <p className="text-sm text-gray-700">
+                <strong>Predicted Rating:</strong>{" "}
+                ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
+              </p>
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
+            <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <Play className="w-3 h-3 mr-1 fill-black" />
+              Play
+            </button>
+            <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <Heart className="w-4 h-4 mr-1 fill-black" />
+              Like
+            </button>
+            <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <Bookmark className="w-4 h-4 mr-1 fill-black" />
+              Save
+            </button>
+          </div>
+
+          {/* Close Button */}
+          <div className="flex justify-end pt-4">
             <button
               onClick={() => setSelectedMovie(null)}
-              className="w-15 border border-gray-400 text-gray-800 py-2 rounded-xl hover:bg-gray-100"
+              className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm"
             >
               Close
             </button>
-          </Dialog.Panel>
+          </div>
+        </Dialog.Panel>
         </div>
       </Dialog>
     </div>
