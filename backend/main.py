@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 # Load .env from ../server/.en
 env_path = Path(__file__).resolve().parent / 'server' / '.env'
 load_dotenv(dotenv_path=env_path)
-
+print("🔍 .env loaded from:", env_path)
 UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads")))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -25,7 +25,7 @@ print("Connecting to Mongo URI:", USER_DB_URI)
 
 
 
-MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
+MOVIE_DB_URI = os.getenv("MOVIE_DB_URI", "").strip()
 JWT_SECRET = os.getenv("JWT_SECRET")
 print("MONGO_URI loaded:", os.getenv("MOVIE_DB_URI"))
 
