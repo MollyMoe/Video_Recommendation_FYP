@@ -96,15 +96,19 @@ def regenerate_movies(
     exclude_titles: List[str] = body.get("excludeTitles", [])
 
     try:
-        query = {
-            "genres": {"$in": genres},
-            "title": {"$nin": exclude_titles},
-            "poster_url": {"$ne": None},
-            "trailer_url": {"$ne": None}
-        }
+        pipeline = [
+            {"$match": {
+                "genres": {"$in": genres},
+                "title": {"$nin": exclude_titles},
+                "poster_url": {"$ne": None},
+                "trailer_url": {"$ne": None}
+            }},
+            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
+            {"$replaceRoot": {"newRoot": "$doc"}},
+            {"$limit": 30}
+        ]
 
-        # Make sure you are querying from the correct collection
-        movies = list(db.hybridRecommendation2.find(query).limit(30))
+        movies = list(db.hybridRecommendation2.aggregate(pipeline))
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])

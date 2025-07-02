@@ -302,11 +302,13 @@ function StHomeContent({ userId }) {
 
   const handleRegenerate = async () => {
   try {
+     console.log("🔁 Sending POST to /api/movies/regenerate...");
     const response = await axios.post(`${API}/api/movies/regenerate`, {
       genres: preferredGenres,
       excludeTitles: movies.map((m) => m.title),
     });
-
+       console.log("✅ Regenerated movies:", response.data);
+       
     const regenerated = response.data
       .filter(
         (movie) =>
