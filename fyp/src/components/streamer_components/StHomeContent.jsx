@@ -84,6 +84,18 @@ function StHomeContent({ userId }) {
     fetchUserAndMovies();
   }, [username]);
 
+    // LOADING SCREEN
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-lg font-semibold">Loading your recommended movies...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
