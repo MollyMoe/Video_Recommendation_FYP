@@ -22,7 +22,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load environment variables
 USER_DB_URI = os.getenv("MONGO_URI", "").strip()
-MOVIE_DB_URI = os.getenv("MOVIE_DB_URI", "").strip()
+MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
 JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
 
 print("🔗 USER_DB_URI:", repr(USER_DB_URI))
