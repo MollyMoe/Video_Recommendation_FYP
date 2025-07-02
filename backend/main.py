@@ -13,8 +13,9 @@ from server.routes.profileRoute import router as profile_router
 from fastapi.staticfiles import StaticFiles
 
 # Load .env from ../server/.en
-env_path = Path(__file__).resolve().parent.parent / '.env'
+env_path = Path(__file__).resolve().parent / 'server' / '.env'
 load_dotenv(dotenv_path=env_path)
+
 UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads")))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
