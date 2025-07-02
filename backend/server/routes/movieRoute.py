@@ -9,7 +9,7 @@ def get_all_movies(request: Request):
     db = request.app.state.movie_db
     try:
         # Fetch from your actual collection
-        movies = list(db.hybridRecommendation.find().limit(25000))
+        movies = list(db.hybridRecommendation2.find().limit(25000))
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])

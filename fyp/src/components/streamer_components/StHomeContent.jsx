@@ -159,6 +159,10 @@ const username = savedUser?.username;
                   Predicted Rating: ⭐️{" "}
                   {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                 </p>
+                <p className="text-sm text-gray-700">
+                  Director:
+                  {selectedMovie?.movieId || "N/A"}
+                </p>
               </div>
             </div>
 
