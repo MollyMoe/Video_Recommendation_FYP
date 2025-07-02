@@ -160,8 +160,7 @@ const username = savedUser?.username;
                   {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                 </p>
                 <p className="text-sm text-gray-700">
-                  Director:
-                  {selectedMovie?.movieId || "N/A"}
+                  Director: {selectedMovie?.director || "N/A"}
                 </p>
               </div>
             </div>

@@ -7,6 +7,8 @@ router = APIRouter()
 @router.get("/all")
 def get_all_movies(request: Request):
     db = request.app.state.movie_db
+    sample = db.hybridRecommendation2.find_one()
+    print("Sample movie document:", sample)
     try:
         # Fetch from your actual collection
         movies = list(db.hybridRecommendation2.find().limit(25000))
