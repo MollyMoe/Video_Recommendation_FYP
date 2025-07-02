@@ -44,7 +44,7 @@ const [page, setPage] = useState(restoredPage);
         }
         const data = await res.json();
           if (data.profileImage) {
-            data.profileImage = `${API}${data.profileImage}`;
+            data.profileImage = data.profileImage;
           }
 
           setUser(data);
