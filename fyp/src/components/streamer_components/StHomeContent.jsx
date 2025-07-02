@@ -12,6 +12,7 @@ function StHomeContent({ searchQuery }) {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const savedUser = JSON.parse(localStorage.getItem("user"));
+  const [hoveredMovieId, setHoveredMovieId] = useState(null);
   const username = savedUser?.username;
 
   useEffect(() => {
@@ -19,10 +20,12 @@ function StHomeContent({ searchQuery }) {
       if (!username) return;
       setIsLoading(true);
       try {
+        // 1. Fetch user genres
         const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
         const userGenres = userRes.data.genres || [];
         setPreferredGenres(userGenres);
 
+        // 2. Fetch all movies (no filtering here)
         const movieRes = await axios.get(`${API}/api/movies/all`);
         const moviesRaw = movieRes.data
           .filter(movie => movie.poster_url && movie.trailer_url)
@@ -30,9 +33,17 @@ function StHomeContent({ searchQuery }) {
             movie.genres = typeof movie.genres === "string"
               ? movie.genres.split(/[,|]/).map(g => g.trim())
               : movie.genres;
+
+            try {
+              const url = new URL(movie.trailer_url);
+              movie.trailer_key = url.searchParams.get("v");
+            } catch {
+              movie.trailer_key = null;
+            }
             return movie;
           });
 
+        // Remove duplicate movies by title
         const unique = [];
         const seen = new Set();
         for (const movie of moviesRaw) {
@@ -42,8 +53,15 @@ function StHomeContent({ searchQuery }) {
           }
         }
 
+        // Save all movies in state
         setAllFetchedMovies(unique);
-        setMovies(unique);
+
+        // Filter for initial display by user preferred genres only
+        const filteredByGenres = unique.filter(movie =>
+          movie.genres?.some(genre => userGenres.includes(genre))
+        );
+
+        setMovies(filteredByGenres);
       } catch (err) {
         console.error("Error:", err);
       } finally {
@@ -56,9 +74,14 @@ function StHomeContent({ searchQuery }) {
 
   useEffect(() => {
     if (!searchQuery?.trim()) {
-      setMovies(allFetchedMovies);
+      // When search is empty, show movies filtered by user preferred genres
+      const filteredByGenres = allFetchedMovies.filter(movie =>
+        movie.genres?.some(genre => preferredGenres.includes(genre))
+      );
+      setMovies(filteredByGenres);
       return;
     }
+    // When search query is active, search in all movies ignoring genre filter
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = allFetchedMovies.filter((movie) => {
       return (
@@ -68,46 +91,57 @@ function StHomeContent({ searchQuery }) {
       );
     });
     setMovies(filtered);
-  }, [searchQuery, allFetchedMovies]);
+  }, [searchQuery, allFetchedMovies, preferredGenres]);
 
   return (
     <div className="min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
-          {movies.map((movie) => (
-            <div
-              key={movie._id}
-              className="relative cursor-pointer group w-[180px] mx-auto"
-              onClick={() => setSelectedMovie(movie)}
-            >
-              <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
-                <img
-                  src={movie.poster_url || "https://via.placeholder.com/150"}
-                  alt={movie.title || "No title"}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
-                <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
-                    frameBorder="0"
-                    allow="autoplay; encrypted-media"
-                    allowFullScreen
+        {isLoading ? (
+          <p className="text-center text-white">Loading movies...</p>
+        ) : movies.length === 0 ? (
+          <p className="text-center text-white">No movies found.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
+            {movies.map((movie) => (
+              <div
+                key={movie._id}
+                className="relative cursor-pointer group w-[180px] mx-auto"
+                onMouseEnter={() => setHoveredMovieId(movie._id)}
+                onMouseLeave={() => setHoveredMovieId(null)}
+                onClick={() => setSelectedMovie(movie)}
+              >
+                <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
+                  <img
+                    src={movie.poster_url || "https://via.placeholder.com/150"}
+                    alt={movie.title || "No title"}
                     className="w-full h-full object-cover"
-                    title={movie.title}
-                  ></iframe>
+                  />
                 </div>
-                <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
-                  <div>{movie.genres?.join(", ")}</div>
-                  <div className="font-semibold text-sm">
-                    ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
+                {hoveredMovieId === movie._id && (
+                  <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10">
+                    <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
+                      <iframe
+                        key={movie.trailer_key}
+                        src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
+                        frameBorder="0"
+                        allow="autoplay; encrypted-media"
+                        allowFullScreen
+                        className="w-full h-full object-cover"
+                        title={movie.title}
+                      ></iframe>
+                    </div>
+                    <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
+                      <div>{movie.genres?.join(", ")}</div>
+                      <div className="font-semibold text-sm">
+                        ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <Dialog
