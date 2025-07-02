@@ -12,28 +12,31 @@ from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
 from fastapi.staticfiles import StaticFiles
 
-# Load .env from ../server/.en
+# Load .env
 env_path = Path(__file__).resolve().parent / 'server' / '.env'
 load_dotenv(dotenv_path=env_path)
 print("🔍 .env loaded from:", env_path)
+
 UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads")))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load environment variables
-USER_DB_URI = os.getenv("MONGO_URI")
-print("Connecting to Mongo URI:", USER_DB_URI)
-
-
-
+USER_DB_URI = os.getenv("MONGO_URI", "").strip()
 MOVIE_DB_URI = os.getenv("MOVIE_DB_URI", "").strip()
-JWT_SECRET = os.getenv("JWT_SECRET")
-print("MONGO_URI loaded:", os.getenv("MOVIE_DB_URI"))
+JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
 
+print("🔗 USER_DB_URI:", repr(USER_DB_URI))
+print("🔗 MOVIE_DB_URI:", repr(MOVIE_DB_URI))
+
+# Validate URIs
+if not USER_DB_URI.startswith("mongodb"):
+    raise ValueError("❌ Invalid USER_DB_URI format")
+if not MOVIE_DB_URI.startswith("mongodb"):
+    raise ValueError("❌ Invalid MOVIE_DB_URI format")
 
 # Connect to MongoDB
 user_client = MongoClient(USER_DB_URI)
 user_db = user_client["users"]
-
 
 movie_client = MongoClient(MOVIE_DB_URI)
 movie_db = movie_client["NewMovieDatabase"]
@@ -42,14 +45,11 @@ print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collectio
 # Initialize FastAPI
 app = FastAPI()
 
-# ✅ Replace with the actual frontend URL you're using
+# CORS
 origins = [
-    "http://localhost:3000",  # React dev server
+    "http://localhost:3000",
     "https://cineit-frontend.onrender.com",
 ]
-
-
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -69,7 +69,6 @@ app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
-
 
 @app.get("/")
 def read_root():
