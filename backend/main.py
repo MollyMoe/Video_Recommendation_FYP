@@ -33,7 +33,7 @@ user_db = user_client["users"]
 
 
 movie_client = MongoClient(MOVIE_DB_URI)
-movie_db = movie_client["MovieDatabase"]
+movie_db = movie_client["NewMovieDatabase"]
 
 # Initialize FastAPI
 app = FastAPI()
