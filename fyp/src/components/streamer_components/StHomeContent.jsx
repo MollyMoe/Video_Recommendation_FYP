@@ -1,3 +1,206 @@
+// import { useEffect, useState } from "react";
+// import axios from "axios";
+// import { Dialog } from "@headlessui/react";
+// import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
+
+// function StHomeContent({ userId }) {
+//   const [movies, setMovies] = useState([]);
+//   const [preferredGenres, setPreferredGenres] = useState([]);
+//   const [selectedMovie, setSelectedMovie] = useState(null);
+
+//   const savedUser = JSON.parse(localStorage.getItem("user"));
+//   const username = savedUser?.username;
+
+//   // Fetch user preferred genres
+//   useEffect(() => {
+//     if (!username) return;
+
+//     axios
+//       .get(`http://localhost:3001/api/users/by-username/${username}`)
+//       .then((res) => {
+//         console.log("Genres fetched for user:", res.data.genres);
+//         setPreferredGenres(res.data.genres || []);
+//       })
+//       .catch((err) => {
+//         console.error("Failed to fetch user preferences", err);
+//         setPreferredGenres([]);
+//       });
+//   }, [username]);
+
+//   // Fetch all movies and filter based on preferredGenres
+//   useEffect(() => {
+//     axios
+//       .get("http://localhost:3001/api/movies/all")
+//       .then((res) => {
+//         const validMovies = res.data
+//           .filter(
+//             (movie) =>
+//               movie.poster_url &&
+//               movie.trailer_url &&
+//               typeof movie.poster_url === "string" &&
+//               typeof movie.trailer_url === "string" &&
+//               movie.poster_url.toLowerCase() !== "nan" &&
+//               movie.trailer_url.toLowerCase() !== "nan" &&
+//               movie.poster_url.trim() !== "" &&
+//               movie.trailer_url.trim() !== ""
+//           )
+//           .map((movie) => {
+//             if (typeof movie.genres === "string") {
+//               movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+//             }
+
+//             // Extract trailer key
+//             if (movie.trailer_url && typeof movie.trailer_url === "string") {
+//               const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+//               movie.trailer_key = match ? match[1] : null;
+//             } else {
+//               movie.trailer_key = null;
+//             }
+
+//             return movie;
+//           });
+
+//         const uniqueMovies = [];
+//         const seenTitles = new Set();
+
+//         for (const movie of validMovies) {
+//           if (!seenTitles.has(movie.title)) {
+//             seenTitles.add(movie.title);
+//             uniqueMovies.push(movie);
+//           }
+//         }
+
+//         console.log("All unique movies loaded:", uniqueMovies.length);
+//         console.log("Preferred genres:", preferredGenres);
+
+//         if (preferredGenres.length === 0) {
+//           setMovies(uniqueMovies);
+//         } else {
+//           const filteredMovies = uniqueMovies.filter((movie) =>
+//             movie.genres?.some((genre) =>
+//               preferredGenres.some((pref) =>
+//                 genre.toLowerCase().includes(pref.toLowerCase())
+//               )
+//             )
+//           );
+//           console.log("Filtered movies by genre:", filteredMovies.length);
+//           setMovies(filteredMovies);
+//         }
+//       })
+//       .catch((err) => {
+//         console.error("Failed to fetch movies", err);
+//       });
+//   }, [preferredGenres]);
+
+//   return (
+//     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+//       <div className="max-w-6xl mx-auto">
+//         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
+//           {movies.map((movie) => (
+//             <div
+//               key={movie._id}
+//               className="relative cursor-pointer group w-[180px] mx-auto"
+//               onClick={() => setSelectedMovie(movie)}
+//             >
+//               <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
+//                 <img
+//                   src={movie.poster_url || "https://via.placeholder.com/150"}
+//                   alt={movie.title || "No title"}
+//                   className="w-full h-full object-cover"
+//                 />
+//               </div>
+
+//               {/* Hover Preview */}
+//               {movie.trailer_key && (
+//                 <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
+//                   <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
+//                     <iframe
+//                       src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
+//                       frameBorder="0"
+//                       allow="autoplay; encrypted-media"
+//                       allowFullScreen
+//                       className="w-full h-full object-cover"
+//                       title={movie.title}
+//                     ></iframe>
+//                   </div>
+
+//                   <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
+//                     <div>{movie.genres?.join(", ")}</div>
+//                     <div className="font-semibold text-sm">
+//                       ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
+//                     </div>
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+//       </div>
+
+//       {/* Dialog Modal */}
+//       <Dialog
+//         open={!!selectedMovie}
+//         onClose={() => setSelectedMovie(null)}
+//         className="relative z-50"
+//       >
+//         <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+//         <div className="fixed inset-0 flex items-center justify-center p-4">
+//           <Dialog.Panel className="bg-white p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
+//             <div className="flex space-x-6">
+//               <img
+//                 src={selectedMovie?.poster_url}
+//                 alt={selectedMovie?.title}
+//                 className="rounded-lg w-40 h-auto object-cover"
+//               />
+//               <div className="flex flex-col justify-center space-y-3 flex-grow">
+//                 <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
+//                 <p className="text-sm text-gray-700">{selectedMovie?.genres?.join(", ")}</p>
+//                 <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
+//                 <p className="text-sm text-gray-700"><strong>Producers:</strong> {selectedMovie?.producers || "N/A"}</p>
+//                 <p className="text-sm text-gray-700"><strong>Actors:</strong> {selectedMovie?.actors || "N/A"}</p>
+//                 <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview || "N/A"}</p>
+//                 <p className="text-sm text-gray-700">⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}</p>
+//               </div>
+//             </div>
+
+//             {/* Action Buttons */}
+//             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
+//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+//                 <Play className="w-3 h-3 mr-1 fill-black" />
+//                 Play
+//               </button>
+//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+//                 <Heart className="w-4 h-4 mr-1 fill-black" />
+//                 Like
+//               </button>
+//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+//                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
+//                 Save
+//               </button>
+//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+//                 <Trash2 className="w-4 h-4 mr-1 text-black" />
+//                 Delete
+//               </button>
+//             </div>
+
+//             {/* Close Button */}
+//             <div className="flex justify-end pt-4">
+//               <button
+//                 onClick={() => setSelectedMovie(null)}
+//                 className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm"
+//               >
+//                 Close
+//               </button>
+//             </div>
+//           </Dialog.Panel>
+//         </div>
+//       </Dialog>
+//     </div>
+//   );
+// }
+
+// export default StHomeContent;
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Dialog } from "@headlessui/react";
@@ -7,11 +210,62 @@ function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Manual refresh state
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
 
-  // Fetch user preferred genres
+  // Handle Regenerate Button Click
+  const handleRegenerate = async () => {
+  console.log("Regenerating recommendations...");
+
+  try {
+    const response = await axios.post(
+      `http://localhost:3001/api/movies/recommendations/regenerate/${username}`
+    );
+
+    const data = response.data.recommendations || [];
+
+    const validMovies = data
+      .filter(
+        (movie) =>
+          movie.poster_url &&
+          movie.trailer_url &&
+          typeof movie.poster_url === "string" &&
+          typeof movie.trailer_url === "string" &&
+          movie.poster_url.toLowerCase() !== "nan" &&
+          movie.trailer_url.toLowerCase() !== "nan"
+      )
+      .map((movie) => {
+        if (typeof movie.genres === "string") {
+          movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+        }
+
+        const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+        movie.trailer_key = match ? match[1] : null;
+        return movie;
+      });
+
+    const uniqueMovies = [];
+    const seenTitles = new Set();
+
+    for (const movie of validMovies) {
+      if (!seenTitles.has(movie.title)) {
+        seenTitles.add(movie.title);
+        uniqueMovies.push(movie);
+      }
+    }
+
+    console.log("Regenerated movies:", uniqueMovies.length);
+    setMovies(uniqueMovies); // ✅ Update the displayed movie list
+
+  } catch (error) {
+    console.error("Error during regeneration:", error);
+  }
+};
+
+
+  // Fetch preferred genres
   useEffect(() => {
     if (!username) return;
 
@@ -27,7 +281,7 @@ function StHomeContent({ userId }) {
       });
   }, [username]);
 
-  // Fetch all movies and filter based on preferredGenres
+  // Fetch and filter movies - re-run when genres or refreshTrigger changes
   useEffect(() => {
     axios
       .get("http://localhost:3001/api/movies/all")
@@ -70,9 +324,6 @@ function StHomeContent({ userId }) {
           }
         }
 
-        console.log("All unique movies loaded:", uniqueMovies.length);
-        console.log("Preferred genres:", preferredGenres);
-
         if (preferredGenres.length === 0) {
           setMovies(uniqueMovies);
         } else {
@@ -83,18 +334,26 @@ function StHomeContent({ userId }) {
               )
             )
           );
-          console.log("Filtered movies by genre:", filteredMovies.length);
           setMovies(filteredMovies);
         }
       })
       .catch((err) => {
         console.error("Failed to fetch movies", err);
       });
-  }, [preferredGenres]);
+  }, [preferredGenres, refreshTrigger]);
 
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleRegenerate}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+          >
+            Regenerate
+          </button>
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
           {movies.map((movie) => (
             <div
@@ -110,7 +369,6 @@ function StHomeContent({ userId }) {
                 />
               </div>
 
-              {/* Hover Preview */}
               {movie.trailer_key && (
                 <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
                   <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
@@ -163,7 +421,6 @@ function StHomeContent({ userId }) {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
                 <Play className="w-3 h-3 mr-1 fill-black" />
@@ -183,7 +440,6 @@ function StHomeContent({ userId }) {
               </button>
             </div>
 
-            {/* Close Button */}
             <div className="flex justify-end pt-4">
               <button
                 onClick={() => setSelectedMovie(null)}
