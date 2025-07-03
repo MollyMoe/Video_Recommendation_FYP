@@ -67,13 +67,20 @@ from .movieDb import liked_collection
 from .movieDb import saved_collection
 from .movieDb import history_collection
 
+
 def to_objectid_safe(id_str):
     try:
         return ObjectId(id_str)
     except (errors.InvalidId, TypeError):
         return None
+    
+
 
 router = APIRouter()
+
+@router.get("/test")
+def movie_router_test():
+    return {"message": "Movie router is working"}
 
 
 #  GET /api/movies/all — fetch all movies
@@ -157,9 +164,6 @@ def regenerate_movies(
 #     return {"message": "Added to history"}
 
 # # For Like button
-from fastapi import APIRouter, Request, HTTPException
-
-router = APIRouter()
 
 @router.post("/like")
 async def like_movie(request: Request):

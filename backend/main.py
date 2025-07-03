@@ -10,6 +10,7 @@ from server.routes.movieRoute import router as movie_router
 from server.routes.passwordRoute import router as password_router
 from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
+from server.routes.movieDb import movie_db
 from fastapi.staticfiles import StaticFiles
 
 # Load .env from ../server/.en
@@ -37,15 +38,15 @@ user_db = user_client["users"]
 # movie_client = MongoClient(MOVIE_DB_URI)
 # movie_db = movie_client["MovieDatabase"]
 
-movie_client = MongoClient(MOVIE_DB_URI)
-movie_db = movie_client["NewMovieDatabase"]
-print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
-print("✅ movie_db name:", movie_db.name)
-print("✅ movie_db collections:", movie_db.list_collection_names())
+# movie_client = MongoClient(MOVIE_DB_URI)
+# movie_db = movie_client["NewMovieDatabase"]
+# print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
+# print("✅ movie_db name:", movie_db.name)
+# print("✅ movie_db collections:", movie_db.list_collection_names())
 
-liked_collection = movie_db["liked"]
-saved_collection = movie_db["saved"]
-history_collection = movie_db["history"]
+# liked_collection = movie_db["liked"]
+# saved_collection = movie_db["saved"]
+# history_collection = movie_db["history"]
 
 
 
