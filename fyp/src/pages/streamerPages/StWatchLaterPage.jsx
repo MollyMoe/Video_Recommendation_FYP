@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const StHistoryPage = () => {
+const StWatchLaterPage = () => {
   const [movies, setMovies] = useState([]);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`${API}/movies/history/${savedUser.userId}`);
+        const res = await fetch(`${API}/movies/saved/${savedUser.userId}`);
         const data = await res.json();
         setMovies(data);
       } catch (err) {
@@ -40,4 +40,4 @@ const StHistoryPage = () => {
   );
 };
 
-export default StHistoryPage;
+export default StWatchLaterPage;

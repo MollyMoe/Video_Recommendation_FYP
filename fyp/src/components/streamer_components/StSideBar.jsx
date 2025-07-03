@@ -45,20 +45,18 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Watch Later
-            </a>
+            <StSidebarButton
+              to="/home/watchLater"
+              label="Watch Later"
+              current={location.pathname === "/home/watchLater"}
+            />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Liked Movies
-            </a>
+            <StSidebarButton
+              to="/home/liked"
+              label="Liked Movies"
+              current={location.pathname === "/home/liked"}
+            />
           </li>
 
           <hr className="my-2 border-gray-300" />

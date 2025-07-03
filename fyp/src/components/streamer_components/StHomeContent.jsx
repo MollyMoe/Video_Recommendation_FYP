@@ -209,15 +209,24 @@ import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
+const getMovieId = (movie) => {
+  if (!movie || !movie._id) return null;
+  return typeof movie._id === "object" && movie._id.$oid ? movie._id.$oid : movie._id;
+};
+
+
 function StHomeContent({ userId }) {
   const [movies, setMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
+
   const [isLoading, setIsLoading] = useState(true);
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
 
+
+  // Fetch user preferred genres
   useEffect(() => {
     const fetchUserAndMovies = async () => {
       if (!username) return;
@@ -253,6 +262,7 @@ function StHomeContent({ userId }) {
             return movie;
           });
 
+
         const uniqueMovies = [];
         const seenTitles = new Set();
 
@@ -287,6 +297,7 @@ function StHomeContent({ userId }) {
 
     fetchUserAndMovies();
   }, [username]);
+
 
     // LOADING SCREEN
   if (isLoading) {
@@ -342,10 +353,34 @@ function StHomeContent({ userId }) {
     setMovies(deduped);
   } catch (err) {
     console.error("❌ Failed to regenerate movies:", err);
+
   }
 };
 
 
+const handleSave = async (movieId) => {
+  try {
+    await fetch(`${API}/api/movies/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: savedUser.userId, movieId }),
+    });
+  } catch (err) {
+    console.error("Error saving movie:", err);
+  }
+};
+
+const handleHide = async (movieId) => {
+  try {
+    await fetch(`${API}/api/movies/${movieId}`, {
+      method: "DELETE",
+    });
+  } catch (err) {
+    console.error("Error hiding movie:", err);
+  }
+};
+
+  
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
@@ -424,23 +459,39 @@ function StHomeContent({ userId }) {
             </div>
 
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                onClick={() => handlePlay(getMovieId(selectedMovie))}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+              >
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+
+              <button
+                onClick={() => handleLike(getMovieId(selectedMovie))}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+              >
                 <Heart className="w-4 h-4 mr-1 fill-black" />
                 Like
               </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+
+              <button
+                onClick={() => handleSave(getMovieId(selectedMovie))}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+              >
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
                 Save
               </button>
+
               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
                 <Trash2 className="w-4 h-4 mr-1 stroke-black" />
                 Delete
               </button>
             </div>
+
+
+
+            {/* Close Button BELOW action buttons */}
 
             <div className="flex justify-end pt-4">
               <button
