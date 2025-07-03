@@ -357,6 +357,27 @@ function StHomeContent({ userId }) {
   }
 };
 
+const handleLike = async (movieId) => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user?.userId) return;
+
+  try {
+    const res = await fetch(`${API}/api/movies/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.userId,
+        movieId: movieId,
+      }),
+    });
+
+    const data = await res.json();
+    console.log(data);
+  } catch (err) {
+    console.error("Error liking movie:", err);
+  }
+};
+
 
 const handleSave = async (movieId) => {
   try {
@@ -458,6 +479,7 @@ const handleHide = async (movieId) => {
               </div>
             </div>
 
+            {/* Action buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
               <button
                 onClick={() => handlePlay(getMovieId(selectedMovie))}

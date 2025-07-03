@@ -43,6 +43,10 @@ print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collectio
 print("✅ movie_db name:", movie_db.name)
 print("✅ movie_db collections:", movie_db.list_collection_names())
 
+liked_collection = movie_db["liked"]
+saved_collection = movie_db["saved"]
+history_collection = movie_db["history"]
+
 
 
 
