@@ -63,9 +63,9 @@ from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
 from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
-from movieDb import liked_collection
-from movieDb import saved_collection
-from movieDb import history_collection
+from .movieDb import liked_collection
+from .movieDb import saved_collection
+from .movieDb import history_collection
 
 def to_objectid_safe(id_str):
     try:
