@@ -16,6 +16,28 @@ function StHomeContent({ userId }) {
 const savedUser = JSON.parse(localStorage.getItem("user"));
 const username = savedUser?.username;
 
+const handlePlay = async () => {
+  if (!selectedMovie || !savedUser) return;
+
+  try {
+    await axios.post(`${API}/api/history/add`, {
+      userId: savedUser.userId,
+      movieId: selectedMovie._id
+    });
+
+    console.log("Added to history:", selectedMovie.title);
+
+    if (selectedMovie.trailer_key) {
+      window.open(`https://www.youtube.com/watch?v=${selectedMovie.trailer_key}`, '_blank');
+    }
+  } catch (err) {
+    console.error("Error adding to history:", err);
+  }
+};
+
+
+
+
   // Fetch user preferred genres
   useEffect(() => {
     const fetchUserAndMovies = async () => {
@@ -172,7 +194,7 @@ const username = savedUser?.username;
 
             {/* Action Buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button  onClick={handlePlay}  className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
