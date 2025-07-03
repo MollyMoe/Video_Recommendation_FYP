@@ -482,7 +482,7 @@ const handleHide = async (movieId) => {
             {/* Action buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
               <button
-                onClick={() => handlePlay(getMovieId(selectedMovie))}
+                onClick={() => selectedMovie && handlePlay(selectedMovie._id)}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
                 <Play className="w-3 h-3 mr-1 fill-black" />
@@ -490,7 +490,7 @@ const handleHide = async (movieId) => {
               </button>
 
               <button
-                onClick={() => handleLike(getMovieId(selectedMovie))}
+                onClick={() => selectedMovie && handleLike(selectedMovie._id)}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
                 <Heart className="w-4 h-4 mr-1 fill-black" />
@@ -498,7 +498,7 @@ const handleHide = async (movieId) => {
               </button>
 
               <button
-                onClick={() => handleSave(getMovieId(selectedMovie))}
+                onClick={() => selectedMovie && handleSave(selectedMovie._id)}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />

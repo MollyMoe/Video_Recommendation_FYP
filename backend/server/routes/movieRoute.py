@@ -165,26 +165,29 @@ def regenerate_movies(
 
 # # For Like button
 
-# @router.post("/like")
-# async def like_movie(request: Request):
-#     try:
-#         body = await request.json()
-#         user_id = body.get("userId")
-#         movie_id = body.get("movieId")
+@router.post("/like")
+async def like_movie(request: Request):
+    try:
+        body = await request.json()
+        user_id = body.get("userId")
+        movie_id = body.get("movieId")
 
-#         if not user_id or not movie_id:
-#             raise HTTPException(status_code=400, detail="Missing userId or movieId")
+        if not user_id or not movie_id:
+            raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-#         # Insert into likes collection
-#         liked_collection.insert_one({
-#             "userId": user_id,
-#             "movieId": movie_id
-#         })
+        result = user_collection.update_one(
+            {"userId": user_id},
+            {"$addToSet": {"likedMovies": movie_id}}  # avoids duplicates
+        )
 
-#         return {"message": "Movie liked successfully"}
+        if result.modified_count == 0:
+            return {"message": "Movie already liked or user not found"}
 
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+        return {"message": "Movie liked successfully"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
@@ -241,39 +244,30 @@ def regenerate_movies(
 #     return movies
 
 # # For Liked Movies Page
-# # @router.get("/movies/liked/{user_id}")
-# # async def get_liked_movies(user_id: str, request: Request):
-# #     db = request.app.state.movie_db
-# #     user = await db.users.find_one({"userId": user_id})
-# #     if not user:
-# #         raise HTTPException(status_code=404, detail="User not found")
+@router.get("/likedMovies/{user_id}")
+async def get_liked_movies(user_id: str, request: Request):
+    try:
+        # Get the user
+        user = user_collection.find_one({"userId": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-# #     liked_ids = user.get("likedMovies", [])
-# #     movies = await db.hybridRecommendation.find(
-# #         {"_id": {"$in": [ObjectId(mid) for mid in liked_ids]}}
-# #     ).to_list(length=100)
+        liked_ids = user.get("likedMovies", [])
 
-# #     for movie in movies:
-# #         movie["_id"] = str(movie["_id"])
+        if not liked_ids:
+            return {"likedMovies": []}
 
-# #     return movies
+        # Fetch movie documents
+        movies = list(movie_collection.find({"movieId": {"$in": liked_ids}}))
 
-# @router.get("/liked/{user_id}")
-# async def get_liked_movies(user_id: str, request: Request):
-#     db = request.app.state.movie_db
-#     user = await db.users.find_one({"userId": user_id})
+        # Convert ObjectId to string if needed
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])
 
-#     if not user:
-#         raise HTTPException(status_code=404, detail="User not found")
+        return {"likedMovies": movies}
 
-#     liked_ids = user.get("liked", [])
-#     movies = await db.hybridRecommendation.find({"_id": {"$in": [ObjectId(mid) for mid in liked_ids]}}).to_list(100)
-
-#     for movie in movies:
-#         movie["_id"] = str(movie["_id"])
-
-#     return movies
-
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # # For Watch Later Page
 # # @router.get("/movies/saved/{user_id}")

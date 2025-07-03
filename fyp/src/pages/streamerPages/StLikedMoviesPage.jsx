@@ -7,18 +7,19 @@ const StLikedMoviesPage = () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await fetch(`${API}/api/movies/liked/${savedUser.userId}`);
-        const data = await res.json();
-        setMovies(data);
-      } catch (err) {
-        console.error("Error fetching history:", err);
-      }
-    };
+  const fetchLikedMovies = async () => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+      const data = await res.json();
+      setLikedMovies(data.likedMovies); // <- store in state
+    } catch (err) {
+      console.error("Failed to fetch liked movies", err);
+    }
+  };
 
-    fetchHistory();
-  }, []);
+  fetchLikedMovies();
+}, []);
 
   return (
     <div className="p-4">
