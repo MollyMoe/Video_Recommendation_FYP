@@ -22,6 +22,11 @@ const StLikedMoviesPage = () => {
 
   return (
     <div className="p-4">
+      <StNav />
+      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
+        <StSearchBar />
+      </div>
+      <StSideBar />
       <h2 className="text-xl font-bold mb-4">History</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {movies.map((movie) => (
