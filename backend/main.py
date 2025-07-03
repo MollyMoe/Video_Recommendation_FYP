@@ -10,7 +10,6 @@ from server.routes.movieRoute import router as movie_router
 from server.routes.passwordRoute import router as password_router
 from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
-from server.routes.movieDb import movie_db
 from fastapi.staticfiles import StaticFiles
 
 # Load .env from ../server/.en
