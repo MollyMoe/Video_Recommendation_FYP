@@ -9,6 +9,6 @@ MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
 movie_client = MongoClient(MOVIE_DB_URI)
 movie_db = movie_client["NewMovieDatabase"]
 
-likes_collection = movie_db["likes"]
-saves_collection = movie_db["saves"]
+liked_collection = movie_db["liked"]
+saved_collection = movie_db["saved"]
 history_collection = movie_db["history"]
