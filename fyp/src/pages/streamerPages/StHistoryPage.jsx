@@ -1,18 +1,41 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const StHistoryPage = () => {
+  const [movies, setMovies] = useState([]);
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`${API}/api/history/${savedUser.userId}`);
+        const data = await res.json();
+        setMovies(data);
+      } catch (err) {
+        console.error("Error fetching history:", err);
+      }
+    };
+
+    if (savedUser?.userId) {
+      fetchHistory();
+    }
+  }, []);
+
   return (
-    <div className="sm:ml-64 pt-24 px-4 sm:px-8">
-      <div className="text-3xl">History Page</div>
-      <Link to="/inputgenre">Go to Input</Link>
+    <div className="p-4 min-h-screen dark:bg-gray-900">
+      <h2 className="text-2xl font-bold text-white mb-6">Watch History</h2>
 
-      <br></br>
-      <Link to="/signup">Go to sign up</Link>
-      <br></br>
-
-      <Link to="/signin">Go to sign in</Link>
-      <br></br>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {movies.map((movie, idx) => (
+          <div key={idx} className="bg-white rounded-lg shadow p-2">
+            <img src={movie.poster_url} alt={movie.title} className="rounded mb-2 w-full h-60 object-cover" />
+            <h3 className="text-sm font-semibold">{movie.title}</h3>
+            <p className="text-xs text-gray-500">{movie.genres?.join(", ")}</p>
+            <p className="text-xs">⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

@@ -11,6 +11,8 @@ function StHomeContent({ userId }) {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  
+
 const savedUser = JSON.parse(localStorage.getItem("user"));
 const username = savedUser?.username;
 
@@ -46,6 +48,12 @@ const username = savedUser?.username;
           .map((movie) => {
             if (typeof movie.genres === "string") {
               movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+            }
+            try {
+              const url = new URL(movie.trailer_url);
+              movie.trailer_key = url.searchParams.get("v");
+            } catch {
+              movie.trailer_key = null;
             }
             return movie;
           });
