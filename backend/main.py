@@ -35,14 +35,14 @@ user_client = MongoClient(USER_DB_URI)
 user_db = user_client["users"]
 
 
-# movie_client = MongoClient(MOVIE_DB_URI)
-# movie_db = movie_client["MovieDatabase"]
+movie_client = MongoClient(MOVIE_DB_URI)
+movie_db = movie_client["MovieDatabase"]
 
-# movie_client = MongoClient(MOVIE_DB_URI)
-# movie_db = movie_client["NewMovieDatabase"]
-# print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
-# print("✅ movie_db name:", movie_db.name)
-# print("✅ movie_db collections:", movie_db.list_collection_names())
+movie_client = MongoClient(MOVIE_DB_URI)
+movie_db = movie_client["NewMovieDatabase"]
+print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
+print("✅ movie_db name:", movie_db.name)
+print("✅ movie_db collections:", movie_db.list_collection_names())
 
 # liked_collection = movie_db["liked"]
 # saved_collection = movie_db["saved"]
