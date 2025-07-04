@@ -104,7 +104,7 @@ useEffect(() => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
               {likedMovies.map((movie) => (
-                <div key={`${movie._id}-${movie.movieId}`} className="bg-white rounded-lg shadow p-2">
+                <div key={movie.movieId} className="bg-white rounded-lg shadow p-2">
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}

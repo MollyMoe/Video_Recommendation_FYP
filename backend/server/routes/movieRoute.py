@@ -322,20 +322,16 @@ async def get_liked_movies(userId: str, request: Request):
     movie_collection = db["hybridRecommendation2"]
 
     try:
-        # Find all liked movie records by userId
-        liked_docs = list(liked_collection.find({ "userId": userId }))
-        liked_movie_ids = [doc["movieId"] for doc in liked_docs]
+        liked_entries = list(liked_collection.find({"userId": userId}))
+        movie_ids = list({entry["movieId"] for entry in liked_entries})  # ✅ unique set
 
-        if not liked_movie_ids:
-            print("👍 No liked movies found")
-            return { "likedMovies": [] }
+        print("🎯 Unique liked movieIds:", movie_ids)
 
-        # Query the movie collection
-        movies = list(movie_collection.find({ "movieId": { "$in": liked_movie_ids } }))
+        movies = list(movie_collection.find({ "movieId": { "$in": movie_ids } }))
         for movie in movies:
             movie["_id"] = str(movie["_id"])
 
-        print(f"✅ Fetched {len(movies)} liked movies from hybridRecommendation2")
+        print(f"✅ Returning {len(movies)} unique liked movies.")
         return { "likedMovies": movies }
 
     except Exception as e:
