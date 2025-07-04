@@ -264,18 +264,21 @@ async def get_liked_movies(userId: str, request: Request):
             raise HTTPException(status_code=404, detail="User not found")
 
         liked_ids = user.get("likedMovies", [])
-        print("👍 likedMovies array:", liked_ids)
+        print("👍 likedMovies array (raw):", liked_ids)
 
-        # Convert to int
+        # Convert to int (only if stored in DB as int)
         try:
             liked_ids = [int(mid) for mid in liked_ids]
         except Exception as e:
             print("❌ Error converting likedIds:", e)
             raise HTTPException(status_code=400, detail="Invalid likedMovies data")
 
+        print("🔍 Final liked_ids used in query:", liked_ids)
+
         # Fetch movies
-        movies = list(movie_collection.find({ "movieId": { "$in": liked_ids } }))
-        print(f"✅ {len(movies)} movies fetched.")
+        movies_cursor = movie_collection.find({ "movieId": { "$in": liked_ids } })
+        movies = list(movies_cursor)
+        print(f"✅ {len(movies)} movie(s) fetched from hybridRecommendation2")
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])
@@ -285,6 +288,7 @@ async def get_liked_movies(userId: str, request: Request):
     except Exception as e:
         print("🔥 Backend exception in likedMovies route:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
