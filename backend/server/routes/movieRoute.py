@@ -252,11 +252,11 @@ async def add_to_liked_movies(request: Request):
 # # For Liked Movies Page
 @router.get("/likedMovies/{user_id}")
 async def get_liked_movies(user_id: str, request: Request):
-    db = request.app.state.user_db
-    user_collection = db["streamer"]
-    
+    db = request.app.state
+    user_collection = db.user_db["streamer"]
+    movie_collection = db.movie_db["hybridRecommendation2"]
+
     try:
-        # Get the user
         user = user_collection.find_one({"userId": user_id})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -266,17 +266,23 @@ async def get_liked_movies(user_id: str, request: Request):
         if not liked_ids:
             return {"likedMovies": []}
 
-        # Fetch movie documents
-        movies = list(db.hybridRecommendation2.find({"movieId": {"$in": liked_ids}}))
-    
-        # Convert ObjectId to string if needed
+        # ✅ Convert string movieIds to integers
+        try:
+            liked_ids = [int(mid) for mid in liked_ids]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid movieId format")
+
+        # ✅ Now match correctly
+        movies = list(movie_collection.find({ "movieId": { "$in": liked_ids } }))
+
         for movie in movies:
             movie["_id"] = str(movie["_id"])
 
-        return {"likedMovies": movies}
+        return { "likedMovies": movies }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # # For Watch Later Page
 # # @router.get("/movies/saved/{user_id}")

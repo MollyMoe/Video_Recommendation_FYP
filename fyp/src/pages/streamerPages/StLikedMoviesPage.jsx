@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import StNav from "./StNav";
-import StSideBar from "./StSideBar";
-import StSearchBar from "./StSearchBar";
+import StNav from "../../components/streamer_components/StNav";
+import StSideBar from "../../components/streamer_components/StSideBar";
+import StSearchBar from "../../components/streamer_components/StSearchBar";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
