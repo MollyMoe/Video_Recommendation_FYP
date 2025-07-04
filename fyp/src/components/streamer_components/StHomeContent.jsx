@@ -389,27 +389,27 @@ const handleLike = async (movieId) => {
 };
 
 
-const handleSave = async (movieId) => {
-  try {
-    await fetch(`${API}/api/movies/save`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: savedUser.userId, movieId }),
-    });
-  } catch (err) {
-    console.error("Error saving movie:", err);
-  }
-};
+// const handleSave = async (movieId) => {
+//   try {
+//     await fetch(`${API}/api/movies/save`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ userId: savedUser.userId, movieId }),
+//     });
+//   } catch (err) {
+//     console.error("Error saving movie:", err);
+//   }
+// };
 
-const handleHide = async (movieId) => {
-  try {
-    await fetch(`${API}/api/movies/${movieId}`, {
-      method: "DELETE",
-    });
-  } catch (err) {
-    console.error("Error hiding movie:", err);
-  }
-};
+// const handleHide = async (movieId) => {
+//   try {
+//     await fetch(`${API}/api/movies/${movieId}`, {
+//       method: "DELETE",
+//     });
+//   } catch (err) {
+//     console.error("Error hiding movie:", err);
+//   }
+// };
 
   
   return (
@@ -494,7 +494,7 @@ const handleHide = async (movieId) => {
             {/* Action buttons */}
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
               <button
-                onClick={() => selectedMovie && handlePlay(selectedMovie._id)}
+                // onClick={() => selectedMovie && handlePlay(selectedMovie._id)}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
                 <Play className="w-3 h-3 mr-1 fill-black" />
@@ -512,7 +512,7 @@ const handleHide = async (movieId) => {
               </button>
 
               <button
-                onClick={() => selectedMovie && handleSave(selectedMovie._id)}
+                // onClick={() => selectedMovie && handleSave(selectedMovie._id)}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />

@@ -172,7 +172,7 @@ async def add_to_liked_movies(request: Request):
     user_collection = db["streamer"]
 
     user_id = data.get("userId")
-    movie_id = data.get("movieId")
+    movie_id = str(data.get("movieId"))
 
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
