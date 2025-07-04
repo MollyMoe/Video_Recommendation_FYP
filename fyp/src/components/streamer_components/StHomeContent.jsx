@@ -210,8 +210,8 @@ const handleLike = async (movieId) => {
               </button>
               <button
                 onClick={() => {
-                  console.log("Like button clicked for movie:", selectedMovie?._id);
-                  handleLike(selectedMovie._id);
+                  console.log("Like button clicked for movie:", selectedMovie?.movieId);
+                  handleLike(selectedMovie.movieId);
                 }}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
