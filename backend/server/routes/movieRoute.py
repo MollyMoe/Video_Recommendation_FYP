@@ -23,3 +23,26 @@ def get_all_movies(request: Request):
     except Exception as e:
         print("❌ Failed to fetch movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
+
+@router.post("/like")
+async def add_to_liked_movies(request: Request):
+    data = await request.json()
+    db = request.app.state.user_db  # Motor client
+    collection = db["streamer"]     # ✅ Access your "streamer" collection
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    user = await collection.find_one({"userId": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="Streamer not found")
+
+    await collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"likedMovies": movie_id}}  # ✅ Adds movieId without duplicates
+    )
+
+    return {"message": "Movie added to liked list"}
