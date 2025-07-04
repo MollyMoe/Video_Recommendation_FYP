@@ -9,6 +9,17 @@ const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
+  const fetchLikedMovies = async () => {
+  try {
+    const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+    const data = await res.json();
+    setLikedMovies(data.likedMovies);
+  } catch (err) {
+    console.error("Failed to fetch liked movies:", err);
+  }
+};
+
+
   // useEffect(() => {
   //   const fetchLikedMovies = async () => {
   //     try {
@@ -39,32 +50,32 @@ const StLikedMoviesPage = () => {
 //   }
 // };
 
-useEffect(() => {
-  const fetchLikedMovies = async () => {
-    try {
-      const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
-      const data = await res.json();
-      console.log("🎯 Liked movies fetched:", data);
+// useEffect(() => {
+//   const fetchLikedMovies = async () => {
+//     try {
+//       const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+//       const data = await res.json();
+//       console.log("🎯 Liked movies fetched:", data);
 
-      if (data?.likedMovies?.length) {
-        const uniqueMovies = Array.from(
-          new Map(data.likedMovies.map((movie) => [movie._id, movie])).values()
-        );
-        setLikedMovies(uniqueMovies);
-      } else {
-        console.warn("⚠️ No liked movies found or empty array");
-        setLikedMovies([]);
-      }
-    } catch (err) {
-      console.error("❌ Failed to fetch liked movies:", err);
-      setLikedMovies([]);
-    }
-  };
+//       if (data?.likedMovies?.length) {
+//         const uniqueMovies = Array.from(
+//           new Map(data.likedMovies.map((movie) => [movie._id, movie])).values()
+//         );
+//         setLikedMovies(uniqueMovies);
+//       } else {
+//         console.warn("⚠️ No liked movies found or empty array");
+//         setLikedMovies([]);
+//       }
+//     } catch (err) {
+//       console.error("❌ Failed to fetch liked movies:", err);
+//       setLikedMovies([]);
+//     }
+//   };
 
-  if (savedUser?.userId) {
-    fetchLikedMovies();
-  }
-}, []);
+//   if (savedUser?.userId) {
+//     fetchLikedMovies();
+//   }
+// }, []);
 
 
 

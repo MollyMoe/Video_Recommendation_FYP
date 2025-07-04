@@ -171,28 +171,52 @@ def get_all_movies(request: Request):
 
 # # For Like button
 
+# @router.post("/like")
+# async def add_to_liked_movies(request: Request):
+#     data = await request.json()
+#     db = request.app.state.user_db
+#     user_collection = db["streamer"]
+#     movie_collection = db["liked"]
+
+#     userId = data.get("userId")
+#     movieId = str(data.get("movieId"))
+
+#     if not userId or not movieId:
+#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+#     user = user_collection.find_one({"userId": userId})  # ✅ no await
+#     if not user:
+#         raise HTTPException(status_code=404, detail="Streamer not found")
+
+#     user_collection.update_one(
+#         {"userId": userId},
+#         {"$addToSet": {"likedMovies": movieId}}  # ✅ no await
+#     )
+#     return {"message": "Movie added to liked list"} 
+
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
     data = await request.json()
-    db = request.app.state.user_db
-    user_collection = db["streamer"]
+    db = request.app.state.movie_db  # ✅ Corrected to point to movie_db
+    liked_collection = db["liked"]
 
     userId = data.get("userId")
-    movieId = str(data.get("movieId"))
+    movieId = data.get("movieId")  # keep as int or str depending on your schema
 
-    if not userId or not movieId:
+    if not userId or movieId is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    user = user_collection.find_one({"userId": userId})  # ✅ no await
-    if not user:
-        raise HTTPException(status_code=404, detail="Streamer not found")
+    # Prevent duplicates using upsert-like logic
+    existing = liked_collection.find_one({ "userId": userId, "movieId": movieId })
+    if existing:
+        return { "message": "Movie already liked" }
 
-    user_collection.update_one(
-        {"userId": userId},
-        {"$addToSet": {"likedMovies": movieId}}  # ✅ no await
-    )
-    return {"message": "Movie added to liked list"} 
+    liked_collection.insert_one({
+        "userId": userId,
+        "movieId": movieId
+    })
 
+    return { "message": "Movie added to liked list" }
 
 
 
@@ -250,45 +274,73 @@ async def add_to_liked_movies(request: Request):
 #     return movies
 
 # # For Liked Movies Page
+# @router.get("/likedMovies/{userId}")
+# async def get_liked_movies(userId: str, request: Request):
+#     print(f"🎯 Fetching liked movies for user: {userId}")
+#     db = request.app.state
+#     user_collection = db.user_db["streamer"]
+#     movie_collection = db.movie_db["hybridRecommendation2"]
+    
+
+#     try:
+#         user = user_collection.find_one({"userId": userId})
+#         if not user:
+#             print("❌ User not found")
+#             raise HTTPException(status_code=404, detail="User not found")
+
+#         liked_ids = user.get("likedMovies", [])
+#         print("👍 likedMovies array (raw):", liked_ids)
+
+#         # Convert to int (only if stored in DB as int)
+#         try:
+#             liked_ids = [int(mid) for mid in liked_ids]
+#         except Exception as e:
+#             print("❌ Error converting likedIds:", e)
+#             raise HTTPException(status_code=400, detail="Invalid likedMovies data")
+
+#         print("🔍 Final liked_ids used in query:", liked_ids)
+
+#         # Fetch movies
+#         movies_cursor = movie_collection.find({ "movieId": { "$in": liked_ids } })
+#         movies = list(movies_cursor)
+#         print(f"✅ {len(movies)} movie(s) fetched from hybridRecommendation2")
+
+#         for movie in movies:
+#             movie["_id"] = str(movie["_id"])
+
+#         return { "likedMovies": movies }
+
+#     except Exception as e:
+#         print("🔥 Backend exception in likedMovies route:", e)
+#         raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/likedMovies/{userId}")
 async def get_liked_movies(userId: str, request: Request):
     print(f"🎯 Fetching liked movies for user: {userId}")
-    db = request.app.state
-    user_collection = db.user_db["streamer"]
-    movie_collection = db.movie_db["hybridRecommendation2"]
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
+    movie_collection = db["hybridRecommendation2"]
 
     try:
-        user = user_collection.find_one({"userId": userId})
-        if not user:
-            print("❌ User not found")
-            raise HTTPException(status_code=404, detail="User not found")
+        # Find all liked movie records by userId
+        liked_docs = list(liked_collection.find({ "userId": userId }))
+        liked_movie_ids = [doc["movieId"] for doc in liked_docs]
 
-        liked_ids = user.get("likedMovies", [])
-        print("👍 likedMovies array (raw):", liked_ids)
+        if not liked_movie_ids:
+            print("👍 No liked movies found")
+            return { "likedMovies": [] }
 
-        # Convert to int (only if stored in DB as int)
-        try:
-            liked_ids = [int(mid) for mid in liked_ids]
-        except Exception as e:
-            print("❌ Error converting likedIds:", e)
-            raise HTTPException(status_code=400, detail="Invalid likedMovies data")
-
-        print("🔍 Final liked_ids used in query:", liked_ids)
-
-        # Fetch movies
-        movies_cursor = movie_collection.find({ "movieId": { "$in": liked_ids } })
-        movies = list(movies_cursor)
-        print(f"✅ {len(movies)} movie(s) fetched from hybridRecommendation2")
-
+        # Query the movie collection
+        movies = list(movie_collection.find({ "movieId": { "$in": liked_movie_ids } }))
         for movie in movies:
             movie["_id"] = str(movie["_id"])
 
+        print(f"✅ Fetched {len(movies)} liked movies from hybridRecommendation2")
         return { "likedMovies": movies }
 
     except Exception as e:
-        print("🔥 Backend exception in likedMovies route:", e)
+        print("🔥 Error in likedMovies route:", e)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 
