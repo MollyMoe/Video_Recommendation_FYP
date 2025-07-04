@@ -35,18 +35,10 @@ user_db = user_client["users"]
 
 
 movie_client = MongoClient(MOVIE_DB_URI)
-movie_db = movie_client["MovieDatabase"]
-
-movie_client = MongoClient(MOVIE_DB_URI)
 movie_db = movie_client["NewMovieDatabase"]
 print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
 print("✅ movie_db name:", movie_db.name)
 print("✅ movie_db collections:", movie_db.list_collection_names())
-
-# liked_collection = movie_db["liked"]
-# saved_collection = movie_db["saved"]
-# history_collection = movie_db["history"]
-
 
 
 
@@ -96,3 +88,7 @@ def get_users():
 def get_movies():
     movies = list(app.state.movie_db.movies.find({}, {"_id": 0}))
     return movies
+
+@app.get("/cors-test")
+def cors_test():
+    return {"status": "CORS is working"}
