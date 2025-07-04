@@ -426,10 +426,12 @@ const handleHide = async (movieId) => {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
           {movies.map((movie) => (
             <div
-              key={movie._id}
-              className="relative cursor-pointer group w-[180px] mx-auto"
-              onClick={() => setSelectedMovie(movie)}
-            >
+                key={movie._id}
+                className="relative cursor-pointer group w-[180px] mx-auto"
+                onMouseEnter={() => setHoveredMovieId(movie._id)}
+                onMouseLeave={() => setHoveredMovieId(null)}
+                onClick={() => setSelectedMovie(movie)}
+              >
               <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
                 <img
                   src={movie.poster_url || "https://via.placeholder.com/150"}

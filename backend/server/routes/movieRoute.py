@@ -244,33 +244,33 @@ async def add_to_liked_movies(request: Request):
 #     return movies
 
 # # For Liked Movies Page
-@router.get("/likedMovies/{user_id}")
-async def get_liked_movies(user_id: str, request: Request):
-    db = request.app.state.user_db
-    user_collection = db["streamer"]
+# @router.get("/likedMovies/{user_id}")
+# async def get_liked_movies(user_id: str, request: Request):
+#     db = request.app.state.user_db
+#     user_collection = db["streamer"]
     
-    try:
-        # Get the user
-        user = user_collection.find_one({"userId": user_id})
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+#     try:
+#         # Get the user
+#         user = user_collection.find_one({"userId": user_id})
+#         if not user:
+#             raise HTTPException(status_code=404, detail="User not found")
 
-        liked_ids = user.get("likedMovies", [])
+#         liked_ids = user.get("likedMovies", [])
 
-        if not liked_ids:
-            return {"likedMovies": []}
+#         if not liked_ids:
+#             return {"likedMovies": []}
 
-        # Fetch movie documents
-        movies = list(db.hybridRecommendation2.find({"movieId": {"$in": liked_ids}}))
+#         # Fetch movie documents
+#         movies = list(db.hybridRecommendation2.find({"movieId": {"$in": liked_ids}}))
     
-        # Convert ObjectId to string if needed
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
+#         # Convert ObjectId to string if needed
+#         for movie in movies:
+#             movie["_id"] = str(movie["_id"])
 
-        return {"likedMovies": movies}
+#         return {"likedMovies": movies}
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 # # For Watch Later Page
 # # @router.get("/movies/saved/{user_id}")
