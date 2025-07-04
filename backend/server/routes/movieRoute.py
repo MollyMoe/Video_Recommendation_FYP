@@ -201,7 +201,7 @@ async def add_to_liked_movies(request: Request):
     liked_collection = db["liked"]
 
     userId = data.get("userId")
-    movieId = data.get("movieId")  # keep as int or str depending on your schema
+    movieId = int(data.get("movieId"))  # keep as int or str depending on your schema
 
     if not userId or movieId is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
@@ -323,16 +323,26 @@ async def get_liked_movies(userId: str, request: Request):
 
     try:
         liked_entries = list(liked_collection.find({"userId": userId}))
-        movie_ids = list({entry["movieId"] for entry in liked_entries})  # ✅ unique set
+        
+        movie_ids = []
+        for entry in liked_entries:
+            try:
+                movie_ids.append(int(entry["movieId"]))  # 💡 force conversion to int
+            except Exception as e:
+                print(f"❌ Invalid movieId in liked entry: {entry}, error: {e}")
 
-        print("🎯 Unique liked movieIds:", movie_ids)
+        movie_ids = list(set(movie_ids))  # remove duplicates
+        print("🎯 Final movieIds:", movie_ids)
 
-        movies = list(movie_collection.find({ "movieId": { "$in": movie_ids } }))
+        if not movie_ids:
+            return {"likedMovies": []}
+
+        movies = list(movie_collection.find({"movieId": {"$in": movie_ids}}))
         for movie in movies:
             movie["_id"] = str(movie["_id"])
 
         print(f"✅ Returning {len(movies)} unique liked movies.")
-        return { "likedMovies": movies }
+        return {"likedMovies": movies}
 
     except Exception as e:
         print("🔥 Error in likedMovies route:", e)

@@ -96,14 +96,15 @@ useEffect(() => {
       </div>
       <StSideBar />
       
-      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700" >
+      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="max-w-6xl mx-auto">
-
           {likedMovies.length === 0 ? (
             <p className="text-center mt-10">No liked movies found.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
-              {likedMovies.map((movie) => (
+              {Array.from(
+                new Map(likedMovies.map((movie) => [movie.movieId, movie])).values()
+              ).map((movie) => (
                 <div key={movie.movieId} className="bg-white rounded-lg shadow p-2">
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
@@ -117,6 +118,7 @@ useEffect(() => {
           )}
         </div>
       </div>
+
     </div>
   );
 };
