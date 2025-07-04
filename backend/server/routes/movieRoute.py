@@ -166,27 +166,27 @@ def regenerate_movies(
 # # For Like button
 
 @router.post("/like")
-async def like_movie(request: Request):
-    try:
-        body = await request.json()
-        user_id = body.get("userId")
-        movie_id = body.get("movieId")
+async def add_to_liked_movies(request: Request):
+    data = await request.json()
+    db = request.app.state.user_db
+    user_collection = db["streamer"]
 
-        if not user_id or not movie_id:
-            raise HTTPException(status_code=400, detail="Missing userId or movieId")
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
 
-        result = user_collection.update_one(
-            {"userId": user_id},
-            {"$addToSet": {"likedMovies": movie_id}}  # avoids duplicates
-        )
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-        if result.modified_count == 0:
-            return {"message": "Movie already liked or user not found"}
+    user = user_collection.find_one({"userId": user_id})  # ✅ no await
+    if not user:
+        raise HTTPException(status_code=404, detail="Streamer not found")
 
-        return {"message": "Movie liked successfully"}
+    user_collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"likedMovies": movie_id}}  # ✅ no await
+    )
+    return {"message": "Movie added to liked list"} 
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 
@@ -246,6 +246,9 @@ async def like_movie(request: Request):
 # # For Liked Movies Page
 @router.get("/likedMovies/{user_id}")
 async def get_liked_movies(user_id: str, request: Request):
+    db = request.app.state.user_db
+    user_collection = db["streamer"]
+    
     try:
         # Get the user
         user = user_collection.find_one({"userId": user_id})
@@ -258,8 +261,8 @@ async def get_liked_movies(user_id: str, request: Request):
             return {"likedMovies": []}
 
         # Fetch movie documents
-        movies = list(movie_collection.find({"movieId": {"$in": liked_ids}}))
-
+        movies = list(db.hybridRecommendation2.find({"movieId": {"$in": liked_ids}}))
+    
         # Convert ObjectId to string if needed
         for movie in movies:
             movie["_id"] = str(movie["_id"])

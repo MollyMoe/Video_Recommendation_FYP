@@ -358,21 +358,31 @@ function StHomeContent({ userId }) {
 };
 
 const handleLike = async (movieId) => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user?.userId) return;
+  if (!movieId || !savedUser?.userId) {
+    console.warn("Missing movieId or userId");
+    return;
+  }
 
   try {
     const res = await fetch(`${API}/api/movies/like`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        userId: user.userId,
+        userId: savedUser.userId,
         movieId: movieId,
       }),
     });
 
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Like failed:", res.status, errorText);
+      return;
+    }
+
     const data = await res.json();
-    console.log(data);
+    console.log("Like response:", data);
   } catch (err) {
     console.error("Error liking movie:", err);
   }
@@ -490,7 +500,9 @@ const handleHide = async (movieId) => {
               </button>
 
               <button
-                onClick={() => selectedMovie && handleLike(selectedMovie._id)}
+                onClick={() => {
+                  console.log("Like button clicked for movie:", selectedMovie?.movieId);
+                  handleLike(selectedMovie.movieId)}}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
                 <Heart className="w-4 h-4 mr-1 fill-black" />
