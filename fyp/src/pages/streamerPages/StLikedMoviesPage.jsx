@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
+import StNav from "./StNav";
+import StSideBar from "./StSideBar";
+import StSearchBar from "./StSearchBar";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const StLikedMoviesPage = () => {
-  const [movies, setMovies] = useState([]);
+  const [likedMovies, setLikedMovies] = useState([]);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-  const fetchLikedMovies = async () => {
-    try {
-      const savedUser = JSON.parse(localStorage.getItem("user"));
-      const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
-      const data = await res.json();
-      setLikedMovies(data.likedMovies); // <- store in state
-    } catch (err) {
-      console.error("Failed to fetch liked movies", err);
-    }
-  };
+    const fetchLikedMovies = async () => {
+      try {
+        const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+        const data = await res.json();
+        setLikedMovies(data.likedMovies); // ✅ now sets the correct state
+      } catch (err) {
+        console.error("Failed to fetch liked movies", err);
+      }
+    };
 
-  fetchLikedMovies();
-}, []);
+    fetchLikedMovies();
+  }, []);
 
   return (
     <div className="p-4">
@@ -28,11 +30,16 @@ const StLikedMoviesPage = () => {
         <StSearchBar />
       </div>
       <StSideBar />
-      <h2 className="text-xl font-bold mb-4">History</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {movies.map((movie) => (
+      <h2 className="text-xl font-bold mb-4">Liked Movies</h2> {/* ✅ fixed heading */}
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+        {likedMovies.map((movie) => (
           <div key={movie._id} className="bg-white rounded-lg shadow p-2">
-            <img src={movie.posterUrl} alt={movie.title} className="rounded mb-2" />
+            <img
+              src={movie.poster_url || "https://via.placeholder.com/150"} // ✅ fixed field name
+              alt={movie.title}
+              className="rounded mb-2"
+            />
             <h3 className="text-sm font-semibold">{movie.title}</h3>
           </div>
         ))}

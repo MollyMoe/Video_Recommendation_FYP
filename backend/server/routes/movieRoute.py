@@ -110,45 +110,45 @@ def get_all_movies(request: Request):
 
 
 # POST /api/movies/regenerate — fetch new movies excluding current ones
-@router.post("/regenerate")
-def regenerate_movies(
-    request: Request,
-    body: dict = Body(...)
-):
-    db = request.app.state.movie_db
-    genres: List[str] = body.get("genres", [])
-    exclude_titles: List[str] = body.get("excludeTitles", [])
+# @router.post("/regenerate")
+# def regenerate_movies(
+#     request: Request,
+#     body: dict = Body(...)
+# ):
+#     db = request.app.state.movie_db
+#     genres: List[str] = body.get("genres", [])
+#     exclude_titles: List[str] = body.get("excludeTitles", [])
 
-    try:
-        pipeline = [
-            {"$match": {
-                "genres": {"$in": genres},
-                "title": {"$nin": exclude_titles},
-                "poster_url": {"$ne": None},
-                "trailer_url": {"$ne": None}
-            }},
-            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
-            {"$replaceRoot": {"newRoot": "$doc"}},
-            {"$limit": 30}
-        ]
+#     try:
+#         pipeline = [
+#             {"$match": {
+#                 "genres": {"$in": genres},
+#                 "title": {"$nin": exclude_titles},
+#                 "poster_url": {"$ne": None},
+#                 "trailer_url": {"$ne": None}
+#             }},
+#             {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
+#             {"$replaceRoot": {"newRoot": "$doc"}},
+#             {"$limit": 30}
+#         ]
 
-        movies = list(db.hybridRecommendation2.aggregate(pipeline))
+#         movies = list(db.hybridRecommendation2.aggregate(pipeline))
 
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
-            for key, value in movie.items():
-                if isinstance(value, float) and math.isnan(value):
-                    movie[key] = None
+#         for movie in movies:
+#             movie["_id"] = str(movie["_id"])
+#             for key, value in movie.items():
+#                 if isinstance(value, float) and math.isnan(value):
+#                     movie[key] = None
 
-        return JSONResponse(content=movies)
+#         return JSONResponse(content=movies)
 
-    except Exception as e:
+#     except Exception as e:
 
-        print("❌ Failed to regenerate movies:", e)
-        raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+#         print("❌ Failed to regenerate movies:", e)
+#         raise HTTPException(status_code=500, detail="Failed to regenerate movies")
 
-        print("❌ Failed to fetch movies:", e)
-        raise HTTPException(status_code=500, detail="Failed to fetch movies")
+#         print("❌ Failed to fetch movies:", e)
+#         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
 # For Play button
 # @router.post("/history")
@@ -250,33 +250,33 @@ async def add_to_liked_movies(request: Request):
 #     return movies
 
 # # For Liked Movies Page
-# @router.get("/likedMovies/{user_id}")
-# async def get_liked_movies(user_id: str, request: Request):
-#     db = request.app.state.user_db
-#     user_collection = db["streamer"]
+@router.get("/likedMovies/{user_id}")
+async def get_liked_movies(user_id: str, request: Request):
+    db = request.app.state.user_db
+    user_collection = db["streamer"]
     
-#     try:
-#         # Get the user
-#         user = user_collection.find_one({"userId": user_id})
-#         if not user:
-#             raise HTTPException(status_code=404, detail="User not found")
+    try:
+        # Get the user
+        user = user_collection.find_one({"userId": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-#         liked_ids = user.get("likedMovies", [])
+        liked_ids = user.get("likedMovies", [])
 
-#         if not liked_ids:
-#             return {"likedMovies": []}
+        if not liked_ids:
+            return {"likedMovies": []}
 
-#         # Fetch movie documents
-#         movies = list(db.hybridRecommendation2.find({"movieId": {"$in": liked_ids}}))
+        # Fetch movie documents
+        movies = list(db.hybridRecommendation2.find({"movieId": {"$in": liked_ids}}))
     
-#         # Convert ObjectId to string if needed
-#         for movie in movies:
-#             movie["_id"] = str(movie["_id"])
+        # Convert ObjectId to string if needed
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])
 
-#         return {"likedMovies": movies}
+        return {"likedMovies": movies}
 
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # # For Watch Later Page
 # # @router.get("/movies/saved/{user_id}")

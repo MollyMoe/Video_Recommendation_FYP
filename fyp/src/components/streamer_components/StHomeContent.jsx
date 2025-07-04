@@ -302,15 +302,16 @@ function StHomeContent({ userId }) {
     // LOADING SCREEN
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-lg font-semibold">Loading your recommended movies...</p>
+      <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+          <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-lg font-semibold">Loading recommended movies...</p>
         </div>
       </div>
     );
   }
 
+  
   const handleRegenerate = async () => {
   try {
      console.log("🔁 Sending POST to /api/movies/regenerate...");
@@ -358,6 +359,7 @@ function StHomeContent({ userId }) {
 };
 
 const handleLike = async (movieId) => {
+   console.log("📦 movieId being sent to backend:", movieId, typeof movieId);
   if (!movieId || !savedUser?.userId) {
     console.warn("Missing movieId or userId");
     return;
@@ -425,12 +427,17 @@ const handleLike = async (movieId) => {
           </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
           {movies.map((movie) => (
-            <div
-                key={movie._id}
-                className="relative cursor-pointer group w-[180px] mx-auto"
-                onMouseEnter={() => setHoveredMovieId(movie._id)}
-                onMouseLeave={() => setHoveredMovieId(null)}
-                onClick={() => setSelectedMovie(movie)}
+            // <div
+            //     key={movie._id}
+            //     className="relative cursor-pointer group w-[180px] mx-auto"
+            //     onMouseEnter={() => setHoveredMovieId(movie._id)}
+            //     onMouseLeave={() => setHoveredMovieId(null)}
+            //     onClick={() => setSelectedMovie(movie)}
+            //   >
+                <div
+              key={movie._id}
+              className="relative cursor-pointer group w-[180px] mx-auto"
+              onClick={() => setSelectedMovie(movie)}
               >
               <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
                 <img
@@ -503,7 +510,8 @@ const handleLike = async (movieId) => {
 
               <button
                 onClick={() => {
-                  console.log("Like button clicked for movie:", selectedMovie?.movieId);
+                  console.log("Selected Movie object:", selectedMovie);
+
                   handleLike(selectedMovie.movieId)}}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
               >
