@@ -27,8 +27,8 @@ def get_all_movies(request: Request):
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
     data = await request.json()
-    db = request.app.state.user_db  # Motor client
-    collection = db["streamer"]     # ✅ Access your "streamer" collection
+    db = request.app.state.user_db
+    collection = db["streamer"]
 
     user_id = data.get("userId")
     movie_id = data.get("movieId")
@@ -36,13 +36,13 @@ async def add_to_liked_movies(request: Request):
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    user = await collection.find_one({"userId": user_id})
+    user = collection.find_one({"userId": user_id})  # ✅ no await
     if not user:
         raise HTTPException(status_code=404, detail="Streamer not found")
 
-    await collection.update_one(
+    collection.update_one(
         {"userId": user_id},
-        {"$addToSet": {"likedMovies": movie_id}}  # ✅ Adds movieId without duplicates
+        {"$addToSet": {"likedMovies": movie_id}}  # ✅ no await
     )
 
     return {"message": "Movie added to liked list"}

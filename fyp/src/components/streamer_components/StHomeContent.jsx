@@ -93,7 +93,7 @@ function StHomeContent({ searchQuery }) {
     setMovies(filtered);
   }, [searchQuery, allFetchedMovies, preferredGenres]);
 
-  const handleLike = async (movieId) => {
+const handleLike = async (movieId) => {
   if (!movieId || !savedUser?.userId) {
     console.warn("Missing movieId or userId");
     return;
@@ -111,13 +111,19 @@ function StHomeContent({ searchQuery }) {
       }),
     });
 
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Like failed:", res.status, errorText);
+      return;
+    }
+
     const data = await res.json();
     console.log("Like response:", data);
-    // You could show toast/notification if needed
   } catch (err) {
     console.error("Error liking movie:", err);
   }
 };
+
 
   return (
     <div className="min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
@@ -202,8 +208,13 @@ function StHomeContent({ searchQuery }) {
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
-              <button onClick={() => handleLike(selectedMovie._id)}
-                  className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                onClick={() => {
+                  console.log("Like button clicked for movie:", selectedMovie?._id);
+                  handleLike(selectedMovie._id);
+                }}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+              >
                 <Heart className="w-4 h-4 mr-1 fill-black" />
                 Like
               </button>
