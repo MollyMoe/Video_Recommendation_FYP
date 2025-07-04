@@ -63,10 +63,23 @@ from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
 from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
-# from .movieDb import liked_collection
-# from .movieDb import saved_collection
-# from .movieDb import history_collection
+from pydantic import BaseModel
+from typing import Optional, List, Union
 
+class Movie(BaseModel):
+    _id: Optional[str]  # ObjectId as string
+    movieId: Union[str, int]
+    predicted_rating: Optional[float]
+    title: Optional[str]
+    genres: Union[str, List[str], None]
+    tmdb_id: Optional[Union[str, int]]
+    poster_url: Optional[str]
+    trailer_key: Optional[str] = None
+    trailer_url: Optional[str] = None
+    overview: Optional[str]
+    director: Optional[str]
+    producers: Optional[str]
+    actors: Optional[str]
 
 def to_objectid_safe(id_str):
     try:
@@ -75,15 +88,8 @@ def to_objectid_safe(id_str):
         return None
     
 
-
 router = APIRouter()
 
-# @router.get("/test")
-# def movie_router_test():
-#     return {"message": "Movie router is working"}
-
-
-#  GET /api/movies/all — fetch all movies
 @router.get("/all")
 def get_all_movies(request: Request):
     db = request.app.state.movie_db
