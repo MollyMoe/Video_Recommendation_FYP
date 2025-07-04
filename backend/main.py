@@ -49,6 +49,7 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "https://cineit-frontend.onrender.com",
+    "https://cineit.onrender.com",
 ]
 app.add_middleware(
     CORSMiddleware,
