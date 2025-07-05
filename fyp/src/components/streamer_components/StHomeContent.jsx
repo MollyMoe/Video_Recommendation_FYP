@@ -87,47 +87,52 @@ function StHomeContent() {
     fetchUserAndMovies();
   }, [username]);
 
-  const handleRegenerate = async () => {
-    try {
-      const response = await axios.post(`${API}/api/movies/regenerate`, {
-        genres: preferredGenres,
-        excludeTitles: movies.map((m) => m.title),
+const handleRegenerate = async () => {
+  try {
+    const response = await axios.post(`${API}/api/movies/regenerate`, {
+      genres: preferredGenres,
+      excludeTitles: movies.map((m) => m.title),
+    });
+
+    const regenerated = response.data
+      .filter((movie) =>
+        movie.poster_url &&
+        movie.trailer_url &&
+        typeof movie.poster_url === "string" &&
+        typeof movie.trailer_url === "string" &&
+        movie.poster_url.toLowerCase() !== "nan" &&
+        movie.trailer_url.toLowerCase() !== "nan" &&
+        movie.poster_url.trim() !== "" &&
+        movie.trailer_url.trim() !== ""
+      )
+      .map((movie) => {
+        if (typeof movie.genres === "string") {
+          movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+        }
+        const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+        movie.trailer_key = match ? match[1] : null;
+        return movie;
       });
 
-      const regenerated = response.data
-        .filter((movie) =>
-          movie.poster_url &&
-          movie.trailer_url &&
-          typeof movie.poster_url === "string" &&
-          typeof movie.trailer_url === "string" &&
-          movie.poster_url.toLowerCase() !== "nan" &&
-          movie.trailer_url.toLowerCase() !== "nan" &&
-          movie.poster_url.trim() !== "" &&
-          movie.trailer_url.trim() !== ""
-        )
-        .map((movie) => {
-          if (typeof movie.genres === "string") {
-            movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-          }
-          const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-          movie.trailer_key = match ? match[1] : null;
-          return movie;
-        });
-
-      const combined = [...regenerated, ...movies];
-      const seen = new Set();
-      const deduped = combined.filter((m) => {
-        if (seen.has(m.title)) return false;
-        seen.add(m.title);
-        return true;
-      });
-
-      setMovies(deduped);
-      localStorage.setItem(localKey, JSON.stringify(deduped));
-    } catch (err) {
-      console.error("Regenerate error:", err);
+    if (regenerated.length === 0) {
+      alert("No new recommendations found in your preferred genres.");
+      return;
     }
-  };
+
+    const combined = [...regenerated, ...movies];
+    const seen = new Set();
+    const deduped = combined.filter((m) => {
+      if (seen.has(m.title)) return false;
+      seen.add(m.title);
+      return true;
+    });
+
+    setMovies(deduped);
+    localStorage.setItem(localKey, JSON.stringify(deduped));
+  } catch (err) {
+    console.error("Regenerate error:", err);
+  }
+};
 
   if (isLoading) {
     return (
