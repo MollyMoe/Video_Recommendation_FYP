@@ -77,14 +77,12 @@ async def get_liked_movies(userId: str, request: Request):
     liked_collection = db["liked"]
     movies_collection = db["movies"]
 
-    # Get likedMovies array for this user
-    liked_doc = liked_collection.find_one({"userId": userId})
+    liked_doc = await liked_collection.find_one({"userId": userId})
     if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
     liked_ids = liked_doc["likedMovies"]
 
-    # If _id in movies collection is ObjectId, cast the movie IDs accordingly
     movies = await movies_collection.find(
         {"_id": {"$in": liked_ids}},
         {"_id": 1, "poster_url": 1, "title": 1}

@@ -15,7 +15,7 @@ import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
 import AdUserDetails from "./components/admin_components/AdUserDetails";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviePage";
+import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
 
 function App() {
 
