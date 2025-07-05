@@ -11,33 +11,29 @@ const StLikedMoviesPage = () => {
 
   // Fetch liked movies for the logged-in user
   const fetchLikedMovies = async () => {
-    try {
-      const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
-      const data = await res.json();
+  try {
+    const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+    const data = await res.json();
 
-      // Deduplicate movies by movieId or _id
-      const uniqueMovies = [];
-      const seen = new Set();
+    console.log("🎬 Liked movies response:", data); // Add this
 
-      for (const movie of data.likedMovies) {
-        const id = movie._id || movie.movieId;
-        if (!seen.has(id)) {
-          seen.add(id);
-          uniqueMovies.push(movie);
-        }
+    const uniqueMovies = [];
+    const seen = new Set();
+
+    for (const movie of data.likedMovies) {
+      const id = movie._id || movie.movieId;
+      if (!seen.has(id)) {
+        seen.add(id);
+        uniqueMovies.push(movie);
       }
-
-      setLikedMovies(uniqueMovies);
-    } catch (err) {
-      console.error("Failed to fetch liked movies:", err);
     }
-  };
 
-  useEffect(() => {
-    if (savedUser?.userId) {
-      fetchLikedMovies();
-    }
-  }, [savedUser]);
+    setLikedMovies(uniqueMovies);
+  } catch (err) {
+    console.error("❌ Failed to fetch liked movies:", err);
+  }
+};
+
 
   return (
     <div className="p-4">
