@@ -77,7 +77,7 @@ async def get_liked_movies(userId: str, request: Request):
     movies_collection = db["movies"]
 
     # Get likedMovies array for this user
-    liked_doc = await liked_collection.find_one({"userId": userId})
+    liked_doc = liked_collection.find_one({"userId": userId})
     if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
