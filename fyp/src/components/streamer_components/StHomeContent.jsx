@@ -94,6 +94,7 @@ const handleRegenerate = async () => {
       excludeTitles: movies.map((m) => m.title),
     });
 
+    // Normalize and filter valid movies
     const regenerated = response.data
       .filter((movie) =>
         movie.poster_url &&
@@ -106,20 +107,33 @@ const handleRegenerate = async () => {
         movie.trailer_url.trim() !== ""
       )
       .map((movie) => {
+        // Normalize genres
         if (typeof movie.genres === "string") {
-          movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+          movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim().toLowerCase());
+        } else if (Array.isArray(movie.genres)) {
+          movie.genres = movie.genres.map((g) => g.trim().toLowerCase());
         }
+
         const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
         movie.trailer_key = match ? match[1] : null;
         return movie;
       });
 
-    if (regenerated.length === 0) {
+    // Normalize user preferences
+    const normalizedPrefs = preferredGenres.map((g) => g.toLowerCase().trim());
+
+    // Filter only matching genres
+    const filteredRegenerated = regenerated.filter((movie) =>
+      movie.genres?.some((g) => normalizedPrefs.includes(g))
+    );
+
+    if (filteredRegenerated.length === 0) {
       alert("No new recommendations found in your preferred genres.");
       return;
     }
 
-    const combined = [...regenerated, ...movies];
+    // Combine and deduplicate
+    const combined = [...filteredRegenerated, ...movies];
     const seen = new Set();
     const deduped = combined.filter((m) => {
       if (seen.has(m.title)) return false;
