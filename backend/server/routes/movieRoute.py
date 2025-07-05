@@ -74,7 +74,7 @@ async def add_to_liked_movies(request: Request):
 def get_liked_movies(userId: str, request: Request):
     db = request.app.state.movie_db
     liked_collection = db["liked"]
-    movies_collection = db["movies"]
+    movies_collection = db["hybridRecommendation2"]
 
     liked_doc = liked_collection.find_one({"userId": userId})
     if not liked_doc or not liked_doc.get("likedMovies"):
