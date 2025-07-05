@@ -74,21 +74,30 @@ async def add_to_liked_movies(request: Request):
 def get_liked_movies(userId: str, request: Request):
     db = request.app.state.movie_db
     liked_collection = db["liked"]
-    movies_collection = db["hybridRecommendation2"]
+    movies_collection = db["movies"]
 
     liked_doc = liked_collection.find_one({"userId": userId})
     if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
-    liked_ids = liked_doc["likedMovies"]  # List of ints or strings like 287149
+    liked_ids = liked_doc["likedMovies"]  # e.g., [287149, 186015]
 
-    # Query by 'movieId' field (which should exist in your movies collection)
-    movies = list(movies_collection.find(
+    # Get all matching movies
+    movies_cursor = movies_collection.find(
         {"movieId": {"$in": liked_ids}},
         {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
-    ))
+    )
 
-    for m in movies:
-        m["_id"] = str(m["_id"])
-    return {"likedMovies": movies}
+    # Remove duplicates by movieId
+    seen = set()
+    unique_movies = []
+    for movie in movies_cursor:
+        mid = movie.get("movieId")
+        if mid not in seen:
+            seen.add(mid)
+            movie["_id"] = str(movie["_id"])
+            unique_movies.append(movie)
+
+    return {"likedMovies": unique_movies}
+
 
