@@ -121,37 +121,39 @@ const handleChange = async (e) => {
     fileInputRef.current.click();
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const savedUser = JSON.parse(localStorage.getItem("user"));
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    console.log("Using ID for update:", savedUser.userId); 
 
-  console.log("Using ID for update:", savedUser.userId); 
+    const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: formData.username,
+        genre: formData.genre,
+      }),
+    });
 
-  const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: formData.username,
-      genre: formData.genre,
-    }),
-  });
+    if (!res.ok) throw new Error("Failed to update");
 
+    const updated = await res.json();
+    setSuccessMessage("Profile updated!");
+    setShowSuccessModal(true);
 
-      if (!res.ok) throw new Error("Failed to update");
+    // ✅ Set flag to refresh homepage recommendations
+    localStorage.setItem("refreshAfterSettings", "true");
 
-      const updated = await res.json();
-      setSuccessMessage("Profile updated!");
-      setShowSuccessModal(true);
-      localStorage.setItem("user", JSON.stringify(updated));
-    } catch (err) {
-      console.error("Update error:", err);
-      alert("Could not update profile.");
-    }
-  };
-
+    // ✅ Update user data in localStorage
+    localStorage.setItem("user", JSON.stringify(updated));
+  } catch (err) {
+    console.error("Update error:", err);
+    alert("Could not update profile.");
+  }
+};
 
 
   const closeModal = () => {
@@ -441,3 +443,4 @@ const handleChange = async (e) => {
 };
 
 export default StSettingPage;
+
