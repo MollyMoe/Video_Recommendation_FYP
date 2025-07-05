@@ -1,6 +1,31 @@
 import math
-from fastapi import APIRouter, Request, HTTPException
+from typing import List
+from fastapi import APIRouter, Request, HTTPException, Body
 from fastapi.responses import JSONResponse
+from bson import ObjectId, errors
+from pydantic import BaseModel
+from typing import Optional, List, Union
+
+class Movie(BaseModel):
+    _id: Optional[str]  # ObjectId as string
+    movieId: Union[str, int]
+    predicted_rating: Optional[float]
+    title: Optional[str]
+    genres: Union[str, List[str], None]
+    tmdb_id: Optional[Union[str, int]]
+    poster_url: Optional[str]
+    trailer_key: Optional[str] = None
+    trailer_url: Optional[str] = None
+    overview: Optional[str]
+    director: Optional[str]
+    producers: Optional[str]
+    actors: Optional[str]
+
+def to_objectid_safe(id_str):
+    try:
+        return ObjectId(id_str)
+    except (errors.InvalidId, TypeError):
+        return None
 
 router = APIRouter()
 
@@ -27,39 +52,41 @@ def get_all_movies(request: Request):
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
     data = await request.json()
-    db = request.app.state.user_db
-    collection = db["streamer"]
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
 
     user_id = data.get("userId")
-    movie_id = data.get("movieId")
+    movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
 
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    user = collection.find_one({"userId": user_id})  # ✅ no await
-    if not user:
-        raise HTTPException(status_code=404, detail="Streamer not found")
-
-    collection.update_one(
+    # Use $addToSet to avoid duplicates
+    await liked_collection.update_one(
         {"userId": user_id},
-        {"$addToSet": {"likedMovies": movie_id}}  # ✅ no await
+        {"$addToSet": {"likedMovies": movie_id}},
+        upsert=True  # Create the document if it doesn't exist
     )
 
     return {"message": "Movie added to liked list"}
 
 @router.get("/likedMovies/{userId}")
 async def get_liked_movies(userId: str, request: Request):
-    user = request.app.state.user_db["streamer"].find_one({"userId": userId})
-    if not user:
-        raise HTTPException(status_code=404, detail="Streamer not found")
-    
-    liked_ids = user.get("likedMovies", [])
-    if not liked_ids:
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
+    movies_collection = db["movies"]
+
+    # Get likedMovies array for this user
+    liked_doc = await liked_collection.find_one({"userId": userId})
+    if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
-    # Fetch full movie docs
-    movies = list(request.app.state.movie_db["movies"].find(
+    liked_ids = liked_doc["likedMovies"]
+
+    # If _id in movies collection is ObjectId, cast the movie IDs accordingly
+    movies = await movies_collection.find(
         {"_id": {"$in": liked_ids}},
         {"_id": 1, "poster_url": 1, "title": 1}
-    ))
+    ).to_list(length=None)
+
     return {"likedMovies": movies}
