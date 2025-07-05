@@ -70,7 +70,7 @@ router = APIRouter()
 def get_all_movies(request: Request):
     db = request.app.state.movie_db
     try:
-        movies = list(db.hybridRecommendation2.find().limit(25000))  # use correct collection
+        movies = list(db.hybridRecommendation2.find().limit(50000))  # use correct collection
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])  # convert ObjectId to string
@@ -122,6 +122,8 @@ def get_all_movies(request: Request):
 #         print("❌ Failed to regenerate movies:", e)
 #         raise HTTPException(status_code=500, detail="Failed to regenerate movies")
 
+
+# POST /api/movies/regenerate — fetch new movies based on genre, excluding existing titles
 @router.post("/regenerate")
 def regenerate_movies(request: Request, body: dict = Body(...)):
     db = request.app.state.movie_db
@@ -129,40 +131,43 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
     exclude_titles: List[str] = body.get("excludeTitles", [])
 
     try:
-        # Step 1: Try to match based on user-preferred genres
+        #  Step 1: Filter movies by user-preferred genres
         genre_pipeline = [
-            {"$match": {
-                "genres": {"$in": genres},
-                "title": {"$nin": exclude_titles},
-                "poster_url": {"$ne": None},
-                "trailer_url": {"$ne": None}
-            }},
-            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
+            {
+                "$match": {
+                    "genres": {"$in": genres},              # Match any of the input genres
+                    "title": {"$nin": exclude_titles},      # Exclude already shown movies
+                    "poster_url": {"$ne": None},            # Poster must exist
+                    "trailer_url": {"$ne": None}            # Trailer must exist
+                }
+            },
+            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},  # Deduplicate by title
             {"$replaceRoot": {"newRoot": "$doc"}},
-            {"$limit": 30}
+            {"$limit": 30}  # Limit the number of results
         ]
 
         genre_movies = list(db.hybridRecommendation2.aggregate(genre_pipeline))
 
-        # Step 2: If not enough genre-based movies, use fallback
+        #  Step 2: If not enough genre-based movies, use fallback (any valid unseen movies)
         if len(genre_movies) < 5:
             print("⚠️ Not enough genre-based movies, using fallback")
             fallback_pipeline = [
-                {"$match": {
-                    "title": {"$nin": exclude_titles},
-                    "poster_url": {"$ne": None},
-                    "trailer_url": {"$ne": None}
-                }},
+                {
+                    "$match": {
+                        "title": {"$nin": exclude_titles},
+                        "poster_url": {"$ne": None},
+                        "trailer_url": {"$ne": None}
+                    }
+                },
                 {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
                 {"$replaceRoot": {"newRoot": "$doc"}},
                 {"$limit": 30}
             ]
-            fallback_movies = list(db.hybridRecommendation2.aggregate(fallback_pipeline))
-            movies = fallback_movies
+            movies = list(db.hybridRecommendation2.aggregate(fallback_pipeline))
         else:
             movies = genre_movies
 
-        # Clean NaNs for frontend compatibility
+        #  Clean any NaNs for frontend safety
         for movie in movies:
             movie["_id"] = str(movie["_id"])
             for key, value in movie.items():
