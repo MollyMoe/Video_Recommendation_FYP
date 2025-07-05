@@ -314,6 +314,8 @@ async def add_to_liked_movies(request: Request):
 #         print("🔥 Backend exception in likedMovies route:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
+# THIS VERSION WORKS, BUT DUPLICATED !!!!!
 @router.get("/likedMovies/{userId}")
 async def get_liked_movies(userId: str, request: Request):
     print(f"🎯 Fetching liked movies for user: {userId}")
@@ -322,31 +324,60 @@ async def get_liked_movies(userId: str, request: Request):
     movie_collection = db["hybridRecommendation2"]
 
     try:
-        liked_entries = list(liked_collection.find({"userId": userId}))
-        
-        movie_ids = []
-        for entry in liked_entries:
-            try:
-                movie_ids.append(int(entry["movieId"]))  # 💡 force conversion to int
-            except Exception as e:
-                print(f"❌ Invalid movieId in liked entry: {entry}, error: {e}")
+        # Find all liked movie records by userId
+        liked_docs = list(liked_collection.find({ "userId": userId }))
+        liked_movie_ids = [doc["movieId"] for doc in liked_docs]
 
-        movie_ids = list(set(movie_ids))  # remove duplicates
-        print("🎯 Final movieIds:", movie_ids)
+        if not liked_movie_ids:
+            print("👍 No liked movies found")
+            return { "likedMovies": [] }
 
-        if not movie_ids:
-            return {"likedMovies": []}
-
-        movies = list(movie_collection.find({"movieId": {"$in": movie_ids}}))
+        # Query the movie collection
+        movies = list(movie_collection.find({ "movieId": { "$in": liked_movie_ids } }))
         for movie in movies:
             movie["_id"] = str(movie["_id"])
 
-        print(f"✅ Returning {len(movies)} unique liked movies.")
-        return {"likedMovies": movies}
+        print(f"✅ Fetched {len(movies)} liked movies from hybridRecommendation2")
+        return { "likedMovies": movies }
 
     except Exception as e:
         print("🔥 Error in likedMovies route:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @router.get("/likedMovies/{userId}")
+# async def get_liked_movies(userId: str, request: Request):
+#     print(f"🎯 Fetching liked movies for user: {userId}")
+#     db = request.app.state.movie_db
+#     liked_collection = db["liked"]
+#     movie_collection = db["hybridRecommendation2"]
+
+#     try:
+#         liked_entries = list(liked_collection.find({"userId": userId}))
+        
+#         movie_ids = []
+#         for entry in liked_entries:
+#             try:
+#                 movie_ids.append(int(entry["movieId"]))  # 💡 force conversion to int
+#             except Exception as e:
+#                 print(f"❌ Invalid movieId in liked entry: {entry}, error: {e}")
+
+#         movie_ids = list(set(movie_ids))  # remove duplicates
+#         print("🎯 Final movieIds:", movie_ids)
+
+#         if not movie_ids:
+#             return {"likedMovies": []}
+
+#         movies = list(movie_collection.find({"movieId": {"$in": movie_ids}}))
+#         for movie in movies:
+#             movie["_id"] = str(movie["_id"])
+
+#         print(f"✅ Returning {len(movies)} unique liked movies.")
+#         return {"likedMovies": movies}
+
+#     except Exception as e:
+#         print("🔥 Error in likedMovies route:", e)
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 
