@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
 from pydantic import BaseModel
 from typing import Optional, List, Union
+from motor.motor_asyncio import AsyncIOMotorClient
 
 class Movie(BaseModel):
     _id: Optional[str]  # ObjectId as string
