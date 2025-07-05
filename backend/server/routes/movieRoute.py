@@ -87,39 +87,40 @@ def get_all_movies(request: Request):
 
 # POST /api/movies/regenerate — fetch new movies excluding current ones
 @router.post("/regenerate")
-def regenerate_movies(
-    request: Request,
-    body: dict = Body(...)
-):
+def regenerate_movies(request: Request, body: dict = Body(...)):
     db = request.app.state.movie_db
     genres: List[str] = body.get("genres", [])
     exclude_titles: List[str] = body.get("excludeTitles", [])
 
     try:
-        pipeline = [
-            {"$match": {
-                "genres": {"$in": genres},
-                "title": {"$nin": exclude_titles},
-                "poster_url": {"$ne": None},
-                "trailer_url": {"$ne": None}
-            }},
-            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
-            {"$replaceRoot": {"newRoot": "$doc"}},
-            {"$limit": 30}
-        ]
+        query = {
+            "poster_url": {"$ne": None},
+            "trailer_url": {"$ne": None},
+            "title": {"$nin": exclude_titles}
+        }
 
-        movies = list(db.hybridRecommendation2.aggregate(pipeline))
+        if genres:
+            query["genres"] = {"$in": genres}
 
+        movies = list(
+            db.hybridRecommendation2.find(query).limit(1000)  # pull up to 1000, or adjust as needed
+        )
+
+        # De-duplicate by title
+        seen = set()
+        unique_movies = []
         for movie in movies:
+            if movie.get("title") in seen:
+                continue
+            seen.add(movie.get("title"))
             movie["_id"] = str(movie["_id"])
             for key, value in movie.items():
                 if isinstance(value, float) and math.isnan(value):
                     movie[key] = None
+            unique_movies.append(movie)
 
-        return JSONResponse(content=movies)
+        return JSONResponse(content=unique_movies)
 
     except Exception as e:
         print("❌ Failed to regenerate movies:", e)
         raise HTTPException(status_code=500, detail="Failed to regenerate movies")
-
-
