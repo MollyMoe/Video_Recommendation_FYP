@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
@@ -10,21 +9,35 @@ const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
+  // Fetch liked movies for the logged-in user
   const fetchLikedMovies = async () => {
-    if (!savedUser?.userId) return;
     try {
-      const { data } = await axios.get(
-        `${API}/api/movies/likedMovies/${savedUser.userId}`
-      );
-      setLikedMovies(data.likedMovies || []);
+      const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+      const data = await res.json();
+
+      // Deduplicate movies by movieId or _id
+      const uniqueMovies = [];
+      const seen = new Set();
+
+      for (const movie of data.likedMovies) {
+        const id = movie._id || movie.movieId;
+        if (!seen.has(id)) {
+          seen.add(id);
+          uniqueMovies.push(movie);
+        }
+      }
+
+      setLikedMovies(uniqueMovies);
     } catch (err) {
       console.error("Failed to fetch liked movies:", err);
     }
   };
 
   useEffect(() => {
-    fetchLikedMovies();
-  }, [savedUser?.userId]);
+    if (savedUser?.userId) {
+      fetchLikedMovies();
+    }
+  }, [savedUser]);
 
   return (
     <div className="p-4">
@@ -34,18 +47,18 @@ const StLikedMoviesPage = () => {
       </div>
       <StSideBar />
 
-      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {likedMovies.length === 0 ? (
-            <p className="text-center mt-10">No liked movies found.</p>
+            <p className="text-center mt-10 text-white">No liked movies found.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
               {likedMovies.map((movie) => (
-                <div key={movie._id} className="bg-white rounded-lg shadow p-2">
+                <div key={movie._id || movie.movieId} className="bg-white rounded-lg shadow p-2">
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
-                    className="rounded mb-2"
+                    className="rounded mb-2 w-full h-60 object-cover"
                   />
                   <h3 className="text-sm font-semibold">{movie.title}</h3>
                 </div>
