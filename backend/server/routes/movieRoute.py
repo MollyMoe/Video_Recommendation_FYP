@@ -81,11 +81,15 @@ async def get_liked_movies(userId: str, request: Request):
     if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
-    liked_ids = liked_doc["likedMovies"]
+    liked_ids = [to_objectid_safe(mid) for mid in liked_doc["likedMovies"]]
 
     movies = await movies_collection.find(
         {"_id": {"$in": liked_ids}},
         {"_id": 1, "poster_url": 1, "title": 1}
     ).to_list(length=None)
+
+    # Convert ObjectId to string before sending response
+    for movie in movies:
+        movie["_id"] = str(movie["_id"])
 
     return {"likedMovies": movies}
