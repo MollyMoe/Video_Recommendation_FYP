@@ -73,23 +73,23 @@ async def add_to_liked_movies(request: Request):
 
 @router.get("/likedMovies/{userId}")
 async def get_liked_movies(userId: str, request: Request):
-    db = request.app.state.movie_db
+    db = request.app.state.movie_db           # Motor database
     liked_collection = db["liked"]
     movies_collection = db["movies"]
 
+    # await find_one
     liked_doc = await liked_collection.find_one({"userId": userId})
     if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
     liked_ids = [to_objectid_safe(mid) for mid in liked_doc["likedMovies"]]
-
+    
+    # await .to_list()
     movies = await movies_collection.find(
         {"_id": {"$in": liked_ids}},
         {"_id": 1, "poster_url": 1, "title": 1}
     ).to_list(length=None)
 
-    # Convert ObjectId to string before sending response
-    for movie in movies:
-        movie["_id"] = str(movie["_id"])
-
+    for m in movies:
+        m["_id"] = str(m["_id"])
     return {"likedMovies": movies}
