@@ -86,6 +86,42 @@ def get_all_movies(request: Request):
 
 
 # POST /api/movies/regenerate — fetch new movies excluding current ones
+# @router.post("/regenerate")
+# def regenerate_movies(request: Request, body: dict = Body(...)):
+#     db = request.app.state.movie_db
+#     genres: List[str] = body.get("genres", [])
+#     exclude_titles: List[str] = body.get("excludeTitles", [])
+
+#     try:
+#         query = {
+#             "genres": {"$in": genres},
+#             "title": {"$nin": exclude_titles},
+#             "poster_url": {"$ne": None},
+#             "trailer_url": {"$ne": None}
+#         }
+
+#         seen = set()
+#         unique_movies = []
+
+#         movies = list(db.hybridRecommendation2.find(query))
+
+#         for movie in movies:
+#             title = movie.get("title")
+#             if title in seen:
+#                 continue
+#             seen.add(title)
+#             movie["_id"] = str(movie["_id"])
+#             for key, value in movie.items():
+#                 if isinstance(value, float) and math.isnan(value):
+#                     movie[key] = None
+#             unique_movies.append(movie)
+
+#         return JSONResponse(content=unique_movies)
+
+#     except Exception as e:
+#         print("❌ Failed to regenerate movies:", e)
+#         raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+
 @router.post("/regenerate")
 def regenerate_movies(request: Request, body: dict = Body(...)):
     db = request.app.state.movie_db
@@ -93,28 +129,43 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
     exclude_titles: List[str] = body.get("excludeTitles", [])
 
     try:
-        query = {
-            "genres": {"$in": genres},
+        # Normalize genres
+        normalized_genres = [g.lower().strip() for g in genres]
+
+        # Initial query to exclude unwanted titles and ensure valid poster/trailer
+        base_query = {
             "title": {"$nin": exclude_titles},
             "poster_url": {"$ne": None},
-            "trailer_url": {"$ne": None}
+            "trailer_url": {"$ne": None},
+            "genres": {"$exists": True}
         }
+
+        # Fetch all potential matches
+        cursor = db.hybridRecommendation2.find(base_query)
 
         seen = set()
         unique_movies = []
 
-        movies = list(db.hybridRecommendation2.find(query))
+        for movie in cursor:
+            raw_genres = movie.get("genres", [])
+            if isinstance(raw_genres, str):
+                raw_genres = [g.strip().lower() for g in raw_genres.split(",")]
+            elif isinstance(raw_genres, list):
+                raw_genres = [g.strip().lower() for g in raw_genres]
+            else:
+                raw_genres = []
 
-        for movie in movies:
-            title = movie.get("title")
-            if title in seen:
-                continue
-            seen.add(title)
-            movie["_id"] = str(movie["_id"])
-            for key, value in movie.items():
-                if isinstance(value, float) and math.isnan(value):
-                    movie[key] = None
-            unique_movies.append(movie)
+            if any(g in normalized_genres for g in raw_genres):
+                title = movie.get("title")
+                if not title or title in seen:
+                    continue
+                seen.add(title)
+
+                movie["_id"] = str(movie["_id"])
+                for key, value in movie.items():
+                    if isinstance(value, float) and math.isnan(value):
+                        movie[key] = None
+                unique_movies.append(movie)
 
         return JSONResponse(content=unique_movies)
 
