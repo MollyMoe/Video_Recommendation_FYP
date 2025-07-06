@@ -103,7 +103,7 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
         seen = set()
         unique_movies = []
 
-        movies = list(db.hybridRecommendation2.find(query).limit(30))
+        movies = list(db.hybridRecommendation2.find(query))
 
         for movie in movies:
             title = movie.get("title")

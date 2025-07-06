@@ -89,13 +89,16 @@ function StHomeContent() {
 
 const handleRegenerate = async () => {
   try {
+    console.log("📤 Sending genres:", preferredGenres);
+    console.log("📤 Excluding titles:", movies.map((m) => m.title));
+
     const response = await axios.post(`${API}/api/movies/regenerate`, {
       genres: preferredGenres,
       excludeTitles: movies.map((m) => m.title),
     });
 
+    console.log("✅ Movies returned from backend:", response.data);
 
-    // Normalize and filter valid movies
     const regenerated = response.data
       .filter((movie) =>
         movie.poster_url &&
@@ -108,32 +111,35 @@ const handleRegenerate = async () => {
         movie.trailer_url.trim() !== ""
       )
       .map((movie) => {
-        // Normalize genres
         if (typeof movie.genres === "string") {
           movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim().toLowerCase());
         } else if (Array.isArray(movie.genres)) {
           movie.genres = movie.genres.map((g) => g.trim().toLowerCase());
+        } else {
+          movie.genres = []; // fallback if genre is undefined or malformed
         }
 
         const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
         movie.trailer_key = match ? match[1] : null;
+
+        console.log("🎬 Movie genres received (normalized):", movie.genres);
         return movie;
       });
 
-    // Normalize user preferences
     const normalizedPrefs = preferredGenres.map((g) => g.toLowerCase().trim());
+    console.log("🔍 Normalized user preferred genres:", normalizedPrefs);
 
-    // Filter only matching genres
     const filteredRegenerated = regenerated.filter((movie) =>
       movie.genres?.some((g) => normalizedPrefs.includes(g))
     );
+
+    console.log("🎯 Filtered movies by genre match:", filteredRegenerated);
 
     if (filteredRegenerated.length === 0) {
       alert("No new recommendations found in your preferred genres.");
       return;
     }
 
-    // Combine and deduplicate
     const combined = [...filteredRegenerated, ...movies];
     const seen = new Set();
     const deduped = combined.filter((m) => {
@@ -145,7 +151,7 @@ const handleRegenerate = async () => {
     setMovies(deduped);
     localStorage.setItem(localKey, JSON.stringify(deduped));
   } catch (err) {
-    console.error("Regenerate error:", err);
+    console.error("❌ Regenerate error:", err);
   }
 };
 
