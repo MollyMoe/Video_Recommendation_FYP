@@ -94,6 +94,7 @@ const handleRegenerate = async () => {
       excludeTitles: movies.map((m) => m.title),
     });
 
+
     // Normalize and filter valid movies
     const regenerated = response.data
       .filter((movie) =>

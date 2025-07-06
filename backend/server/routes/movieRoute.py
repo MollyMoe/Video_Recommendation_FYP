@@ -93,30 +93,16 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
     exclude_titles: List[str] = body.get("excludeTitles", [])
 
     try:
-        # Normalize genres for matching
-        normalized_genres = [g.lower().strip() for g in genres]
-
         query = {
+            "genres": {"$in": genres},
+            "title": {"$nin": exclude_titles},
             "poster_url": {"$ne": None},
-            "trailer_url": {"$ne": None},
-            "title": {"$nin": exclude_titles}
+            "trailer_url": {"$ne": None}
         }
 
-        if normalized_genres:
-            query["genres"] = {"$in": normalized_genres}
+        # Make sure you are querying from the correct collection
+        movies = list(db.hybridRecommendation2.find(query).limit(30))
 
-        print("🔍 Genres filter:", normalized_genres)
-        print("🔍 Query used:", query)
-
-        movies = list(db.hybridRecommendation2.find(query).limit(1000))
-        print("✅ Movies found:", len(movies))
-
-        # If no matching movies found, return empty list
-        if not movies:
-            return JSONResponse(content=[], status_code=200)
-
-        seen = set()
-        unique_movies = []
         for movie in movies:
             title = movie.get("title")
             if title in seen:
