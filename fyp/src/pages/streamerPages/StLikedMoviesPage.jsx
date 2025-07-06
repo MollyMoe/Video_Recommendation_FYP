@@ -11,29 +11,35 @@ const StLikedMoviesPage = () => {
 
   // Fetch liked movies for the logged-in user
   const fetchLikedMovies = async () => {
-  try {
-    const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
-    const data = await res.json();
+    try {
+      const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+      const data = await res.json();
 
-    console.log("🎬 Liked movies response:", data); // Add this
+      console.log("🎬 Liked movies response:", data);
 
-    const uniqueMovies = [];
-    const seen = new Set();
+      // Remove duplicates by _id or movieId
+      const uniqueMovies = [];
+      const seen = new Set();
 
-    for (const movie of data.likedMovies) {
-      const id = movie._id || movie.movieId;
-      if (!seen.has(id)) {
-        seen.add(id);
-        uniqueMovies.push(movie);
+      for (const movie of data.likedMovies) {
+        const id = movie._id || movie.movieId;
+        if (!seen.has(id)) {
+          seen.add(id);
+          uniqueMovies.push(movie);
+        }
       }
+
+      setLikedMovies(uniqueMovies);
+    } catch (err) {
+      console.error("❌ Failed to fetch liked movies:", err);
     }
+  };
 
-    setLikedMovies(uniqueMovies);
-  } catch (err) {
-    console.error("❌ Failed to fetch liked movies:", err);
-  }
-};
-
+  useEffect(() => {
+    if (savedUser?.userId) {
+      fetchLikedMovies();
+    }
+  }, [savedUser]);
 
   return (
     <div className="p-4">
@@ -42,7 +48,6 @@ const StLikedMoviesPage = () => {
         <StSearchBar />
       </div>
       <StSideBar />
-
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {likedMovies.length === 0 ? (
