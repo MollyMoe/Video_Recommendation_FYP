@@ -21,18 +21,21 @@ function StHomeContent({ searchQuery }) {
       setIsLoading(true);
       try {
         // 1. Fetch user genres
-        const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+        const userRes = await axios.get(
+          `${API}/api/auth/users/streamer/${savedUser.userId}`
+        );
         const userGenres = userRes.data.genres || [];
         setPreferredGenres(userGenres);
 
         // 2. Fetch all movies (no filtering here)
         const movieRes = await axios.get(`${API}/api/movies/all`);
         const moviesRaw = movieRes.data
-          .filter(movie => movie.poster_url && movie.trailer_url)
-          .map(movie => {
-            movie.genres = typeof movie.genres === "string"
-              ? movie.genres.split(/[,|]/).map(g => g.trim())
-              : movie.genres;
+          .filter((movie) => movie.poster_url && movie.trailer_url)
+          .map((movie) => {
+            movie.genres =
+              typeof movie.genres === "string"
+                ? movie.genres.split(/[,|]/).map((g) => g.trim())
+                : movie.genres;
 
             try {
               const url = new URL(movie.trailer_url);
@@ -57,8 +60,8 @@ function StHomeContent({ searchQuery }) {
         setAllFetchedMovies(unique);
 
         // Filter for initial display by user preferred genres only
-        const filteredByGenres = unique.filter(movie =>
-          movie.genres?.some(genre => userGenres.includes(genre))
+        const filteredByGenres = unique.filter((movie) =>
+          movie.genres?.some((genre) => userGenres.includes(genre))
         );
 
         setMovies(filteredByGenres);
@@ -75,8 +78,8 @@ function StHomeContent({ searchQuery }) {
   useEffect(() => {
     if (!searchQuery?.trim()) {
       // When search is empty, show movies filtered by user preferred genres
-      const filteredByGenres = allFetchedMovies.filter(movie =>
-        movie.genres?.some(genre => preferredGenres.includes(genre))
+      const filteredByGenres = allFetchedMovies.filter((movie) =>
+        movie.genres?.some((genre) => preferredGenres.includes(genre))
       );
       setMovies(filteredByGenres);
       return;
@@ -87,43 +90,43 @@ function StHomeContent({ searchQuery }) {
       return (
         movie.title?.toLowerCase().includes(lowerQuery) ||
         movie.director?.toLowerCase().includes(lowerQuery) ||
-        (Array.isArray(movie.genres) && movie.genres.some(g => g.toLowerCase().includes(lowerQuery)))
+        (Array.isArray(movie.genres) &&
+          movie.genres.some((g) => g.toLowerCase().includes(lowerQuery)))
       );
     });
     setMovies(filtered);
   }, [searchQuery, allFetchedMovies, preferredGenres]);
 
-const handleLike = async (movieId) => {
-  if (!movieId || !savedUser?.userId) {
-    console.warn("Missing movieId or userId");
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/api/movies/like`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: savedUser.userId,
-        movieId: movieId,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Like failed:", res.status, errorText);
+  const handleLike = async (movieId) => {
+    if (!movieId || !savedUser?.userId) {
+      console.warn("Missing movieId or userId");
       return;
     }
 
-    const data = await res.json();
-    console.log("Like response:", data);
-  } catch (err) {
-    console.error("Error liking movie:", err);
-  }
-};
+    try {
+      const res = await fetch(`${API}/api/movies/like`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: savedUser.userId,
+          movieId: movieId,
+        }),
+      });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Like failed:", res.status, errorText);
+        return;
+      }
+
+      const data = await res.json();
+      console.log("Like response:", data);
+    } catch (err) {
+      console.error("Error liking movie:", err);
+    }
+  };
 
   return (
     <div className="min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
@@ -191,12 +194,15 @@ const handleLike = async (movieId) => {
                 className="rounded-lg w-40 h-auto object-cover"
               />
               <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
+                <h2 className="text-2xl font-semibold">
+                  {selectedMovie?.title}
+                </h2>
                 <p className="text-sm text-gray-700">
                   {selectedMovie?.genres?.join(", ")}
                 </p>
                 <p className="text-sm text-gray-700">
-                  Predicted Rating: ⭐️ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
+                  Predicted Rating: ⭐️{" "}
+                  {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                 </p>
                 <p className="text-sm text-gray-700">
                   Director: {selectedMovie?.director || "N/A"}
@@ -204,13 +210,19 @@ const handleLike = async (movieId) => {
               </div>
             </div>
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                onClick={handlePlay}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+              >
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
               <button
                 onClick={() => {
-                  console.log("Like button clicked for movie:", selectedMovie?.movieId);
+                  console.log(
+                    "Like button clicked for movie:",
+                    selectedMovie?.movieId
+                  );
                   handleLike(selectedMovie.movieId);
                 }}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
