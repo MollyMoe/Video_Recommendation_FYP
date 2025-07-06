@@ -100,7 +100,9 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
             "trailer_url": {"$ne": None}
         }
 
-        # Make sure you are querying from the correct collection
+        seen = set()
+        unique_movies = []
+
         movies = list(db.hybridRecommendation2.find(query).limit(30))
 
         for movie in movies:
