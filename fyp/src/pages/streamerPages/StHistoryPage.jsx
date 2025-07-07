@@ -7,16 +7,14 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const StHistoryPage = () => {
   const [historyMovies, setHistoryMovies] = useState([]);
-  const savedUser = JSON.parse(localStorage.getItem("user"));
 
-  const fetchHistoryMovies = async () => {
+  const fetchHistoryMovies = async (userId) => {
     try {
-      const res = await fetch(`${API}/api/movies/historyMovies/${savedUser.userId}`);
+      const res = await fetch(`${API}/api/movies/historyMovies/${userId}`);
       const data = await res.json();
 
       console.log("📽 History movies response:", data);
 
-      // Remove duplicates by _id or movieId
       const uniqueMovies = [];
       const seen = new Set();
 
@@ -35,10 +33,11 @@ const StHistoryPage = () => {
   };
 
   useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
-      fetchHistoryMovies();
+      fetchHistoryMovies(savedUser.userId);
     }
-  }, [savedUser]);
+  }, []);
 
   return (
     <div className="p-4">

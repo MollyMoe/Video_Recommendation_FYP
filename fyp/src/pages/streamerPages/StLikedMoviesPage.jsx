@@ -7,12 +7,10 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
-  const savedUser = JSON.parse(localStorage.getItem("user"));
 
-  // Fetch liked movies for the logged-in user
-  const fetchLikedMovies = async () => {
+  const fetchLikedMovies = async (userId) => {
     try {
-      const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+      const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
       const data = await res.json();
 
       console.log("🎬 Liked movies response:", data);
@@ -21,7 +19,7 @@ const StLikedMoviesPage = () => {
       const uniqueMovies = [];
       const seen = new Set();
 
-      for (const movie of data.likedMovies) {
+      for (const movie of data.likedMovies || []) {
         const id = movie._id || movie.movieId;
         if (!seen.has(id)) {
           seen.add(id);
@@ -36,10 +34,11 @@ const StLikedMoviesPage = () => {
   };
 
   useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
-      fetchLikedMovies();
+      fetchLikedMovies(savedUser.userId);
     }
-  }, [savedUser]);
+  }, []);
 
   return (
     <div className="p-4">
