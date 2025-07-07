@@ -12,6 +12,10 @@ const StreamerSchema = new mongoose.Schema({
   genres: [String],
   resetToken: String,
   tokenExpiry: Date,
+  profileImage: { type: String, default: "/uploads/profile.png" }
+
+
+
 });
 
 

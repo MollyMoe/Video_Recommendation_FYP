@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
@@ -8,6 +9,7 @@ const AdMovieContent = ({ searchQuery }) => {
   const [movies, setMovies] = useState([]);
   const [allFetchedMovies, setAllFetchedMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
 
   // 🧠 Fetch movies on load
   useEffect(() => {
@@ -65,8 +67,9 @@ const AdMovieContent = ({ searchQuery }) => {
   // 🗑️ Delete logic
   const handleDelete = (id) => {
     setMovies(movies.filter((movie) => movie._id !== id));
+
     setAllFetchedMovies(allFetchedMovies.filter((movie) => movie._id !== id));
-  };
+
 
   const openConfirm = (id) => {
     setSelectedMovieId(id);
@@ -87,6 +90,7 @@ const AdMovieContent = ({ searchQuery }) => {
   };
 
   // ⏳ Loading state
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-800 text-white">
@@ -100,6 +104,7 @@ const AdMovieContent = ({ searchQuery }) => {
 
   return (
     <div className="sm:ml-40 px-4 pt-30 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+
       {/* 🎬 Movie Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {movies.map((movie) => (
@@ -124,6 +129,7 @@ const AdMovieContent = ({ searchQuery }) => {
           </div>
         ))}
       </div>
+
 
       {/* 🧾 Delete Confirmation Modal */}
       {isConfirmOpen && (
@@ -157,6 +163,7 @@ const AdMovieContent = ({ searchQuery }) => {
       )}
     </div>
   );
+};
 };
 
 export default AdMovieContent;

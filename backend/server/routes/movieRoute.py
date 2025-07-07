@@ -1,3 +1,4 @@
+
 import math
 from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
@@ -33,21 +34,23 @@ router = APIRouter()
 def get_all_movies(request: Request):
     db = request.app.state.movie_db
     try:
+
         # Fetch from your actual collection
         movies = list(db.hybridRecommendation2.find().limit(25000))
 
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
 
-            # Replace all NaN values with None
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])  # convert ObjectId to string
             for key, value in movie.items():
                 if isinstance(value, float) and math.isnan(value):
-                    movie[key] = None
+                    movie[key] = None  # replace NaN with None
 
         return JSONResponse(content=movies)
+
     except Exception as e:
         print("❌ Failed to fetch movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
+
 
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
@@ -99,5 +102,8 @@ def get_liked_movies(userId: str, request: Request):
             unique_movies.append(movie)
 
     return {"likedMovies": unique_movies}
+
+
+
 
 
