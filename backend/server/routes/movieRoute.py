@@ -101,3 +101,58 @@ def get_liked_movies(userId: str, request: Request):
     return {"likedMovies": unique_movies}
 
 
+@router.post("/history")
+async def add_to_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    # Use $addToSet to avoid duplicate entries in history
+    await history_collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"historyMovies": movie_id}},
+        upsert=True
+    )
+
+    return {"message": "Movie added to history"}
+
+
+@router.get("/historyMovies/{userId}")
+def get_history_movies(userId: str, request: Request):
+    try:
+        db = request.app.state.movie_db
+        history_collection = db["history"]
+        movies_collection = db["hybridRecommendation2"]
+
+        history_doc = history_collection.find_one({"userId": userId})
+        if not history_doc or not history_doc.get("historyMovies"):
+            return {"historyMovies": []}
+
+        history_ids = history_doc["historyMovies"]
+
+        movies_cursor = movies_collection.find(
+            {"movieId": {"$in": history_ids}},
+            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
+        )
+
+        # Remove duplicates by movieId
+        seen = set()
+        unique_movies = []
+        for movie in movies_cursor:
+            mid = movie.get("movieId")
+            if mid not in seen:
+                seen.add(mid)
+                movie["_id"] = str(movie["_id"])
+                unique_movies.append(movie)
+
+        return {"historyMovies": unique_movies}
+
+    except Exception as e:
+        print("❌ Error fetching history movies:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch history movies")

@@ -125,6 +125,40 @@ const handleLike = async (movieId) => {
 };
 
 
+const handleHistory = async (movieId) => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!movieId || !savedUser?.userId) {
+    console.warn("❌ Missing movieId or userId:", movieId, savedUser?.userId);
+    return;
+  }
+
+  try {
+    console.log("📤 Sending history (play) request for:", movieId);
+    const res = await fetch(`${API}/api/movies/history`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: savedUser.userId,
+        movieId: movieId,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("❌ History POST failed:", res.status, data);
+      return;
+    }
+
+    console.log("✅ History saved:", data);
+  } catch (err) {
+    console.error("❌ Error saving history:", err);
+  }
+};
+
+
   return (
     <div className="min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
@@ -191,12 +225,15 @@ const handleLike = async (movieId) => {
                 className="rounded-lg w-40 h-auto object-cover"
               />
               <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
+                <h2 className="text-2xl font-semibold">
+                  {selectedMovie?.title}
+                </h2>
                 <p className="text-sm text-gray-700">
                   {selectedMovie?.genres?.join(", ")}
                 </p>
                 <p className="text-sm text-gray-700">
-                  Predicted Rating: ⭐️ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
+                  Predicted Rating: ⭐️{" "}
+                  {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                 </p>
                 <p className="text-sm text-gray-700">
                   Director: {selectedMovie?.director || "N/A"}
@@ -204,13 +241,28 @@ const handleLike = async (movieId) => {
               </div>
             </div>
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+                onClick={() => {
+                  console.log("▶️ Play clicked for:", selectedMovie?.movieId);
+                  handleHistory(selectedMovie?.movieId);
+
+                  // Optional: open trailer
+                  if (selectedMovie?.trailer_url) {
+                    window.open(selectedMovie.trailer_url, "_blank");
+                  }
+                }}
+              >
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
+
               <button
                 onClick={() => {
-                  console.log("Like button clicked for movie:", selectedMovie?.movieId);
+                  console.log(
+                    "Like button clicked for movie:",
+                    selectedMovie?.movieId
+                  );
                   handleLike(selectedMovie.movieId);
                 }}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
