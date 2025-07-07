@@ -15,8 +15,6 @@ const StLikedMoviesPage = () => {
       const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
       const data = await res.json();
 
-      console.log("🎬 Liked movies response:", data);
-
       // Remove duplicates by _id or movieId
       const uniqueMovies = [];
       const seen = new Set();
