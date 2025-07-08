@@ -16,6 +16,7 @@ import AdUserDetails from "./components/admin_components/AdUserDetails";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
+import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 
 function App() {
 
@@ -36,6 +37,7 @@ function App() {
             <Route path="history" element={<StHistoryPage />} />
             <Route path="setting" element={<StSettingPage />} />
             <Route path="like" element={<StLikedMoviesPage />} />
+            <Route path="watchLater" element={<StWatchLaterPage />} />
           </Route>
 
           {/* Admin Layout */}

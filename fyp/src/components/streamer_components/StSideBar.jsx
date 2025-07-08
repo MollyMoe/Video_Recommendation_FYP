@@ -45,12 +45,11 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Watch Later
-            </a>
+            <StSidebarButton
+              to="/home/watchLater"
+              label="Watch Later"
+              current={location.pathname === "/home/watchLater"}
+            />
           </li>
             <StSidebarButton
               to="/home/like"
