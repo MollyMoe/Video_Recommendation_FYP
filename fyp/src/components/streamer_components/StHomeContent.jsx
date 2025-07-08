@@ -167,7 +167,7 @@ const handleWatchLater = async (movieId) => {
   }
 
   try {
-    const res = await fetch(`${API}/api/movies/watchlater`, {
+    const res = await fetch(`${API}/api/movies/watchLater`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -180,14 +180,14 @@ const handleWatchLater = async (movieId) => {
 
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("Like failed:", res.status, errorText);
+      console.error("Save failed:", res.status, errorText);
       return;
     }
 
     const data = await res.json();
-    console.log("Like response:", data);
+    console.log("Save response:", data);
   } catch (err) {
-    console.error("Error liking movie:", err);
+    console.error("Save  movie:", err);
   }
 };
 
