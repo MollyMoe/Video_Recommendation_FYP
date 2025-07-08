@@ -79,7 +79,6 @@ import math
 from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
 from fastapi.responses import JSONResponse
-from bson import ObjectId
 
 router = APIRouter()
 
@@ -164,3 +163,17 @@ async def store_recommendations(
     except Exception as e:
         print("❌ Error saving recommendations:", e)
         return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
+
+# when new data is regenrated it will stay that way 
+@router.get("/recommendations/{user_id}")
+def get_user_recommendations(user_id: str, request: Request):
+    db = request.app.state.movie_db
+    try:
+        record = db.recommended.find_one({ "userId": user_id })
+        if not record:
+            return JSONResponse(content=[])  
+
+        return JSONResponse(content=record.get("recommended", []))
+    except Exception as e:
+        print("❌ Error fetching recommendations:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch recommendations")

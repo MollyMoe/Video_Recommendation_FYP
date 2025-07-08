@@ -268,73 +268,71 @@ function StHomeContent({ userId }) {
 
   useEffect(() => {
     const fetchUserAndMovies = async () => {
-      if (!username) return;
+      if (!username || !savedUser?.userId) return;
       setIsLoading(true);
       try {
         const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
         const userGenres = userRes.data.genres || [];
-        console.log("Genres fetched for user:", userGenres);
         setPreferredGenres(userGenres);
 
-        const movieRes = await axios.get(`${API}/api/movies/all`);
-        const validMovies = movieRes.data
-          .filter(
-            (movie) =>
-              movie.poster_url &&
-              movie.trailer_url &&
-              typeof movie.poster_url === "string" &&
-              typeof movie.trailer_url === "string" &&
-              movie.poster_url.toLowerCase() !== "nan" &&
-              movie.trailer_url.toLowerCase() !== "nan" &&
-              movie.poster_url.trim() !== "" &&
-              movie.trailer_url.trim() !== ""
-          )
-          .map((movie) => {
-            if (typeof movie.genres === "string") {
-              movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+        // Step 1: Try to load from recommendations
+        const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+        let fetchedMovies = recRes.data;
+
+        if (!fetchedMovies || fetchedMovies.length === 0) {
+          // Step 2: If no saved recommendations, fetch all and filter
+          const allRes = await axios.get(`${API}/api/movies/all`);
+          const validMovies = allRes.data
+            .filter(
+              (movie) =>
+                movie.poster_url &&
+                movie.trailer_url &&
+                typeof movie.poster_url === "string" &&
+                typeof movie.trailer_url === "string" &&
+                movie.poster_url.toLowerCase() !== "nan" &&
+                movie.trailer_url.toLowerCase() !== "nan" &&
+                movie.poster_url.trim() !== "" &&
+                movie.trailer_url.trim() !== ""
+            )
+            .map((movie) => {
+              if (typeof movie.genres === "string") {
+                movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+              }
+              const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+              movie.trailer_key = match ? match[1] : null;
+              return movie;
+            });
+
+          const unique = [];
+          const seen = new Set();
+          for (const movie of validMovies) {
+            if (!seen.has(movie.title)) {
+              seen.add(movie.title);
+              unique.push(movie);
             }
-
-            const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-            movie.trailer_key = match ? match[1] : null;
-
-            return movie;
-          });
-
-        const uniqueMovies = [];
-        const seenTitles = new Set();
-
-        for (const movie of validMovies) {
-          if (!seenTitles.has(movie.title)) {
-            seenTitles.add(movie.title);
-            uniqueMovies.push(movie);
           }
-        }
 
-        //added for collection
-         let finalList = uniqueMovies;
-        if (userGenres.length > 0) {
           const normalizedPreferred = userGenres.map((g) => g.toLowerCase().trim());
-          finalList = uniqueMovies.filter((movie) =>
-            Array.isArray(movie.genres) &&
-            movie.genres.some((genre) => {
-              const g = genre.toLowerCase().trim();
-              return normalizedPreferred.some((pref) => g.includes(pref));
-            })
+          fetchedMovies = unique.filter(
+            (movie) =>
+              Array.isArray(movie.genres) &&
+              movie.genres.some((genre) =>
+                normalizedPreferred.some((pref) => genre.toLowerCase().trim().includes(pref))
+              )
           );
+
+          // Store filtered list
+          await axios.post(`${API}/api/movies/store-recommendations`, {
+            userId: savedUser.userId,
+            movies: fetchedMovies,
+          });
         }
 
-        setMovies(finalList);
-
-         // Store to database
-        await axios.post(`${API}/api/movies/store-recommendations`, {
-          userId: savedUser.userId,
-          movies: finalList,
-        });
-
+        setMovies(fetchedMovies);
       } catch (err) {
-        console.error("Error fetching user or movies:", err);
-        setPreferredGenres([]);
+        console.error("Error loading movies:", err);
         setMovies([]);
+        setPreferredGenres([]);
       } finally {
         setIsLoading(false);
       }
@@ -512,6 +510,7 @@ function StHomeContent({ userId }) {
         </div>
       </Dialog>
     </div>
+
   );
 }
 
