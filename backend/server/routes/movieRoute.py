@@ -79,6 +79,7 @@ import math
 from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
 from fastapi.responses import JSONResponse
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -138,3 +139,28 @@ def regenerate_movies(
         print("❌ Failed to regenerate movies:", e)
         
     raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+
+
+# store recommendations in a collection
+@router.post("/store-recommendations")
+async def store_recommendations(
+    request: Request,
+    payload: dict = Body(...)
+):
+    db = request.app.state.movie_db
+    user_id = payload.get("userId")
+    movies = payload.get("movies", [])
+
+    if not user_id or not isinstance(movies, list):
+        return JSONResponse(status_code=400, content={"error": "Invalid request"})
+
+    try:
+        db.recommended.update_one(
+            { "userId": user_id },
+            { "$set": { "recommended": movies } },
+            upsert=True
+        )
+        return { "message": "Recommendations saved to 'recommended' collection." }
+    except Exception as e:
+        print("❌ Error saving recommendations:", e)
+        return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
