@@ -197,7 +197,7 @@ const handleLike = async (movieId) => {
 
 
   
-  return (
+  {/* return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-end mb-4">
@@ -231,7 +231,7 @@ const handleLike = async (movieId) => {
               </div>
 
               {/* Hover Preview */}
-              {movie.trailer_key && (
+              {/* {movie.trailer_key && (
                 <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
                   <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
                     <iframe
@@ -254,8 +254,8 @@ const handleLike = async (movieId) => {
             </div>
           ))}
         </div>
-      </div>
-    </div> 
+      </div> */}
+    
 
       {/* Dialog Modal */}
         <div className="fixed inset-0 bg-black/50" aria-hidden="true" />

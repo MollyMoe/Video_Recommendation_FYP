@@ -36,7 +36,6 @@ function App() {
             <Route index element={<StHomePage />} />
             <Route path="history" element={<StHistoryPage />} />
             <Route path="liked" element={<StLikedMoviesPage />} />
-            <Route path="watchLater" element={<StWatchLaterPage />} />  
             <Route path="setting" element={<StSettingPage />} />
             <Route path="like" element={<StLikedMoviesPage />} />
           </Route>
