@@ -81,6 +81,7 @@ function StHomeContent({ searchQuery }) {
       setMovies(filteredByGenres);
       return;
     }
+
     // When search query is active, search in all movies ignoring genre filter
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = allFetchedMovies.filter((movie) => {
