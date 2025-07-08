@@ -276,11 +276,17 @@ function StHomeContent({ userId }) {
         setPreferredGenres(userGenres);
 
         // Step 1: Try to load from recommendations
-        const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
-        let fetchedMovies = recRes.data;
+        let fetchedMovies = [];
+        const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
 
-        if (!fetchedMovies || fetchedMovies.length === 0) {
-          // Step 2: If no saved recommendations, fetch all and filter
+        if (!refreshNeeded) {
+          const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+          fetchedMovies = recRes.data;
+        }
+
+        if (refreshNeeded || !fetchedMovies || fetchedMovies.length === 0) {
+          localStorage.removeItem("refreshAfterSettings");
+          
           const allRes = await axios.get(`${API}/api/movies/all`);
           const validMovies = allRes.data
             .filter(
@@ -321,13 +327,13 @@ function StHomeContent({ userId }) {
               )
           );
 
-          // Store filtered list
+          // Update DB with new list
           await axios.post(`${API}/api/movies/store-recommendations`, {
             userId: savedUser.userId,
             movies: fetchedMovies,
           });
         }
-
+        
         setMovies(fetchedMovies);
       } catch (err) {
         console.error("Error loading movies:", err);
@@ -409,7 +415,7 @@ function StHomeContent({ userId }) {
         <div className="flex justify-end mb-4">
           <button
             onClick={handleRegenerate}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm shadow-md"
+            className="bg-white text-black border border-black hover:bg-gray-100 px-4 py-2 rounded-lg text-sm shadow-md"
           >
             Regenerate Movies
           </button>
