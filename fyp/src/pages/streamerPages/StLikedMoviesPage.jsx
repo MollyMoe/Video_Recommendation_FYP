@@ -39,6 +39,7 @@ const StLikedMoviesPage = () => {
     }
   }, [savedUser]);
 
+
   return (
     <div className="p-4">
       <StNav />
@@ -58,6 +59,7 @@ const StLikedMoviesPage = () => {
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
                     className="rounded mb-2 w-full h-60 object-cover"
+
                   />
                   <h3 className="text-sm font-semibold">{movie.title}</h3>
                 </div>
@@ -70,4 +72,6 @@ const StLikedMoviesPage = () => {
   );
 };
 
+
 export default StLikedMoviesPage;
+

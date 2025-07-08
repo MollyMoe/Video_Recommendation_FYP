@@ -21,7 +21,9 @@ UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path(os.path.abspa
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load environment variables
+
 USER_DB_URI = os.getenv("MONGO_URI", "").strip()
+
 MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
 JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
 
@@ -34,6 +36,9 @@ if not USER_DB_URI.startswith("mongodb"):
 if not MOVIE_DB_URI.startswith("mongodb"):
     raise ValueError("❌ Invalid MOVIE_DB_URI format")
 
+
+print("MONGO_URI loaded:", os.getenv("MOVIE_DB_URI"))
+
 # Connect to MongoDB
 user_client = MongoClient(USER_DB_URI)
 user_db = user_client["users"]
@@ -41,6 +46,7 @@ user_db = user_client["users"]
 movie_client = MongoClient(MOVIE_DB_URI)
 movie_db = movie_client["NewMovieDatabase"]
 print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
+
 
 # Initialize FastAPI
 app = FastAPI()
@@ -83,4 +89,6 @@ def get_users():
 @app.get("/movies")
 def get_movies():
     movies = list(app.state.movie_db.movies.find({}, {"_id": 0}))
+
     return movies
+

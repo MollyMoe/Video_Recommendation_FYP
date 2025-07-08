@@ -50,6 +50,7 @@ const StSettingPage = () => {
     const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
     updateProfileImage(fallbackImage, "streamer");
 
+
     // Step 2: Try fetching latest from backend
     const fetchUser = async () => {
       try {
@@ -76,6 +77,7 @@ const StSettingPage = () => {
   }, []);
 
 const handleChange = async (e) => {
+
     const { name, value, files } = e.target;
     const user = JSON.parse(localStorage.getItem("user"));
   
@@ -151,8 +153,6 @@ const handleChange = async (e) => {
       alert("Could not update profile.");
     }
   };
-
-
 
   const closeModal = () => {
     setShowSuccessModal(false);

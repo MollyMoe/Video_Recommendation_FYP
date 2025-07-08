@@ -213,6 +213,7 @@ const handleChange = async (e) => {
     }
 
     try {
+
       const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

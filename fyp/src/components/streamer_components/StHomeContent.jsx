@@ -1,15 +1,19 @@
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Dialog } from "@headlessui/react";
-import { Play, Heart, Bookmark } from "lucide-react";
+import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
+
 function StHomeContent({ searchQuery }) {
+
   const [movies, setMovies] = useState([]);
   const [allFetchedMovies, setAllFetchedMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const [hoveredMovieId, setHoveredMovieId] = useState(null);
@@ -19,11 +23,14 @@ function StHomeContent({ searchQuery }) {
     const fetchUserAndMovies = async () => {
       if (!username) return;
       setIsLoading(true);
+
       try {
         // 1. Fetch user genres
+
         const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
         const userGenres = userRes.data.genres || [];
         setPreferredGenres(userGenres);
+
 
         // 2. Fetch all movies (no filtering here)
         const movieRes = await axios.get(`${API}/api/movies/all`);
@@ -40,8 +47,13 @@ function StHomeContent({ searchQuery }) {
             } catch {
               movie.trailer_key = null;
             }
+
+            const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+            movie.trailer_key = match ? match[1] : null;
+
             return movie;
           });
+
 
         // Remove duplicate movies by title
         const unique = [];
@@ -71,6 +83,7 @@ function StHomeContent({ searchQuery }) {
 
     fetchUserAndMovies();
   }, [username]);
+
 
   useEffect(() => {
     if (!searchQuery?.trim()) {
@@ -181,6 +194,70 @@ const handleLike = async (movieId) => {
         onClose={() => setSelectedMovie(null)}
         className="relative z-50"
       >
+
+
+  
+  return (
+    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-end mb-4">
+            <button
+              onClick={handleRegenerate}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm shadow-md"
+            >
+              Regenerate Movies
+            </button>
+          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
+          {movies.map((movie) => (
+            // <div
+            //     key={movie._id}
+            //     className="relative cursor-pointer group w-[180px] mx-auto"
+            //     onMouseEnter={() => setHoveredMovieId(movie._id)}
+            //     onMouseLeave={() => setHoveredMovieId(null)}
+            //     onClick={() => setSelectedMovie(movie)}
+            //   >
+                <div
+              key={movie._id}
+              className="relative cursor-pointer group w-[180px] mx-auto"
+              onClick={() => setSelectedMovie(movie)}
+              >
+              <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
+                <img
+                  src={movie.poster_url || "https://via.placeholder.com/150"}
+                  alt={movie.title || "No title"}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Hover Preview */}
+              {movie.trailer_key && (
+                <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
+                  <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
+                      frameBorder="0"
+                      allow="autoplay; encrypted-media"
+                      allowFullScreen
+                      className="w-full h-full object-cover"
+                      title={movie.title}
+                    ></iframe>
+                  </div>
+                  <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
+                    <div>{movie.genres?.join(", ")}</div>
+                    <div className="font-semibold text-sm">
+                      ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div> 
+
+      {/* Dialog Modal */}
         <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="bg-white p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
@@ -192,10 +269,14 @@ const handleLike = async (movieId) => {
               />
               <div className="flex flex-col justify-center space-y-3 flex-grow">
                 <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
+                <p className="text-sm text-gray-700">{selectedMovie?.genres?.join(", ")}</p>
+                <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
                 <p className="text-sm text-gray-700">
-                  {selectedMovie?.genres?.join(", ")}
+                  <strong>Actors:</strong> {Array.isArray(selectedMovie?.actors) ? selectedMovie.actors.join(", ") : selectedMovie?.actors || "N/A"}
                 </p>
+                <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview || "N/A"}</p>
                 <p className="text-sm text-gray-700">
+
                   Predicted Rating: ⭐️ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                 </p>
                 <p className="text-sm text-gray-700">
@@ -203,8 +284,12 @@ const handleLike = async (movieId) => {
                 </p>
               </div>
             </div>
+
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                // onClick={() => selectedMovie && handlePlay(selectedMovie._id)}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+              >
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
@@ -218,11 +303,24 @@ const handleLike = async (movieId) => {
                 <Heart className="w-4 h-4 mr-1 fill-black" />
                 Like
               </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+
+              <button
+                // onClick={() => selectedMovie && handleSave(selectedMovie._id)}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+              >
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
                 Save
               </button>
+
+              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+                <Trash2 className="w-4 h-4 mr-1 stroke-black" />
+                Delete
+              </button>
             </div>
+
+
+
+            {/* Close Button BELOW action buttons */}
             <div className="flex justify-end pt-4">
               <button
                 onClick={() => setSelectedMovie(null)}

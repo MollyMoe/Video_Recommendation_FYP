@@ -73,10 +73,18 @@ function SignInPage() {
       });
 
       const data = await res.json();
+      console.log("Login API response data:", data);
+
 
       if (res.ok) {
         setMessage({ type: "success", text: "Login successful!" });
         localStorage.setItem("token", data.token);
+      
+        // Clear old profile images
+        localStorage.removeItem("streamer_profileImage");
+        localStorage.removeItem("admin_profileImage");
+        
+        localStorage.setItem("token", data.token); 
         localStorage.setItem("user", JSON.stringify(data.user));
 
         if (formData.userType === "streamer") {
@@ -111,6 +119,31 @@ function SignInPage() {
         res.status === 403 &&
         data.detail?.toLowerCase().includes("suspend")
       ) {
+      
+        // 👉 Add this block BELOW:
+        // Set profile image for context to pick up on next reload
+        const baseUrl = "http://localhost:3001";
+        const profileImageUrl = data.user.profileImage
+          ? data.user.profileImage.startsWith("http")
+            ? data.user.profileImage
+            : `${baseUrl}${data.user.profileImage}`
+          : baseUrl + "/uploads/profile.png";
+        if (formData.userType === "streamer") {
+          localStorage.setItem("streamer_profileImage", profileImageUrl);
+        } else if (formData.userType === "admin") {
+          localStorage.setItem("admin_profileImage", profileImageUrl);
+        }
+      
+        // Navigation...
+        if (formData.userType === "admin") {
+          navigate("/admin");
+        } else if (formData.userType === "streamer") {
+          navigate("/home");
+        } else {
+          navigate("/home");
+        }
+      }
+       else if (res.status === 403 && data.error?.toLowerCase().includes("suspend")) {
         setMessage({
           type: "error",
           text: "Your account is suspended. Please contact support.",

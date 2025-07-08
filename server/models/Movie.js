@@ -1,3 +1,20 @@
+// const mongoose = require('mongoose');
+
+// const MovieSchema = new mongoose.Schema({
+//   userId: String,
+//   movieId: String,
+//   predicted_rating: Number,
+//   title: String,
+//   genres: [String],
+//   tmdb_id: String,
+//   poster_url: String,
+//   trailer_key: String,
+//   trailer_url: String,
+// }, { timestamps: true });
+
+
+// module.exports = (conn) => conn.model('Movie', MovieSchema, 'hybridRecommendation');
+
 const mongoose = require('mongoose');
 
 const MovieSchema = new mongoose.Schema({
@@ -13,5 +30,6 @@ const MovieSchema = new mongoose.Schema({
   actors: String,
   overview: String,
 }, { timestamps: true });
+
 
 module.exports = (conn) => conn.model('Movie', MovieSchema, 'hybridRecommendation2');
