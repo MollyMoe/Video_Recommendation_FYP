@@ -39,7 +39,7 @@ function App() {
             <Route path="setting" element={<StSettingPage />} />
             <Route path="like" element={<StLikedMoviesPage />} />
             <Route path="watchLater" element={<StWatchLaterPage />} />
-            <Route path="helpPage" element={<StHelpPage />} />
+            <Route path="help" element={<StHelpPage />} />
           </Route>
 
           {/* Admin Layout */}
