@@ -156,3 +156,63 @@ def get_history_movies(userId: str, request: Request):
     except Exception as e:
         print("❌ Error fetching history movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch history movies")
+    
+
+    
+@router.post("/watchLater")
+async def add_to_watchLater(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    watchLater_collection = db["saved"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    # Use $addToSet to avoid duplicate entries in history
+    await watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"SaveMovies": movie_id}},
+        upsert=True
+    )
+
+    return {"message": "Movie saved to watch later"}
+
+
+
+@router.get("/watchLater/{userId}")
+def get_watchLater_movies(userId: str, request: Request):
+    try:
+        db = request.app.state.movie_db
+        watchLater_collection = db["saved"]
+        movies_collection = db["hybridRecommendation2"]
+
+        save = watchLater_collection.find_one({"userId": userId})
+        if not save or not save.get("SaveMovies"):
+            return {"SaveMovies": []}
+
+        saveMovie_ids = save["SaveMovies"]
+
+        movies_cursor = movies_collection.find(
+            {"movieId": {"$in": saveMovie_ids}},
+            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
+        )
+
+        # Remove duplicates by movieId
+        seen = set()
+        unique_movies = []
+        for movie in movies_cursor:
+            mid = movie.get("movieId")
+            if mid not in seen:
+                seen.add(mid)
+                movie["_id"] = str(movie["_id"])
+                unique_movies.append(movie)
+
+        return {"SaveMovies": unique_movies}
+
+    except Exception as e:
+        print("❌ Error fetching saved movies:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
+    

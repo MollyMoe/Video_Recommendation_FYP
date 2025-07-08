@@ -159,6 +159,42 @@ const handleHistory = async (movieId) => {
 };
 
 
+
+const handleWatchLater = async (movieId) => {
+  if (!movieId || !savedUser?.userId) {
+    console.warn("Missing movieId or userId");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/api/movies/watchlater`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: savedUser.userId,
+        movieId: movieId,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Like failed:", res.status, errorText);
+      return;
+    }
+
+    const data = await res.json();
+    console.log("Like response:", data);
+  } catch (err) {
+    console.error("Error liking movie:", err);
+  }
+};
+
+
+
+
+
   return (
     <div className="min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
@@ -270,10 +306,20 @@ const handleHistory = async (movieId) => {
                 <Heart className="w-4 h-4 mr-1 fill-black" />
                 Like
               </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+
+              <button 
+                onClick={() => {
+                  console.log(
+                    "Save for movie:",
+                    selectedMovie?.movieId
+                  );
+                  handleWatchLater(selectedMovie.movieId);
+                }}
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
                 Save
               </button>
+
             </div>
             <div className="flex justify-end pt-4">
               <button
