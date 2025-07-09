@@ -19,94 +19,87 @@ function StHomeContent({ searchQuery }) {
     const fetchUserAndMovies = async () => {
       if (!username || !savedUser?.userId) return;
       setIsLoading(true);
-      try {
-        const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-        const userGenres = userRes.data.genres || [];
-        setPreferredGenres(userGenres);
-
-        // Step 1: Try to load from recommendations
-        setIsLoading(true);
-
-          let fetchedMovies = [];
+    try {
           const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
 
+          // ✅ Always refetch genres if refresh flag is set
+          const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+          const userGenres = userRes.data.genres || [];
+          setPreferredGenres(userGenres);
+
+          // ✅ Clear refresh flag after using
+          if (refreshNeeded) {
+            localStorage.removeItem("refreshAfterSettings");
+          }
+
+          let fetchedMovies = [];
+
+          // Only use stored recommendations if not refreshing
           if (!refreshNeeded) {
             const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
             fetchedMovies = recRes.data;
           }
 
+          // If nothing from recommendations or refresh triggered
           if (refreshNeeded || !fetchedMovies || fetchedMovies.length === 0) {
-            localStorage.removeItem("refreshAfterSettings");
-        // let fetchedMovies = [];
-        // const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
+            const allRes = await axios.get(`${API}/api/movies/all`);
+            const validMovies = allRes.data
+              .filter(
+                (movie) =>
+                  movie.poster_url &&
+                  movie.trailer_url &&
+                  typeof movie.poster_url === "string" &&
+                  typeof movie.trailer_url === "string" &&
+                  movie.poster_url.toLowerCase() !== "nan" &&
+                  movie.trailer_url.toLowerCase() !== "nan" &&
+                  movie.poster_url.trim() !== "" &&
+                  movie.trailer_url.trim() !== ""
+              )
+              .map((movie) => {
+                if (typeof movie.genres === "string") {
+                  movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+                }
+                const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+                movie.trailer_key = match ? match[1] : null;
+                return movie;
+              });
 
-        // if (!refreshNeeded) {
-        //   const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
-        //   fetchedMovies = recRes.data;
-        // }
-
-        // if (refreshNeeded || !fetchedMovies || fetchedMovies.length === 0) {
-        //   localStorage.removeItem("refreshAfterSettings");
-          
-          const allRes = await axios.get(`${API}/api/movies/all`);
-          const validMovies = allRes.data
-            .filter(
-              (movie) =>
-                movie.poster_url &&
-                movie.trailer_url &&
-                typeof movie.poster_url === "string" &&
-                typeof movie.trailer_url === "string" &&
-                movie.poster_url.toLowerCase() !== "nan" &&
-                movie.trailer_url.toLowerCase() !== "nan" &&
-                movie.poster_url.trim() !== "" &&
-                movie.trailer_url.trim() !== ""
-            )
-            .map((movie) => {
-              if (typeof movie.genres === "string") {
-                movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+            const unique = [];
+            const seen = new Set();
+            for (const movie of validMovies) {
+              if (!seen.has(movie.title)) {
+                seen.add(movie.title);
+                unique.push(movie);
               }
-              const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-              movie.trailer_key = match ? match[1] : null;
-              return movie;
-            });
-
-          const unique = [];
-          const seen = new Set();
-          for (const movie of validMovies) {
-            if (!seen.has(movie.title)) {
-              seen.add(movie.title);
-              unique.push(movie);
             }
+
+            const normalizedPreferred = userGenres.map((g) => g.toLowerCase().trim());
+            fetchedMovies = unique.filter(
+              (movie) =>
+                Array.isArray(movie.genres) &&
+                movie.genres.some((genre) =>
+                  normalizedPreferred.some((pref) => genre.toLowerCase().trim().includes(pref))
+                )
+            );
+
+            await axios.post(`${API}/api/movies/store-recommendations`, {
+              userId: savedUser.userId,
+              movies: fetchedMovies,
+            });
           }
 
-          const normalizedPreferred = userGenres.map((g) => g.toLowerCase().trim());
-          fetchedMovies = unique.filter(
-            (movie) =>
-              Array.isArray(movie.genres) &&
-              movie.genres.some((genre) =>
-                normalizedPreferred.some((pref) => genre.toLowerCase().trim().includes(pref))
-              )
-          );
-
-          // Update DB with new list
-          await axios.post(`${API}/api/movies/store-recommendations`, {
-            userId: savedUser.userId,
-            movies: fetchedMovies,
-          });
+          setMovies(fetchedMovies);
+        } catch (err) {
+          console.error("Error loading movies:", err);
+          setMovies([]);
+          setPreferredGenres([]);
+        } finally {
+          setIsLoading(false);
         }
-        
-        setMovies(fetchedMovies);
-      } catch (err) {
-        console.error("Error loading movies:", err);
-        setMovies([]);
-        setPreferredGenres([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      };
 
-    fetchUserAndMovies();
-  }, [username]);
+      fetchUserAndMovies();
+    }, [username]);
 
   const handleRegenerate = async () => {
     try {
@@ -330,6 +323,14 @@ const handleLike = async (movieId) => {
           </Dialog.Panel>
         </div>
       </Dialog>
+      {isLoading && (
+            <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+                <p className="text-lg font-semibold">Loading movies...</p>
+                <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+              </div>
+            </div>
+          )}
     </div>
   );
 }
