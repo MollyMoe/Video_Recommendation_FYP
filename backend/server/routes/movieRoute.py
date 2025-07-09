@@ -51,7 +51,7 @@ def get_all_movies(request: Request):
         print("❌ Failed to fetch movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
-
+# to like
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
     data = await request.json()
@@ -73,6 +73,7 @@ async def add_to_liked_movies(request: Request):
 
     return {"message": "Movie added to liked list"}
 
+# for liked Movies page
 @router.get("/likedMovies/{userId}")
 def get_liked_movies(userId: str, request: Request):
     db = request.app.state.movie_db
@@ -180,4 +181,30 @@ def get_user_recommendations(user_id: str, request: Request):
         print("❌ Error fetching recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
+# for filter recommendation page
+@router.post("/filter")
+async def filter_recommendations(request: Request, body: dict = Body(...)):
+    user_id = body.get("userId")
+    query = body.get("query", "").lower()
 
+    db = request.app.state.movie_db
+    recommended_collection = db["recommended"]
+
+    if not user_id:
+        return JSONResponse(content={"error": "Missing userId"}, status_code=400)
+
+    # Filter by userId and optional query match in title/genres
+    filters = { "userId": user_id }
+    results = list(recommended_collection.find(filters))
+
+    if query:
+        results = [
+            movie for movie in results
+            if query in movie.get("title", "").lower()
+            or query in " ".join(movie.get("genres", [])).lower()
+        ]
+
+    for movie in results:
+        movie["_id"] = str(movie["_id"])
+
+    return { "movies": results }
