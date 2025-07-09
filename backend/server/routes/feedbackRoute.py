@@ -16,33 +16,59 @@ async def submit_streamer_feedback(
     Submits streamer feedback, including an optional file upload.
     Database operation is run in a thread pool to avoid blocking the event loop.
     """
-    db = request.app.state.support_db # Assuming this is a PyMongo database object
-
-    feedback_collection = db["feedback"]
-
-    feedback_data = {
-        "userId": userId,
-        "feedback": feedback,
-        "timestamp": datetime.utcnow()
-    }
-
-    if file:
-        file_content = await file.read() # This is an async operation, so 'async def' is needed
-        feedback_data["fileName"] = file.filename
-        feedback_data["fileContent"] = file_content  # For testing only; use file storage like GridFS or S3 in prod
+    print(f"DEBUG: Received feedback submission request for userId: {userId}")
+    print(f"DEBUG: Feedback content: {feedback[:50]}...") # Print first 50 chars of feedback
 
     try:
-        # Get the current event loop
-        loop = asyncio.get_event_loop()
+        db = request.app.state.support_db
+        print(f"DEBUG: Accessed database object: {db.name}") # Should print 'support_db'
 
-        # Run the synchronous insert_one operation in a separate thread pool
-        # This prevents the blocking database call from freezing the main event loop
+        feedback_collection = db["feedback"]
+        print(f"DEBUG: Accessed collection: {feedback_collection.name}") # Should print 'feedback'
+
+        feedback_data = {
+            "userId": userId,
+            "feedback": feedback,
+            "timestamp": datetime.utcnow()
+        }
+        print(f"DEBUG: Initial feedback_data: {feedback_data}")
+
+        if file:
+            print(f"DEBUG: File detected: {file.filename}, content_type: {file.content_type}")
+            file_content = await file.read()
+            feedback_data["fileName"] = file.filename
+            # WARNING: Storing large file content directly in MongoDB documents is not recommended.
+            # It can hit the 16MB BSON document size limit and degrade performance.
+            # For production, consider GridFS or cloud storage (S3, GCS, Cloudinary).
+            feedback_data["fileContent"] = file_content
+            print(f"DEBUG: File content size: {len(file_content)} bytes")
+        else:
+            print("DEBUG: No file uploaded.")
+
+        print(f"DEBUG: Final feedback_data before insertion: {feedback_data}")
+
+        loop = asyncio.get_event_loop()
+        print("DEBUG: Attempting to insert feedback into MongoDB via run_in_executor...")
+
         result = await loop.run_in_executor(
-            None, # Use the default thread pool
-            feedback_collection.insert_one, # The synchronous function to run
-            feedback_data # Arguments to the function
+            None,
+            feedback_collection.insert_one,
+            feedback_data
         )
-        return {"message": "Feedback submitted successfully", "id": str(result.inserted_id)}
+
+        if result.inserted_id:
+            print(f"✅ SUCCESS: Feedback successfully inserted with ID: {result.inserted_id}")
+            return {"message": "Feedback submitted successfully", "id": str(result.inserted_id)}
+        else:
+            # This case indicates insert_one didn't raise an error but also didn't return an ID
+            print("❌ ERROR: Feedback insertion failed, but no exception was raised by insert_one. inserted_id was None.")
+            raise HTTPException(status_code=500, detail="Failed to submit feedback: Insertion issue.")
+
     except Exception as e:
-        print("❌ Failed to submit feedback:", e)
-        raise HTTPException(status_code=500, detail="Failed to submit feedback")
+        # This catches any exception during the entire process, including DB connection issues,
+        # permission errors, or issues with the data itself (e.g., BSON size limit).
+        print(f"❌ CRITICAL ERROR: Failed to submit feedback (exception caught): {e}")
+        # Optionally, print the full traceback for more context
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to submit feedback: {e}")
