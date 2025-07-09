@@ -140,8 +140,6 @@ const handleChange = async (e) => {
       genre: formData.genre,
     }),
   });
-
-
       if (!res.ok) throw new Error("Failed to update");
 
       const updated = await res.json();
