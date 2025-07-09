@@ -1,5 +1,7 @@
-import React from 'react'
-import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { Dialog } from "@headlessui/react";
+import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,23 +19,36 @@ const StFilterRecPage = () => {
   }, []);
 
   const handleSearch = async () => {
-    if (!user?.userId) return;
+  if (!user?.userId) {
+    console.warn("❌ No userId found in localStorage");
+    return;
+  }
 
-    setIsLoading(true);
-    try {
-      const res = await fetch(`${API}/api/recommendations/filter`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.userId, query }),
-      });
+  setIsLoading(true);
+  try {
+    const res = await fetch(`${API}/api/movies/filter`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.userId, query }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("❌ Backend error:", data.error || data);
+      setMovies([]);
+    } else {
+      console.log("✅ Search result:", data);
       setMovies(data.movies || []);
-    } catch (err) {
-      console.error("Search failed:", err);
     }
+  } catch (err) {
+    console.error("❌ Search request failed:", err);
+    setMovies([]);
+  } finally {
     setIsLoading(false);
-  };
+  }
+};
+
 
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
@@ -69,7 +84,7 @@ const StFilterRecPage = () => {
                     <div
                     key={movie._id}
                     className="relative cursor-pointer group w-[180px] mx-auto"
-                    onClick={() => setSelectedMovie(movie)}
+            
                     >
                     <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
                     <img

@@ -16,6 +16,7 @@ import AdUserDetails from "./components/admin_components/AdUserDetails";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
+import StFilterRecPage from "./pages/streamerPages/StFilterRecPage";
 
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
             <Route path="liked" element={<StLikedMoviesPage />} />
             <Route path="setting" element={<StSettingPage />} />
             <Route path="like" element={<StLikedMoviesPage />} />
+            <Route path="filter" element={<StFilterRecPage />} />
           </Route>
 
           {/* Admin Layout */}

@@ -64,12 +64,11 @@ const StSideBar = () => {
           <hr className="my-2 border-gray-300" />
           
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Filter Recommendations
-            </a>
+            <StSidebarButton
+              to="/home/filter"
+              label="Filter Recommendations"
+              current={location.pathname === "/home/filter"}
+            />
           </li>
 
           <hr className="my-2 border-gray-300" />
