@@ -25,23 +25,33 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 USER_DB_URI = os.getenv("MONGO_URI", "").strip()
 MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
 JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
+SUPPORT_DB_URI = os.getenv("SUPPORT_DB_URI", "").strip()
 
 print("🔗 USER_DB_URI:", repr(USER_DB_URI))
 print("🔗 MOVIE_DB_URI:", repr(MOVIE_DB_URI))
+print("🔗 SUPPORT_DB_URI:", repr(SUPPORT_DB_URI))
 
 # Validate URIs
 if not USER_DB_URI.startswith("mongodb"):
     raise ValueError("❌ Invalid USER_DB_URI format")
 if not MOVIE_DB_URI.startswith("mongodb"):
     raise ValueError("❌ Invalid MOVIE_DB_URI format")
+if not SUPPORT_DB_URI.startswith("mongodb"):
+    raise ValueError("❌ Invalid SUPPORT_DB_URI format")
 
 # Connect to MongoDB
 user_client = MongoClient(USER_DB_URI)
 user_db = user_client["users"]
 
+
+
 movie_client = MongoClient(MOVIE_DB_URI)
 movie_db = movie_client["NewMovieDatabase"]
 print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
+
+support_client = MongoClient(SUPPORT_DB_URI)
+support_db = support_client["support_db"] # Make sure 'support_db' matches your actual database name
+print("✅ Connected to support_db. Collections:", support_db.list_collection_names())
 
 # Initialize FastAPI
 app = FastAPI()
@@ -63,6 +73,7 @@ app.add_middleware(
 # Store DB in state
 app.state.user_db = user_db
 app.state.movie_db = movie_db
+app.state.support_db = support_db
 
 # Routes
 app.include_router(auth_router, prefix="/api/auth")
@@ -87,3 +98,9 @@ def get_users():
 def get_movies():
     movies = list(app.state.movie_db.movies.find({}, {"_id": 0}))
     return movies
+
+@app.get("/support/feedback_items")
+def get_feedback_items():
+    # Access the 'feedback' collection within the 'support_db'
+    feedback_items = list(app.state.support_db.feedback.find({}, {"_id": 0}))
+    return feedback_items
