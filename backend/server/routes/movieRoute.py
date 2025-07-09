@@ -100,6 +100,44 @@ def get_liked_movies(userId: str, request: Request):
 
     return {"likedMovies": unique_movies}
 
+# @router.post("/history")
+# async def add_to_history(request: Request):
+#     data = await request.json()
+#     db = request.app.state.movie_db
+#     history_collection = db["history"]
+
+#     user_id = data.get("userId")
+#     movie_id = data.get("movieId")
+
+#     if not user_id or movie_id is None:
+#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+#     # Ensure movie_id matches the data type stored in MongoDB
+#     try:
+#         movie_id = int(movie_id)
+#     except (ValueError, TypeError):
+#         pass  # keep as string if it fails
+
+#     try:
+#         # Remove from history if it exists
+#         await history_collection.update_one(
+#             {"userId": user_id},
+#             {"$pull": {"historyMovies": movie_id}},
+#         )
+
+#         # Add to end
+#         await history_collection.update_one(
+#             {"userId": user_id},
+#             {"$push": {"historyMovies": movie_id}},
+#             upsert=True
+#         )
+
+#         return {"message": "Movie moved to end of history"}
+#     except Exception as e:
+#         print("❌ Error saving history:", e)
+#         raise HTTPException(status_code=500, detail="Failed to save history")
+
+
 @router.post("/history")
 async def add_to_history(request: Request):
     data = await request.json()
@@ -112,27 +150,27 @@ async def add_to_history(request: Request):
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    # Ensure movie_id matches the data type stored in MongoDB
     try:
         movie_id = int(movie_id)
     except (ValueError, TypeError):
-        pass  # keep as string if it fails
+        pass  # Keep as string
 
     try:
-        # Remove from history if it exists
-        await history_collection.update_one(
+        # ✅ Remove existing entry (synchronously)
+        history_collection.update_one(
             {"userId": user_id},
-            {"$pull": {"historyMovies": movie_id}},
+            {"$pull": {"historyMovies": movie_id}}
         )
 
-        # Add to end
-        await history_collection.update_one(
+        # ✅ Add new entry to the end (synchronously)
+        history_collection.update_one(
             {"userId": user_id},
             {"$push": {"historyMovies": movie_id}},
             upsert=True
         )
 
         return {"message": "Movie moved to end of history"}
+
     except Exception as e:
         print("❌ Error saving history:", e)
         raise HTTPException(status_code=500, detail="Failed to save history")
