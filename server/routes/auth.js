@@ -17,6 +17,23 @@ router.get('/users/streamer', async (req, res) => {
 });
 
 // SIGNUP — plain password
+const Admin = require('../models/Admin');
+const Streamer = require('../models/Streamer');
+
+const bcrypt = require('bcrypt');
+
+// GET all streamers
+router.get('/users/streamer', async (req, res) => {
+  try {
+    const streamers = await Streamer.find(); // Fetch all streamer users
+    res.json(streamers);
+  } catch (err) {
+    console.error('Failed to get streamers:', err);
+    res.status(500).json({ error: 'Server error while fetching streamers' });
+  }
+});
+
+// SIGNUP — plain password
 router.post('/signup', async (req, res) => {
   const { fullName, username, email, password, userType } = req.body;
 
@@ -29,15 +46,26 @@ router.post('/signup', async (req, res) => {
     }
 
     const newUser = new Model({ fullName, username, email, password });
+    const Model = userType === 'admin' ? Admin : Streamer;
+
+    const existingUser = await Model.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+
+    const newUser = new Model({ fullName, username, email, password });
     await newUser.save();
 
     res.status(201).json({ username: newUser.username });
+    res.status(201).json({ username: newUser.username });
   } catch (err) {
+    console.error('Signup error:', err);
     console.error('Signup error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+router.post('/signin', async (req, res) => {
 router.post('/signin', async (req, res) => {
   const { username, password } = req.body;
   const userType = req.body.userType?.toLowerCase(); // normalize

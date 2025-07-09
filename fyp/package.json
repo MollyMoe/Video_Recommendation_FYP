@@ -6,7 +6,10 @@
   "author": "Your Name",
   "private": true,
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
+    "start": "electron .",
+    "dev": "vite & wait-on http://localhost:3000 && electron .",
     "start": "electron .",
     "dev": "vite & wait-on http://localhost:3000 && electron .",
     "build": "vite build",
@@ -37,6 +40,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.3",
     "@heroicons/react": "^2.2.0",
+    "@heroicons/react": "^2.2.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -44,6 +48,7 @@
     "electron-store": "^10.0.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "jwt-decode": "^4.0.0",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.511.0",
     "mongoose": "^8.15.1",
@@ -58,6 +63,7 @@
     "@eslint/js": "^9.25.0",
     "@tailwindcss/postcss": "^4.1.7",
     "@tailwindcss/vite": "^4.1.7",
+    "@tailwindcss/vite": "^4.1.7",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
@@ -70,6 +76,8 @@
     "globals": "^16.0.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.7",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
     "vite": "^6.3.5",
     "wait-on": "^8.0.3"
   }

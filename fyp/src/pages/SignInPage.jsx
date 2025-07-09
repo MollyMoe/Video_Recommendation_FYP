@@ -7,7 +7,13 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 function SignInPage() {
   const navigate = useNavigate();
+  const navigate = useNavigate();
 
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    userType: "",
+    username: "",
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -19,11 +25,15 @@ function SignInPage() {
   const [message, setMessage] = useState(null);
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
@@ -32,6 +42,10 @@ function SignInPage() {
     const newErrors = {};
     if (!formData.userType) newErrors.userType = "Please select user type";
     if (!formData.username.trim()) newErrors.username = "Username required";
+    if (!/^\S+@\S+\.\S+$/.test(formData.email))
+      newErrors.email = "Invalid email";
+    if (formData.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
     if (!/^\S+@\S+\.\S+$/.test(formData.email))
       newErrors.email = "Invalid email";
     if (formData.password.length < 6)
@@ -53,13 +67,28 @@ function SignInPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(null);
 
+
     if (!validateForm()) return;
 
+
     setIsLoading(true);
+
 
     try {
       const res = await fetch(`${API}/api/auth/signin`, {
@@ -70,7 +99,11 @@ function SignInPage() {
           password: formData.password,
           userType: formData.userType.toLowerCase(),
         }),
+          password: formData.password,
+          userType: formData.userType.toLowerCase(),
+        }),
       });
+
 
       const data = await res.json();
       console.log("Login API response data:", data);
@@ -166,6 +199,7 @@ function SignInPage() {
       }
     } catch (error) {
       setMessage({ type: "error", text: "Server error. Please try again." });
+      setMessage({ type: "error", text: "Server error. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +207,7 @@ function SignInPage() {
 
   // FIXED: Return needs to be inside the component
   return (
+    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
     <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto flex flex-col">
         {/* Header */}
@@ -185,11 +220,27 @@ function SignInPage() {
           <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
             Sign In
           </h2>
+          <img
+            src={logoPic}
+            alt="Cine It"
+            className="mx-auto h-12 mb-1 rounded-full"
+          />
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+            Sign In
+          </h2>
         </div>
 
         {/* Form Box */}
         <div className="bg-purple-100 rounded-lg shadow-xl p-4 mt-2 dark:bg-gray-600 dark:border-white">
+        <div className="bg-purple-100 rounded-lg shadow-xl p-4 mt-2 dark:bg-gray-600 dark:border-white">
           {message && (
+            <div
+              className={`mb-4 p-2 rounded-md text-center text-sm ${
+                message.type === "error"
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : "bg-green-50 text-green-700 border border-green-200"
+              }`}
+            >
             <div
               className={`mb-4 p-2 rounded-md text-center text-sm ${
                 message.type === "error"
@@ -274,12 +325,24 @@ function SignInPage() {
               >
                 Username
               </label>
+              <label
+                htmlFor="username"
+                className="block text-md font-medium text-gray-700 mb-1 dark:text-white"
+              >
+                Username
+              </label>
               <input
                 id="username"
                 type="text"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
+                className="w-full px-4 py-2 text-sm 
+                border border-gray-300 rounded-md 
+                bg-white text-gray-900 
+                dark:bg-gray-700 dark:text-white 
+                focus:outline-none focus:ring-2 focus:ring-purple-400"
+                placeholder="Choose a username"
                 className="w-full px-4 py-2 text-sm 
                 border border-gray-300 rounded-md 
                 bg-white text-gray-900 
@@ -301,12 +364,24 @@ function SignInPage() {
               >
                 Email
               </label>
+              <label
+                htmlFor="email"
+                className="block text-md font-medium text-gray-700 mb-1 dark:text-white"
+              >
+                Email
+              </label>
               <input
                 id="email"
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                className="w-full px-4 py-2 text-sm 
+                border border-gray-300 rounded-md 
+                bg-white text-gray-900 
+                dark:bg-gray-700 dark:text-white 
+                focus:outline-none focus:ring-2 focus:ring-purple-400"
+                placeholder="Enter your email"
                 className="w-full px-4 py-2 text-sm 
                 border border-gray-300 rounded-md 
                 bg-white text-gray-900 
@@ -328,12 +403,24 @@ function SignInPage() {
               >
                 Password
               </label>
+              <label
+                htmlFor="password"
+                className="block text-md font-medium text-gray-700 mb-1 dark:text-white"
+              >
+                Password
+              </label>
               <input
                 id="password"
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
+                className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
+                placeholder="Enter your password"
                 className="w-full px-4 py-2 text-sm 
              border border-gray-300 rounded-md 
              bg-white text-gray-900 
@@ -349,7 +436,12 @@ function SignInPage() {
 
             {/* Forgot Password */}
             <div className="text-sm text-gray-900 ml-2 block dark:text-white">
+            <div className="text-sm text-gray-900 ml-2 block dark:text-white">
               Forgot Password?{" "}
+              <Link
+                to="/reset-password"
+                className="text-purple-600 hover:underline dark:text-violet-200"
+              >
               <Link
                 to="/reset-password"
                 className="text-purple-600 hover:underline dark:text-violet-200"
@@ -364,14 +456,21 @@ function SignInPage() {
                 type="submit"
                 disabled={isLoading}
                 className="w-full py-2 bg-white text-gray-600 font-bold rounded-md shadow-md border border-gray-300 hover:bg-gray-100 text-sm transition duration-200"
+                className="w-full py-2 bg-white text-gray-600 font-bold rounded-md shadow-md border border-gray-300 hover:bg-gray-100 text-sm transition duration-200"
               >
+                {isLoading ? "Signing in..." : "Sign In"}
                 {isLoading ? "Signing in..." : "Sign In"}
               </button>
             </div>
 
             {/* Sign Up */}
             <div className="text-sm text-center text-gray-900 ml-2 block dark:text-white">
+            <div className="text-sm text-center text-gray-900 ml-2 block dark:text-white">
               Don't have an account?{" "}
+              <Link
+                to="/signup"
+                className="text-purple-600 hover:underline dark:text-violet-200"
+              >
               <Link
                 to="/signup"
                 className="text-purple-600 hover:underline dark:text-violet-200"
