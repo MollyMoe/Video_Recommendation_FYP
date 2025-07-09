@@ -223,26 +223,26 @@ def get_watchLater_movies(userId: str, request: Request):
         raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
     
 
-# remove movie
-# @router.post("/unlike")
-# async def remove_from_liked_movies(request: Request):
-#     data = await request.json()
-#     db = request.app.state.movie_db
-#     liked_collection = db["liked"]
 
-#     user_id = data.get("userId")
-#     movie_id = data.get("movieId")
+@router.post("/unlike")
+async def remove_from_liked_movies(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
 
-#     if not user_id or not movie_id:
-#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
 
-#     result = await liked_collection.update_one(
-#         {"userId": user_id},
-#         {"$pull": {"likedMovies": movie_id}}
-#     )
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-#     if result.modified_count > 0:
-#         return {"message": "Movie removed from liked list"}
-#     else:
-#         return {"message": "Movie not found or already removed"}
+    result = await liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": movie_id}}
+    )
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from liked list"}
+    else:
+        return {"message": "Movie not found or already removed"}
 
