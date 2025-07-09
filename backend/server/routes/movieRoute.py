@@ -100,7 +100,6 @@ def get_liked_movies(userId: str, request: Request):
 
     return {"likedMovies": unique_movies}
 
-
 @router.post("/history")
 async def add_to_history(request: Request):
     data = await request.json()
@@ -110,23 +109,33 @@ async def add_to_history(request: Request):
     user_id = data.get("userId")
     movie_id = data.get("movieId")
 
-    if not user_id or not movie_id:
+    if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-   # Step 1: Pull the movie if it already exists (removes it)
-    await history_collection.update_one(
-        {"userId": user_id},
-        {"$pull": {"historyMovies": movie_id}},
-    )
+    # Ensure movie_id matches the data type stored in MongoDB
+    try:
+        movie_id = int(movie_id)
+    except (ValueError, TypeError):
+        pass  # keep as string if it fails
 
-    # Step 2: Push it again to the end (adds it back at the end)
-    await history_collection.update_one(
-        {"userId": user_id},
-        {"$push": {"historyMovies": movie_id}},
-        upsert=True
-    )
+    try:
+        # Remove from history if it exists
+        await history_collection.update_one(
+            {"userId": user_id},
+            {"$pull": {"historyMovies": movie_id}},
+        )
 
-    return {"message": "Movie moved to end of history"}
+        # Add to end
+        await history_collection.update_one(
+            {"userId": user_id},
+            {"$push": {"historyMovies": movie_id}},
+            upsert=True
+        )
+
+        return {"message": "Movie moved to end of history"}
+    except Exception as e:
+        print("❌ Error saving history:", e)
+        raise HTTPException(status_code=500, detail="Failed to save history")
 
 
 @router.get("/historyMovies/{userId}")
@@ -222,27 +231,28 @@ def get_watchLater_movies(userId: str, request: Request):
         print("❌ Error fetching saved movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
     
+# @router.post("/unlike")
+# def remove_from_liked_movies(request: Request, data: dict = Body(...)):
+#     db = request.app.state.movie_db
+#     liked_collection = db["liked"]
 
+#     user_id = data.get("userId")
+#     movie_id = data.get("movieId")
 
-@router.post("/unlike")
-async def remove_from_liked_movies(request: Request):
-    data = await request.json()
-    db = request.app.state.movie_db
-    liked_collection = db["liked"]
+#     if not user_id or movie_id is None:
+#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    user_id = data.get("userId")
-    movie_id = data.get("movieId")
+#     try:
+#         movie_id = int(movie_id)
+#     except (ValueError, TypeError):
+#         pass
 
-    if not user_id or not movie_id:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+#     result = liked_collection.update_one(
+#         {"userId": user_id},
+#         {"$pull": {"likedMovies": movie_id}}
+#     )
 
-    result = await liked_collection.update_one(
-        {"userId": user_id},
-        {"$pull": {"likedMovies": movie_id}}
-    )
-
-    if result.modified_count > 0:
-        return {"message": "Movie removed from liked list"}
-    else:
-        return {"message": "Movie not found or already removed"}
-
+#     if result.modified_count > 0:
+#         return {"message": "Movie removed from liked list"}
+#     else:
+#         return {"message": "Movie not found or already removed"}
