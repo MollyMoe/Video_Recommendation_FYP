@@ -16,18 +16,6 @@ function StHomeContent({ searchQuery }) {
   const username = savedUser?.username;
 
   useEffect(() => {
-  const refresh = localStorage.getItem("refreshAfterSettings") === "true";
-  if (refresh) {
-    console.log("🔄 Refreshing home content after genre update");
-    localStorage.removeItem("refreshAfterSettings");
-    setIsLoading(true);
-    setMovies([]);
-    setAllFetchedMovies([]);
-  }
-}, []);
-
-
-  useEffect(() => {
     const fetchUserAndMovies = async () => {
       if (!username || !savedUser?.userId) return;
       setIsLoading(true);
@@ -120,6 +108,19 @@ function StHomeContent({ searchQuery }) {
     fetchUserAndMovies();
   }, [username, savedUser?.userId]); // add userId
 
+
+  useEffect(() => {
+  const refresh = localStorage.getItem("refreshAfterSettings") === "true";
+
+  if (refresh) {
+    console.log("🔄 Refreshing home content after genre update");
+    localStorage.removeItem("refreshAfterSettings");
+    setIsLoading(true);
+    setMovies([]);
+    setAllFetchedMovies([]);
+  }
+}, [location]); // you already added this
+
   const handleRegenerate = async () => {
     try {
       console.log("🔁 Sending POST to /api/movies/regenerate...");
@@ -150,20 +151,13 @@ function StHomeContent({ searchQuery }) {
           return movie;
         });
 
-      const updated = [...regenerated, ...movies];
-      const seenTitles = new Set();
-      const deduped = updated.filter((m) => {
-        if (seenTitles.has(m.title)) return false;
-        seenTitles.add(m.title);
-        return true;
-      });
-
-      setMovies(deduped);
+    setMovies(regenerated);
+    setAllFetchedMovies(regenerated);
      
       // Update saved list after regeneration
       await axios.post(`${API}/api/movies/store-recommendations`, {
         userId: savedUser.userId,
-        movies: deduped,
+        movies: regenerated,
       });
 
     } catch (err) {
