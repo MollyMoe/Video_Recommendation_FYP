@@ -34,7 +34,7 @@ def get_all_movies(request: Request):
     db = request.app.state.movie_db
     try:
         # Fetch from your actual collection
-        movies = list(db.hybridRecommendation2.find().limit(25000))
+        movies = list(db.hybridRecommendation2.find())
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])
@@ -100,4 +100,78 @@ def get_liked_movies(userId: str, request: Request):
 
     return {"likedMovies": unique_movies}
 
+# POST /api/movies/regenerate — fetch new movies excluding current ones
+@router.post("/regenerate")
+def regenerate_movies(
+    request: Request,
+    body: dict = Body(...)
+):
+    db = request.app.state.movie_db
+    genres: List[str] = body.get("genres", [])
+    exclude_titles: List[str] = body.get("excludeTitles", [])
 
+    try:
+        pipeline = [
+            {"$match": {
+                "genres": {"$in": genres},
+                "title": {"$nin": exclude_titles},
+                "poster_url": {"$ne": None},
+                "trailer_url": {"$ne": None}
+            }},
+            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
+            {"$replaceRoot": {"newRoot": "$doc"}},
+            {"$limit": 30}
+        ]
+
+        movies = list(db.hybridRecommendation2.aggregate(pipeline))
+        
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])
+            for key, value in movie.items():
+                if isinstance(value, float) and math.isnan(value):
+                    movie[key] = None
+
+        return JSONResponse(content=movies)
+
+    except Exception as e:
+        print("❌ Failed to regenerate movies:", e)
+        
+    raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+
+# store recommendations in a collection
+@router.post("/store-recommendations")
+async def store_recommendations(
+    request: Request,
+    payload: dict = Body(...)
+):
+    db = request.app.state.movie_db
+    user_id = payload.get("userId")
+    movies = payload.get("movies", [])
+
+    if not user_id or not isinstance(movies, list):
+        return JSONResponse(status_code=400, content={"error": "Invalid request"})
+
+    try:
+        db.recommended.update_one(
+            { "userId": user_id },
+            { "$set": { "recommended": movies } },
+            upsert=True
+        )
+        return { "message": "Recommendations saved to 'recommended' collection." }
+    except Exception as e:
+        print("❌ Error saving recommendations:", e)
+        return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
+
+# when new data is regenrated it will stay that way 
+@router.get("/recommendations/{user_id}")
+def get_user_recommendations(user_id: str, request: Request):
+    db = request.app.state.movie_db
+    try:
+        record = db.recommended.find_one({ "userId": user_id })
+        if not record:
+            return JSONResponse(content=[])  
+
+        return JSONResponse(content=record.get("recommended", []))
+    except Exception as e:
+        print("❌ Error fetching recommendations:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch recommendations")

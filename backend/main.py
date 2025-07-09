@@ -50,6 +50,7 @@ origins = [
     "http://localhost:3000",
     "https://cineit-frontend.onrender.com",
     "https://cineit.onrender.com",
+    "http://localhost:8000",
 ]
 app.add_middleware(
     CORSMiddleware,
