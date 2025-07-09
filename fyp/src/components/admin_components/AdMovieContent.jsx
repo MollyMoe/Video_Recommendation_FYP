@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdMovieContent = ({ searchQuery }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState(null);
@@ -13,7 +15,7 @@ const AdMovieContent = ({ searchQuery }) => {
   useEffect(() => {
     setIsLoading(true);
     axios
-      .get('http://localhost:3001/api/movies/all')
+      .get(`${API}/api/movies/all`)
       .then((res) => {
         const unique = [];
         const seenTitles = new Set();
