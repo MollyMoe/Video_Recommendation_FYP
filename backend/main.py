@@ -10,6 +10,7 @@ from server.routes.movieRoute import router as movie_router
 from server.routes.passwordRoute import router as password_router
 from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
+from server.routes.feedbackRoute import router as feedback_router
 from fastapi.staticfiles import StaticFiles
 
 # Load .env
@@ -70,6 +71,8 @@ app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
+app.include_router(feedback_router, prefix="/api/feedback")
+
 
 @app.get("/")
 def read_root():
