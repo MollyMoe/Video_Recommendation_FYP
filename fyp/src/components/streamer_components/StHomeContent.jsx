@@ -17,9 +17,9 @@ function StHomeContent({ searchQuery }) {
 
   useEffect(() => {
     const fetchUserAndMovies = async () => {
-      if (!username) return;
+      if (!username || !savedUser?.userId) return;
       setIsLoading(true);
-      try {
+    try {
         // 1. Fetch user genres
         const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
         const userGenres = userRes.data.genres || [];
@@ -81,6 +81,7 @@ function StHomeContent({ searchQuery }) {
       setMovies(filteredByGenres);
       return;
     }
+
     // When search query is active, search in all movies ignoring genre filter
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = allFetchedMovies.filter((movie) => {
@@ -190,10 +191,6 @@ const handleWatchLater = async (movieId) => {
     console.error("Save  movie:", err);
   }
 };
-
-
-
-
 
   return (
     <div className="min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
