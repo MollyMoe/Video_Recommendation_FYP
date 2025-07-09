@@ -16,8 +16,12 @@ import AdUserDetails from "./components/admin_components/AdUserDetails";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
+
 import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
+
+
+
 
 function App() {
 
@@ -36,10 +40,12 @@ function App() {
           <Route path="/home" element={<StreamerLayout />}>
             <Route index element={<StHomePage />} />
             <Route path="history" element={<StHistoryPage />} />
+            <Route path="liked" element={<StLikedMoviesPage />} />
             <Route path="setting" element={<StSettingPage />} />
             <Route path="like" element={<StLikedMoviesPage />} />
             <Route path="watchLater" element={<StWatchLaterPage />} />
             <Route path="help" element={<StHelpPage />} />
+
           </Route>
 
           {/* Admin Layout */}

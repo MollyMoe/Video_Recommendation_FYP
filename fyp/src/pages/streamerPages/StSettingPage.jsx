@@ -51,6 +51,7 @@ const StSettingPage = () => {
     const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
     updateProfileImage(fallbackImage, "streamer");
 
+
     // Step 2: Try fetching latest from backend
     const fetchUser = async () => {
       try {
@@ -77,6 +78,7 @@ const StSettingPage = () => {
 
     fetchUser();
   }, []);
+
 
   const handleChange = async (e) => {
     const { name, value, files } = e.target;
@@ -129,21 +131,19 @@ const StSettingPage = () => {
     try {
       const savedUser = JSON.parse(localStorage.getItem("user"));
 
-      console.log("Using ID for update:", savedUser.userId);
 
-      const res = await fetch(
-        `${API}/api/editProfile/streamer/${savedUser.userId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username: formData.username,
-            genre: formData.genre,
-          }),
-        }
-      );
+  console.log("Using ID for update:", savedUser.userId); 
+
+  const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username: formData.username,
+      genre: formData.genre,
+    }),
+  });
 
       if (!res.ok) throw new Error("Failed to update");
 
@@ -164,12 +164,10 @@ const StSettingPage = () => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(
-        `${API}/api/auth/delete/${userType}/${username}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const res = await fetch(`${API}/api/auth/delete/${userType}/${username}`, {
+        method: "DELETE",
+      });
+
       const data = await res.json();
       localStorage.removeItem("user");
       setSuccessMessage(
@@ -258,11 +256,7 @@ const StSettingPage = () => {
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
-      if (
-        showConfirm &&
-        modalRef.current &&
-        !modalRef.current.contains(e.target)
-      ) {
+      if (showConfirm && modalRef.current && !modalRef.current.contains(e.target)) {
         setShowConfirm(false);
       }
     };
@@ -331,6 +325,7 @@ const StSettingPage = () => {
               type="submit"
               className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
             >
+
               Save Changes
             </button>
           </div>
@@ -374,10 +369,7 @@ const StSettingPage = () => {
                       </button>
                       <button
                         onClick={() => {
-                          handleDelete(
-                            savedUser?.userType,
-                            savedUser?.username
-                          );
+                          handleDelete(savedUser?.userType, savedUser?.username);
                           setShowConfirm(false);
                         }}
                         className="px-4 py-2 rounded-md text-sm text-white bg-red-600 hover:bg-red-700"

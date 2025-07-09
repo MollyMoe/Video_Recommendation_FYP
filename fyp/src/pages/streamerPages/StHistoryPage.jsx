@@ -1,11 +1,14 @@
+
 import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 
+
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const StHistoryPage = () => {
+
   const [historyMovies, setHistoryMovies] = useState([]);
 
   const fetchHistoryMovies = async (userId) => {
@@ -37,6 +40,7 @@ const StHistoryPage = () => {
     if (savedUser?.userId) {
       fetchHistoryMovies(savedUser.userId);
     }
+
   }, []);
 
   return (
@@ -46,6 +50,7 @@ const StHistoryPage = () => {
         <StSearchBar />
       </div>
       <StSideBar />
+
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {historyMovies.length === 0 ? (

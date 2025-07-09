@@ -16,8 +16,6 @@ const StLikedMoviesPage = () => {
       const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
       const data = await res.json();
 
-      console.log("🎬 Liked movies response:", data);
-
       // Remove duplicates by _id or movieId
       const uniqueMovies = [];
       const seen = new Set();
@@ -135,6 +133,7 @@ const StLikedMoviesPage = () => {
   // };
   
 
+
   return (
     <div className="p-4">
       <StNav />
@@ -159,6 +158,7 @@ const StLikedMoviesPage = () => {
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
                     className="rounded mb-2 w-full h-60 object-cover"
+
                   />
                   <h3 className="text-sm font-semibold">{movie.title}</h3>
 
@@ -194,4 +194,6 @@ const StLikedMoviesPage = () => {
   );
 };
 
+
 export default StLikedMoviesPage;
+

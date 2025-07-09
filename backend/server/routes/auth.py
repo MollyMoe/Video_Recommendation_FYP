@@ -70,6 +70,7 @@ def signup(request: Request, user: SignUpRequest):
         "genres": [],
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
+        "likedMovies": [],
         "__v": 0
     }
 

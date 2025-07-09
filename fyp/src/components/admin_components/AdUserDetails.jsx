@@ -113,7 +113,7 @@ const [page, setPage] = useState(restoredPage);
               <span className="absolute left-0 top-0 bottom-0 w-px bg-gray-400"></span>
               <input
                 type="text"
-                value={Array.isArray(user.genres) ? user.genres.join(", ") : ""}
+                value={user.genre}
                 disabled
                 className="bg-white border border-white pl-6 pr-3 py-1.5 shadow-sm w-full h-9 leading-6"
               />

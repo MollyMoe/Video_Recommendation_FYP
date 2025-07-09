@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
 import { Link, useNavigate } from "react-router-dom";
+<<<<<<< HEAD
+=======
+
+>>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
 
 const API = import.meta.env.VITE_API_BASE_URL;
 const defaultImage =

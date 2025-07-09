@@ -4,8 +4,12 @@ import { useUser } from "../../context/UserContext";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
+<<<<<<< HEAD
 const defaultImage =
   "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
+=======
+const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
+>>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
@@ -40,6 +44,11 @@ function StUserProfile({ userProfile }) {
       });
   }, []);
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
     if (savedTheme === "true") {
@@ -48,23 +57,7 @@ function StUserProfile({ userProfile }) {
   }, []);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user?._id || user.userType !== "streamer") return;
-
-    fetch(`http://localhost:3001/api/profile/streamers/${user._id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.profileImage && data.profileImage !== "") {
-          const fullPath = "http://localhost:3001" + data.profileImage;
-          setProfileImage(fullPath); // local state
-          updateProfileImage(fullPath, "streamer"); // ✅ sync with global context
-        } else {
-          updateProfileImage("", "streamer"); // ✅ clear global if user has no image
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch streamer profile image:", err);
-      });
+    setCurrentRole("streamer");
   }, []);
 
   useEffect(() => {
