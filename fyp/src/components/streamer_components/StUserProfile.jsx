@@ -47,25 +47,6 @@ function StUserProfile({ userProfile }) {
     }
   }, []);
 
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user?._id || user.userType !== "streamer") return;
-
-    fetch(`http://localhost:3001/api/profile/streamers/${user._id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.profileImage && data.profileImage !== "") {
-          const fullPath = "http://localhost:3001" + data.profileImage;
-          setProfileImage(fullPath); // local state
-          updateProfileImage(fullPath, "streamer"); // ✅ sync with global context
-        } else {
-          updateProfileImage("", "streamer"); // ✅ clear global if user has no image
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch streamer profile image:", err);
-      });
-  }, []);
 
   useEffect(() => {
     if (darkMode) {
