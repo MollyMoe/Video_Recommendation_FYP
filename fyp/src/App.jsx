@@ -18,6 +18,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
 import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
+import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
 
 function App() {
 
@@ -40,6 +41,7 @@ function App() {
             <Route path="like" element={<StLikedMoviesPage />} />
             <Route path="watchLater" element={<StWatchLaterPage />} />
             <Route path="help" element={<StHelpPage />} />
+            <Route path="sendfeedback" element={<StSendFeedbackPage />} />
           </Route>
 
           {/* Admin Layout */}
