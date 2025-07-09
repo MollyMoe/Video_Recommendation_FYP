@@ -6,7 +6,6 @@ import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-
 function StHomeContent({ searchQuery }) {
 
   const [movies, setMovies] = useState([]);
@@ -21,61 +20,90 @@ function StHomeContent({ searchQuery }) {
 
   useEffect(() => {
     const fetchUserAndMovies = async () => {
-      if (!username) return;
+      if (!username || !savedUser?.userId) return;
       setIsLoading(true);
 
       try {
-        // 1. Fetch user genres
-
         const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
         const userGenres = userRes.data.genres || [];
         setPreferredGenres(userGenres);
 
+        // Step 1: Try to load from recommendations
+        setIsLoading(true);
 
-        // 2. Fetch all movies (no filtering here)
-        const movieRes = await axios.get(`${API}/api/movies/all`);
-        const moviesRaw = movieRes.data
-          .filter(movie => movie.poster_url && movie.trailer_url)
-          .map(movie => {
-            movie.genres = typeof movie.genres === "string"
-              ? movie.genres.split(/[,|]/).map(g => g.trim())
-              : movie.genres;
+          let fetchedMovies = [];
+          const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
 
-            try {
-              const url = new URL(movie.trailer_url);
-              movie.trailer_key = url.searchParams.get("v");
-            } catch {
-              movie.trailer_key = null;
-            }
-
-            const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-            movie.trailer_key = match ? match[1] : null;
-
-            return movie;
-          });
-
-
-        // Remove duplicate movies by title
-        const unique = [];
-        const seen = new Set();
-        for (const movie of moviesRaw) {
-          if (!seen.has(movie.title)) {
-            seen.add(movie.title);
-            unique.push(movie);
+          if (!refreshNeeded) {
+            const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+            fetchedMovies = recRes.data;
           }
+
+          if (refreshNeeded || !fetchedMovies || fetchedMovies.length === 0) {
+            localStorage.removeItem("refreshAfterSettings");
+        // let fetchedMovies = [];
+        // const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
+
+        // if (!refreshNeeded) {
+        //   const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+        //   fetchedMovies = recRes.data;
+        // }
+
+        // if (refreshNeeded || !fetchedMovies || fetchedMovies.length === 0) {
+        //   localStorage.removeItem("refreshAfterSettings");
+          
+          const allRes = await axios.get(`${API}/api/movies/all`);
+          const validMovies = allRes.data
+            .filter(
+              (movie) =>
+                movie.poster_url &&
+                movie.trailer_url &&
+                typeof movie.poster_url === "string" &&
+                typeof movie.trailer_url === "string" &&
+                movie.poster_url.toLowerCase() !== "nan" &&
+                movie.trailer_url.toLowerCase() !== "nan" &&
+                movie.poster_url.trim() !== "" &&
+                movie.trailer_url.trim() !== ""
+            )
+            .map((movie) => {
+              if (typeof movie.genres === "string") {
+                movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+              }
+              const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+              movie.trailer_key = match ? match[1] : null;
+              return movie;
+            });
+
+          const unique = [];
+          const seen = new Set();
+          for (const movie of validMovies) {
+            if (!seen.has(movie.title)) {
+              seen.add(movie.title);
+              unique.push(movie);
+            }
+          }
+
+          const normalizedPreferred = userGenres.map((g) => g.toLowerCase().trim());
+          fetchedMovies = unique.filter(
+            (movie) =>
+              Array.isArray(movie.genres) &&
+              movie.genres.some((genre) =>
+                normalizedPreferred.some((pref) => genre.toLowerCase().trim().includes(pref))
+              )
+          );
+
+          // Update DB with new list
+          await axios.post(`${API}/api/movies/store-recommendations`, {
+            userId: savedUser.userId,
+            movies: fetchedMovies,
+          });
         }
-
-        // Save all movies in state
-        setAllFetchedMovies(unique);
-
-        // Filter for initial display by user preferred genres only
-        const filteredByGenres = unique.filter(movie =>
-          movie.genres?.some(genre => userGenres.includes(genre))
-        );
-
-        setMovies(filteredByGenres);
+        
+        setMovies(fetchedMovies);
       } catch (err) {
-        console.error("Error:", err);
+        console.error("Error loading movies:", err);
+        setMovies([]);
+        setPreferredGenres([]);
       } finally {
         setIsLoading(false);
       }
@@ -84,6 +112,56 @@ function StHomeContent({ searchQuery }) {
     fetchUserAndMovies();
   }, [username]);
 
+  const handleRegenerate = async () => {
+    try {
+      console.log("🔁 Sending POST to /api/movies/regenerate...");
+      const response = await axios.post(`${API}/api/movies/regenerate`, {
+        genres: preferredGenres,
+        excludeTitles: movies.map((m) => m.title),
+      });
+      console.log("✅ Regenerated movies:", response.data);
+
+      const regenerated = response.data
+        .filter(
+          (movie) =>
+            movie.poster_url &&
+            movie.trailer_url &&
+            typeof movie.poster_url === "string" &&
+            typeof movie.trailer_url === "string" &&
+            movie.poster_url.toLowerCase() !== "nan" &&
+            movie.trailer_url.toLowerCase() !== "nan" &&
+            movie.poster_url.trim() !== "" &&
+            movie.trailer_url.trim() !== ""
+        )
+        .map((movie) => {
+          if (typeof movie.genres === "string") {
+            movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+          }
+          const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+          movie.trailer_key = match ? match[1] : null;
+          return movie;
+        });
+
+      const updated = [...regenerated, ...movies];
+      const seenTitles = new Set();
+      const deduped = updated.filter((m) => {
+        if (seenTitles.has(m.title)) return false;
+        seenTitles.add(m.title);
+        return true;
+      });
+
+      setMovies(deduped);
+     
+      // Update saved list after regeneration
+      await axios.post(`${API}/api/movies/store-recommendations`, {
+        userId: savedUser.userId,
+        movies: deduped,
+      });
+
+    } catch (err) {
+      console.error("❌ Failed to regenerate movies:", err);
+    }
+  };
 
   useEffect(() => {
     if (!searchQuery?.trim()) {
@@ -141,6 +219,12 @@ const handleLike = async (movieId) => {
   return (
     <div className="min h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
+        <button
+            onClick={handleRegenerate}
+            className="bg-white text-black border border-black hover:bg-gray-100 px-4 py-2 rounded-lg text-sm shadow-md"
+          >
+            Regenerate Movies
+        </button>
         {isLoading ? (
           <p className="text-center text-white">Loading movies...</p>
         ) : movies.length === 0 ? (
@@ -194,69 +278,7 @@ const handleLike = async (movieId) => {
         onClose={() => setSelectedMovie(null)}
         className="relative z-50"
       >
-
-
-  
-  {/* return (
-    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-end mb-4">
-            <button
-              onClick={handleRegenerate}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm shadow-md"
-            >
-              Regenerate Movies
-            </button>
-          </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
-          {movies.map((movie) => (
-            // <div
-            //     key={movie._id}
-            //     className="relative cursor-pointer group w-[180px] mx-auto"
-            //     onMouseEnter={() => setHoveredMovieId(movie._id)}
-            //     onMouseLeave={() => setHoveredMovieId(null)}
-            //     onClick={() => setSelectedMovie(movie)}
-            //   >
-                <div
-              key={movie._id}
-              className="relative cursor-pointer group w-[180px] mx-auto"
-              onClick={() => setSelectedMovie(movie)}
-              >
-              <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
-                <img
-                  src={movie.poster_url || "https://via.placeholder.com/150"}
-                  alt={movie.title || "No title"}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Hover Preview */}
-              {/* {movie.trailer_key && (
-                <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
-                  <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
-                      frameBorder="0"
-                      allow="autoplay; encrypted-media"
-                      allowFullScreen
-                      className="w-full h-full object-cover"
-                      title={movie.title}
-                    ></iframe>
-                  </div>
-                  <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
-                    <div>{movie.genres?.join(", ")}</div>
-                    <div className="font-semibold text-sm">
-                      ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div> */}
     
-
       {/* Dialog Modal */}
         <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
