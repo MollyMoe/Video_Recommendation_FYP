@@ -50,8 +50,8 @@ movie_db = movie_client["NewMovieDatabase"]
 print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
 
 support_client = MongoClient(SUPPORT_DB_URI)
-support_db = support_client["support_db"] # Make sure 'support_db' matches your actual database name
-print("✅ Connected to support_db. Collections:", support_db.list_collection_names())
+support_db = support_client["support"] 
+print("✅ Connected to support. Collections:", support_db.list_collection_names())
 
 # Initialize FastAPI
 app = FastAPI()
