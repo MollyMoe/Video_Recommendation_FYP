@@ -19,7 +19,7 @@ function StHomeContent({ searchQuery }) {
     const fetchUserAndMovies = async () => {
       if (!username || !savedUser?.userId) return;
       setIsLoading(true);
- try {
+    try {
         // 1. Fetch user genres
         const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
         const userGenres = userRes.data.genres || [];
