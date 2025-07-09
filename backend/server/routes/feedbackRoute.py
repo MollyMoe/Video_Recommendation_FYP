@@ -5,7 +5,7 @@ import asyncio
 
 router = APIRouter()
 
-@router.post("/feedback/streamer")
+@router.post("/streamer")
 async def submit_streamer_feedback(
     request: Request,
     feedback: str = Form(...),
