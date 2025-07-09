@@ -310,8 +310,7 @@ def regenerate_movies(
             {"$match": {
                 "genres": {"$in": genres},
                 "title": {"$nin": exclude_titles},
-                "poster_url": {"$ne": None},
-                "trailer_url": {"$ne": None}
+                "poster_url": {"$ne": None}
             }},
             {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
             {"$replaceRoot": {"newRoot": "$doc"}},

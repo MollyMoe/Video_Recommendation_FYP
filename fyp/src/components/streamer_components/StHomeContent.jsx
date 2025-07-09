@@ -16,6 +16,18 @@ function StHomeContent({ searchQuery }) {
   const username = savedUser?.username;
 
   useEffect(() => {
+  const refresh = localStorage.getItem("refreshAfterSettings") === "true";
+  if (refresh) {
+    console.log("🔄 Refreshing home content after genre update");
+    localStorage.removeItem("refreshAfterSettings");
+    setIsLoading(true);
+    setMovies([]);
+    setAllFetchedMovies([]);
+  }
+}, []);
+
+
+  useEffect(() => {
     const fetchUserAndMovies = async () => {
       if (!username || !savedUser?.userId) return;
       setIsLoading(true);
@@ -42,23 +54,31 @@ function StHomeContent({ searchQuery }) {
             .filter(
               (movie) =>
                 movie.poster_url &&
-                movie.trailer_url &&
                 typeof movie.poster_url === "string" &&
-                typeof movie.trailer_url === "string" &&
                 movie.poster_url.toLowerCase() !== "nan" &&
-                movie.trailer_url.toLowerCase() !== "nan" &&
-                movie.poster_url.trim() !== "" &&
-                movie.trailer_url.trim() !== ""
+                movie.poster_url.trim() !== ""
             )
             .map((movie) => {
+              // Split genres
               if (typeof movie.genres === "string") {
                 movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
               }
-              const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+
+              // Extract trailer key
+              const match = movie.trailer_url?.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
               movie.trailer_key = match ? match[1] : null;
+
+              // Fallback for poster
+              if (
+                !movie.poster_url ||
+                typeof movie.poster_url !== "string" ||
+                movie.poster_url.trim().toLowerCase() === "nan"
+              ) {
+                movie.poster_url = "https://via.placeholder.com/300x450?text=No+Poster";
+              }
+
               return movie;
             });
-
           const unique = [];
           const seen = new Set();
           for (const movie of validMovies) {
@@ -91,7 +111,9 @@ function StHomeContent({ searchQuery }) {
         setMovies([]);
         setPreferredGenres([]);
       } finally {
-        setIsLoading(false);
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 300); // optional fade-out delay
       }
     };
 
@@ -301,7 +323,7 @@ const handleWatchLater = async (movieId) => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                {hoveredMovieId === movie._id && (
+                {hoveredMovieId === movie._id && movie.trailer_key && (
                   <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10">
                     <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
                       <iframe
