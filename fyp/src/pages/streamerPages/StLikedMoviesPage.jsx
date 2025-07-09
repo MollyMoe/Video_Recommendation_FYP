@@ -46,9 +46,42 @@ const StLikedMoviesPage = () => {
 
   // play
   
+  // const handlePlay = async (movieId, trailerUrl) => {
+  //   const savedUser = JSON.parse(localStorage.getItem("user")); // ✅ Add this
+  //   if (!movieId || !savedUser?.userId) return;
+  
+  //   try {
+  //     const res = await fetch(`${API}/api/movies/history`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         userId: savedUser.userId,
+  //         movieId: movieId,
+  //       }),
+  //     });
+  
+  //     if (!res.ok) throw new Error("Failed to save to history");
+  //     const data = await res.json();
+  //     console.log("📚 History updated:", data);
+  
+  //     if (trailerUrl) {
+  //       window.open(trailerUrl, "_blank");
+  //     }
+  //   } catch (err) {
+  //     console.error("❌ Error playing movie:", err);
+  //   }
+  // };
+
+
   const handlePlay = async (movieId, trailerUrl) => {
-    const savedUser = JSON.parse(localStorage.getItem("user")); // ✅ Add this
+    const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!movieId || !savedUser?.userId) return;
+  
+    // ✅ Open immediately before async/await
+    let newTab = null;
+    if (trailerUrl) {
+      newTab = window.open("", "_blank"); // open empty tab immediately
+    }
   
     try {
       const res = await fetch(`${API}/api/movies/history`, {
@@ -61,16 +94,16 @@ const StLikedMoviesPage = () => {
       });
   
       if (!res.ok) throw new Error("Failed to save to history");
-      const data = await res.json();
-      console.log("📚 History updated:", data);
   
-      if (trailerUrl) {
-        window.open(trailerUrl, "_blank");
+      if (newTab && trailerUrl) {
+        newTab.location.href = trailerUrl;  // ✅ now load trailer
       }
     } catch (err) {
       console.error("❌ Error playing movie:", err);
+      if (newTab) newTab.close(); // if error, close tab
     }
   };
+  
   
   // const handleRemove = async (movieId) => {
   //   const savedUser = JSON.parse(localStorage.getItem("user"));
