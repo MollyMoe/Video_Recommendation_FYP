@@ -129,10 +129,13 @@ const StLikedMoviesPage = () => {
 
       const data = await res.json();
       console.log("🗑️ Remove response:", data);
+
+      console.log("Before removal:", likedMovies.map(m => typeof m.movieId), typeof movieId);
+
   
       // ✅ Remove movie from frontend UI state
       setLikedMovies((prev) =>
-        prev.filter((m) => m.movieId !== Number(movieId))
+        prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
