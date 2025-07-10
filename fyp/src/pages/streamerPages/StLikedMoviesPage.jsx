@@ -107,34 +107,34 @@ const StLikedMoviesPage = () => {
   };
   
   
-  // const handleRemove = async (movieId) => {
-  //   const savedUser = JSON.parse(localStorage.getItem("user"));
-  //   if (!movieId || !savedUser?.userId) {
-  //     console.warn("Missing movieId or userId");
-  //     return;
-  //   }
+  const handleRemove = async (movieId) => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!movieId || !savedUser?.userId) {
+      console.warn("Missing movieId or userId");
+      return;
+    }
   
-  //   try {
-  //     const res = await fetch(`${API}/api/movies/unlike`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         userId: savedUser.userId,
-  //         movieId: movieId,
-  //       }),
-  //     });
+    try {
+      const res = await fetch(`${API}/api/movies/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: savedUser.userId,
+          movieId: movieId,
+        }),
+      });
   
-  //     const data = await res.json();
-  //     console.log("❌ Remove response:", data);
+      const data = await res.json();
+      console.log("❌ Remove response:", data);
   
-  //     // Optionally update UI
-  //     setLikedMovies((prev) => prev.filter((m) => m.movieId !== movieId));
-  //   } catch (err) {
-  //     console.error("❌ Error removing liked movie:", err);
-  //   }
-  // };
+      // Optionally update UI
+      setLikedMovies((prev) => prev.filter((m) => m.movieId !== movieId));
+    } catch (err) {
+      console.error("❌ Error removing liked movie:", err);
+    }
+  };
   
 
   return (
@@ -178,13 +178,13 @@ const StLikedMoviesPage = () => {
                     </button>
 
                     {/* remove btn */}
-                    {/* <button
+                    <button
                       onClick={() => handleRemove(movie.movieId)}
                       className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 mt-1"
                     >
                       <Trash2 className="w-3 h-3 mr-1 fill-black" />
                       Remove
-                    </button> */}
+                    </button>
                   </div>
                 </div>
               ))}

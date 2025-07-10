@@ -294,3 +294,37 @@ def get_watchLater_movies(userId: str, request: Request):
 #         return {"message": "Movie removed from liked list"}
 #     else:
 #         return {"message": "Movie not found or already removed"}
+
+# delete btn in like page
+@router.post("/delete")
+async def remove_from_liked_movies(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    try:
+        movie_id = int(movie_id)
+    except (ValueError, TypeError):
+        pass
+
+
+
+    result = await liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": movie_id}}
+    )
+
+    print("💥 MongoDB modified count:", result.modified_count)
+
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from liked list"}
+    else:
+        return {"message": "Movie not found or already removed"}
+
