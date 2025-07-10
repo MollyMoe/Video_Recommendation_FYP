@@ -85,7 +85,7 @@ def get_liked_movies(userId: str, request: Request):
     # Get all matching movies
     movies_cursor = movies_collection.find(
         {"movieId": {"$in": liked_ids}},
-        {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
+        {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
     )
 
     # Remove duplicates by movieId

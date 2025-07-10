@@ -76,6 +76,8 @@ const StLikedMoviesPage = () => {
   const handlePlay = async (movieId, trailerUrl) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!movieId || !savedUser?.userId) return;
+
+    console.log("▶️ Trailer URL:", trailerUrl);
   
     // ✅ Open immediately before async/await
     let newTab = null;
