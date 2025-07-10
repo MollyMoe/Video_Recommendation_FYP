@@ -126,11 +126,14 @@ const StLikedMoviesPage = () => {
         }),
       });
   
+
       const data = await res.json();
-      console.log("❌ Remove response:", data);
+      console.log("🗑️ Remove response:", data);
   
-      // Optionally update UI
-      setLikedMovies((prev) => prev.filter((m) => m.movieId !== movieId));
+      // ✅ Remove movie from frontend UI state
+      setLikedMovies((prev) =>
+        prev.filter((m) => m.movieId !== Number(movieId))
+      );
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
