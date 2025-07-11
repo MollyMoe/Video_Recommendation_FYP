@@ -1,16 +1,15 @@
-<<<<<<< HEAD
+
 import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
-=======
-import { useEffect, useState } from "react";
->>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
+
+
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const StWatchLaterPage = () => {
-<<<<<<< HEAD
+
   const [watchLaterMovies, setWatchLaterMovies] = useState([]);
 
   const fetchWatchLaterMovies = async (userId) => {
@@ -43,23 +42,6 @@ const StWatchLaterPage = () => {
     if (savedUser?.userId) {
       fetchWatchLaterMovies(savedUser.userId);
     }
-=======
-  const [movies, setMovies] = useState([]);
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await fetch(`${API}/movies/saved/${savedUser.userId}`);
-        const data = await res.json();
-        setMovies(data);
-      } catch (err) {
-        console.error("Error fetching history:", err);
-      }
-    };
-
-    fetchHistory();
->>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
   }, []);
 
   return (
@@ -69,7 +51,7 @@ const StWatchLaterPage = () => {
         <StSearchBar />
       </div>
       <StSideBar />
-<<<<<<< HEAD
+
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {watchLaterMovies.length === 0 ? (
@@ -89,16 +71,6 @@ const StWatchLaterPage = () => {
             </div>
           )}
         </div>
-=======
-      <h2 className="text-xl font-bold mb-4">History</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {movies.map((movie) => (
-          <div key={movie._id} className="bg-white rounded-lg shadow p-2">
-            <img src={movie.posterUrl} alt={movie.title} className="rounded mb-2" />
-            <h3 className="text-sm font-semibold">{movie.title}</h3>
-          </div>
-        ))}
->>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
       </div>
     </div>
   );

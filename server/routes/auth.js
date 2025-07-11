@@ -63,7 +63,6 @@ router.post('/signin', async (req, res) => {
     
     return res.json({
       message: 'Login successful',
-<<<<<<< HEAD
 
       user: {
         userId: user.userId,
@@ -73,9 +72,7 @@ router.post('/signin', async (req, res) => {
         userType: user.userType,
       }
 
-=======
-      user,
->>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
+
     });
   } catch (err) {
     console.error('Login error:', err);

@@ -54,15 +54,6 @@ const StSideBar = () => {
           </li>
           <li>
             <StSidebarButton
-              to="/home/watchLater"
-              label="Watch Later"
-              current={location.pathname === "/home/watchLater"}
-            />
-          </li>
-
-
-          <li>
-            <StSidebarButton
               to="/home/liked"
               label="Liked Movies"
               current={location.pathname === "/home/liked"}

@@ -235,9 +235,36 @@ const handleWatchLater = async (movieId) => {
   }
 };
 
+const handleLike = async (movieId) => {
+  if (!movieId || !savedUser?.userId) {
+    console.warn("Missing movieId or userId");
+    return;
+  }
 
+  try {
+    const res = await fetch(`${API}/api/movies/like`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: savedUser.userId,
+        movieId: movieId,
+      }),
+    });
 
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Like failed:", res.status, errorText);
+      return;
+    }
 
+    const data = await res.json();
+    console.log("Like response:", data);
+  } catch (err) {
+    console.error("Error liking movie:", err);
+  }
+};
 
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">

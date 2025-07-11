@@ -4,12 +4,8 @@ import { useUser } from "../../context/UserContext";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-<<<<<<< HEAD
-const defaultImage =
-  "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
-=======
+
 const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
->>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
@@ -44,11 +40,6 @@ function StUserProfile({ userProfile }) {
       });
   }, []);
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> c87e97ec1acdecc208442b1bd6addc859ca2c284
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
     if (savedTheme === "true") {
