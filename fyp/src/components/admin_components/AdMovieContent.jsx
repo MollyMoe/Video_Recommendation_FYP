@@ -133,6 +133,9 @@ import React, { useEffect, useState } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
+
 const AdMovieContent = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState(null);
