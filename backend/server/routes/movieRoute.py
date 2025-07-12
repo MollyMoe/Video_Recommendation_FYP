@@ -207,6 +207,8 @@ def get_history_movies(userId: str, request: Request):
                 movie["_id"] = str(movie["_id"])
                 unique_movies.append(movie)
 
+        print("hello")
+
         return {"historyMovies": unique_movies}
 
     except Exception as e:
