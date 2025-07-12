@@ -25,7 +25,7 @@ const StFilterRecPage = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API}/api/movies/recommended/${savedUser.userId}`);
+      const res = await fetch(`${API}/api/movies/filter/${savedUser.userId}`);
       const data = await res.json();
       setAllMovies(data.movies || []);
       setMovies(data.movies || []);
