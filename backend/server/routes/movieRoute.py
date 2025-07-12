@@ -147,10 +147,12 @@ async def add_to_history(request: Request):
     user_id = data.get("userId")
     movie_id = data.get("movieId")
 
+    
+
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-
+    movie_id = str(movie_id) 
     # delete segment
     try:
         movie_id = int(movie_id)
@@ -207,7 +209,7 @@ def get_history_movies(userId: str, request: Request):
                 movie["_id"] = str(movie["_id"])
                 unique_movies.append(movie)
 
-        print("hello")
+
 
         return {"historyMovies": unique_movies}
 
@@ -228,6 +230,8 @@ async def add_to_watchLater(request: Request):
 
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    movie_id = str(movie_id) 
 
     # Use $addToSet to avoid duplicate entries in history
     await watchLater_collection.update_one(
@@ -251,7 +255,7 @@ def get_watchLater_movies(userId: str, request: Request):
         if not save or not save.get("SaveMovies"):
             return {"SaveMovies": []}
 
-        saveMovie_ids = save["SaveMovies"]
+        saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": saveMovie_ids}},
@@ -318,7 +322,7 @@ async def remove_from_liked_movies(request: Request):
     except (ValueError, TypeError):
         pass
 
-
+    movie_id = str(data.get("movieId"))
 
     result = await liked_collection.update_one(
         {"userId": user_id},
