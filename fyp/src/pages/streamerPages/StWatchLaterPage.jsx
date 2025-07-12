@@ -5,23 +5,25 @@ import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 
 
+
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const StHistoryPage = () => {
+const StWatchLaterPage = () => {
 
-  const [historyMovies, setHistoryMovies] = useState([]);
+  const [watchLaterMovies, setWatchLaterMovies] = useState([]);
 
-  const fetchHistoryMovies = async (userId) => {
+  const fetchWatchLaterMovies = async (userId) => {
     try {
-      const res = await fetch(`${API}/api/movies/historyMovies/${userId}`);
+      const res = await fetch(`${API}/api/movies/watchLater/${userId}`);
       const data = await res.json();
 
-      console.log("📽 History movies response:", data);
+      console.log("🎬 Watch Later response:", data);
 
+      // Remove duplicates by _id or movieId
       const uniqueMovies = [];
       const seen = new Set();
 
-      for (const movie of data.historyMovies || []) {
+      for (const movie of data.SaveMovies || []) {
         const id = movie._id || movie.movieId;
         if (!seen.has(id)) {
           seen.add(id);
@@ -29,18 +31,17 @@ const StHistoryPage = () => {
         }
       }
 
-      setHistoryMovies(uniqueMovies);
+      setWatchLaterMovies(uniqueMovies);
     } catch (err) {
-      console.error("❌ Failed to fetch history movies:", err);
+      console.error("❌ Failed to fetch watch later movies:", err);
     }
   };
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
-      fetchHistoryMovies(savedUser.userId);
+      fetchWatchLaterMovies(savedUser.userId);
     }
-
   }, []);
 
   return (
@@ -53,11 +54,11 @@ const StHistoryPage = () => {
 
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
-          {historyMovies.length === 0 ? (
-            <p className="text-center mt-10 text-white">No history movies found.</p>
+          {watchLaterMovies.length === 0 ? (
+            <p className="text-center mt-10 text-white">No saved movies found.</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
-              {historyMovies.map((movie) => (
+              {watchLaterMovies.map((movie) => (
                 <div key={movie._id || movie.movieId} className="bg-white rounded-lg shadow p-2">
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
@@ -75,4 +76,4 @@ const StHistoryPage = () => {
   );
 };
 
-export default StHistoryPage;
+export default StWatchLaterPage;

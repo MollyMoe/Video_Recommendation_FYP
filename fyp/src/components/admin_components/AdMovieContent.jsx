@@ -143,7 +143,7 @@ const AdMovieContent = () => {
   useEffect(() => {
     setIsLoading(true); // Start loading
     axios
-      .get('http://localhost:3001/api/movies/all') // Adjust if deployed
+      .get(`${API}/api/movies/all`) // Adjust if deployed
       .then((res) => {
         const unique = [];
         const seenTitles = new Set();
