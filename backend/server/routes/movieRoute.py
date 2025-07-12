@@ -377,35 +377,16 @@ def get_user_recommendations(user_id: str, request: Request):
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
 # for filter recommendation page
-@router.post("/filter/")
-async def filter_recommendations(request: Request, body: dict = Body(...)):
-    user_id = body.get("userId")
-    query = body.get("query", "").lower()
-
+@router.get("/filter/{userId}")
+async def get_recommended_movies(userId: str, request: Request):
     db = request.app.state.movie_db
     recommended_collection = db["recommended"]
 
-    print(f"🔍 Incoming userId: {user_id}, query: {query}")
+    movies = list(recommended_collection.find({ "userId": userId }))
 
-    if not user_id:
-        return JSONResponse(content={"error": "Missing userId"}, status_code=400)
-
-    filters = { "userId": user_id }  # Adjust this if userId is stored differently
-    results = list(recommended_collection.find(filters))
-
-    print(f"✅ Matched {len(results)} documents for userId")
-
-    if query:
-        results = [
-            movie for movie in results
-            if query in movie.get("title", "").lower()
-            or query in " ".join(movie.get("genres", [])).lower()
-        ]
-        print(f"🎯 Filtered {len(results)} movies after search query")
-
-    for movie in results:
+    for movie in movies:
         movie["_id"] = str(movie["_id"])
 
-    return { "movies": results }
+    return { "movies": movies }
 
 

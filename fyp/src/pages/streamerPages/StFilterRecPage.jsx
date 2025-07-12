@@ -8,46 +8,52 @@ const API = import.meta.env.VITE_API_BASE_URL;
 const StFilterRecPage = () => {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
+  const [allMovies, setAllMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    // Clear cache/data on every mount
+    // Clear state and fetch fresh data every time page mounts
     setQuery("");
     setMovies([]);
+    fetchMovies();
   }, []);
 
-  const handleSearch = async () => {
-  if (!user?.userId) {
-    console.warn("❌ No userId found in localStorage");
-    return;
-  }
+  const fetchMovies = async () => {
+    if (!savedUser?.userId) return;
 
-  setIsLoading(true);
-  try {
-    const res = await fetch(`${API}/api/movies/filter`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: savedUser.userId, query }),
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API}/api/movies/recommended/${savedUser.userId}`);
+      const data = await res.json();
+      setAllMovies(data.movies || []);
+      setMovies(data.movies || []);
+    } catch (err) {
+      console.error("Failed to fetch recommended movies:", err);
+    }
+    setIsLoading(false);
+  };
+
+  // Update movie list based on search query
+  useEffect(() => {
+    if (!query.trim()) {
+      setMovies(allMovies); // reset to all
+      return;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const filtered = allMovies.filter((movie) => {
+      return (
+        movie.title?.toLowerCase().includes(lowerQuery) ||
+        movie.director?.toLowerCase().includes(lowerQuery) ||
+        (Array.isArray(movie.genres) &&
+          movie.genres.some((g) => g.toLowerCase().includes(lowerQuery)))
+      );
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("❌ Backend error:", data.error || data);
-      setMovies([]);
-    } else {
-      console.log("✅ Search result:", data);
-      setMovies(data.movies || []);
-    }
-  } catch (err) {
-    console.error("❌ Search request failed:", err);
-    setMovies([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+    setMovies(filtered);
+  }, [query, allMovies]);
 
 
   return (
