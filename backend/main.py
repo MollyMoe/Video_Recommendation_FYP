@@ -17,12 +17,16 @@ env_path = Path(__file__).resolve().parent / 'server' / '.env'
 load_dotenv(dotenv_path=env_path)
 print("🔍 .env loaded from:", env_path)
 
+
+
+
 UPLOAD_DIR = Path("/tmp/uploads") if os.getenv("RENDER") else Path(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads")))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load environment variables
 USER_DB_URI = os.getenv("MONGO_URI", "").strip()
 MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
+print("🔐 FastAPI is using MOVIE_DB_URI:", repr(MOVIE_DB_URI))
 JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
 
 print("🔗 USER_DB_URI:", repr(USER_DB_URI))

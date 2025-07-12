@@ -150,6 +150,8 @@ async def add_to_history(request: Request):
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
+
+    # delete segment
     try:
         movie_id = int(movie_id)
     except (ValueError, TypeError):
@@ -187,7 +189,8 @@ def get_history_movies(userId: str, request: Request):
         if not history_doc or not history_doc.get("historyMovies"):
             return {"historyMovies": []}
 
-        history_ids = history_doc["historyMovies"]
+        history_ids = [str(mid) for mid in history_doc["historyMovies"]]
+
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
