@@ -159,7 +159,7 @@ def get_history_movies(userId: str, request: Request):
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
+              {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
         )
 
         # Remove duplicates by movieId

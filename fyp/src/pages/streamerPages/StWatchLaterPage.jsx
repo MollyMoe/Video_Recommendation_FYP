@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
-import {Play, Trash2} from "lucid-react";
+import {Play, Trash2} from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
