@@ -56,6 +56,7 @@ origins = [
 ]
 
 
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
