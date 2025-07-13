@@ -10,6 +10,9 @@ const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
+  const [refreshTrigger, setRefreshTrigger] = useState(false);
+
+
 
   const fetchLikedMovies = async (userId) => {
     try {
@@ -41,7 +44,7 @@ const StLikedMoviesPage = () => {
     if (savedUser?.userId) {
       fetchLikedMovies(savedUser.userId);
     }
-  }, []);
+  }, [refreshTrigger]);
 
 
 
@@ -105,10 +108,8 @@ const StLikedMoviesPage = () => {
       console.log("Before removal:", likedMovies.map(m => typeof m.movieId), typeof movieId);
 
   
-      // ✅ Remove movie from frontend UI state
-      setLikedMovies((prev) =>
-        prev.filter((m) => m.movieId.toString() !== movieId.toString())
-      );
+    // ✅ Trigger re-fetch instead of manual state update
+    setRefreshTrigger(prev => !prev);
 
           // ✅ Re-fetch movies after deletion
     await fetchLikedMovies(savedUser.userId);
