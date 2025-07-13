@@ -90,7 +90,7 @@ const StLikedMoviesPage = () => {
     }
   
     try {
-      const res = await fetch(`${API}/api/movies/delete`, {
+      const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

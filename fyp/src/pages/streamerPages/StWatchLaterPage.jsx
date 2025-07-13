@@ -74,7 +74,45 @@ const StWatchLaterPage = () => {
       if (newTab) newTab.close(); // if error, close tab
     }
   };
+
+  const handleRemove = async (movieId) => {
+
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!movieId || !savedUser?.userId) {
+      console.warn("Missing movieId or userId");
+      return;
+    }
   
+    try {
+      const res = await fetch(`${API}/api/movies/watchLater/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: savedUser.userId,
+          movieId: movieId,
+        }),
+      });
+  
+
+      const data = await res.json();
+      console.log("🗑️ Remove response:", data);
+
+      console.log("Before removal:", likedMovies.map(m => typeof m.movieId), typeof movieId);
+
+  
+      // ✅ Remove movie from frontend UI state
+      setLikedMovies((prev) =>
+        prev.filter((m) => m.movieId.toString() !== movieId.toString())
+      );
+    } catch (err) {
+      console.error("❌ Error removing liked movie:", err);
+    }
+  };
+  
+  
+
   
 
   return (
@@ -113,13 +151,13 @@ const StWatchLaterPage = () => {
                     </button>
 
                     {/* remove btn */}
-                    {/* <button
+                    <button
                       onClick={() => handleRemove(movie.movieId)}
                       className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 mt-1"
                     >
                       <Trash2 className="w-3 h-3 mr-1 fill-black" />
                       Remove
-                    </button> */}
+                    </button>
                   </div>
 
                 </div>

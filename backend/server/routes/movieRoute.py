@@ -240,7 +240,7 @@ def get_watchLater_movies(userId: str, request: Request):
         raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
     
 
-@router.post("/delete")
+@router.post("/likedMovies/delete")
 async def remove_from_liked_movies(request: Request):
     data = await request.json()
     db = request.app.state.movie_db
@@ -272,3 +272,30 @@ async def remove_from_liked_movies(request: Request):
     else:
         return {"message": "Movie not found or already removed"}
 
+
+
+@router.post("/watchLater/delete")
+async def remove_from_watchLater(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    watchLater_collection = db["saved"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    movie_id = str(movie_id)
+
+    result = watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"SaveMovies": movie_id}}
+    )
+
+    print("💥 WatchLater delete modified count:", result.modified_count)
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from watch later list"}
+    else:
+        return {"message": "Movie not found or already removed"}
