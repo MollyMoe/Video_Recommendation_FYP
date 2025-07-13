@@ -301,7 +301,7 @@ async def remove_from_watchLater(request: Request):
         return {"message": "Movie not found or already removed"}
     
 
-@router.post("/history/delete")
+@router.post("/historyMovies/delete")
 async def remove_from_history(request: Request):
     data = await request.json()
     db = request.app.state.movie_db
