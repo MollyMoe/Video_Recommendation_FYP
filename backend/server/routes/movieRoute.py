@@ -322,3 +322,41 @@ async def remove_from_history(request: Request):
     else:
         return {"message": "Movie not found or already removed"}
 
+
+# store recommendations in a collection
+@router.post("/store-recommendations")
+async def store_recommendations(
+    request: Request,
+    payload: dict = Body(...)
+):
+    db = request.app.state.movie_db
+    user_id = payload.get("userId")
+    movies = payload.get("movies", [])
+
+    if not user_id or not isinstance(movies, list):
+        return JSONResponse(status_code=400, content={"error": "Invalid request"})
+
+    try:
+        db.recommended.update_one(
+            { "userId": user_id },
+            { "$set": { "recommended": movies } },
+            upsert=True
+        )
+        return { "message": "Recommendations saved to 'recommended' collection." }
+    except Exception as e:
+        print("❌ Error saving recommendations:", e)
+        return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
+
+# when new data is regenrated it will stay that way 
+@router.get("/recommendations/{user_id}")
+def get_user_recommendations(user_id: str, request: Request):
+    db = request.app.state.movie_db
+    try:
+        record = db.recommended.find_one({ "userId": user_id })
+        if not record:
+            return JSONResponse(content=[])  
+
+        return JSONResponse(content=record.get("recommended", []))
+    except Exception as e:
+        print("❌ Error fetching recommendations:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch recommendations")

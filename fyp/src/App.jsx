@@ -18,6 +18,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
 import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
+import StFilterPage from "./pages/streamerPages/StFilterPage";
 
 function App() {
 
@@ -39,6 +40,7 @@ function App() {
             <Route path="setting" element={<StSettingPage />} />
             <Route path="like" element={<StLikedMoviesPage />} />
             <Route path="watchLater" element={<StWatchLaterPage />} />
+            <Route path="filter" element={<StFilterPage />} />
             <Route path="help" element={<StHelpPage />} />
           </Route>
 
