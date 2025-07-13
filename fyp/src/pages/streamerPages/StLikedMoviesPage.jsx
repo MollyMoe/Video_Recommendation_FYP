@@ -44,34 +44,6 @@ const StLikedMoviesPage = () => {
   }, []);
 
 
-  // play
-  
-  // const handlePlay = async (movieId, trailerUrl) => {
-  //   const savedUser = JSON.parse(localStorage.getItem("user")); // ✅ Add this
-  //   if (!movieId || !savedUser?.userId) return;
-  
-  //   try {
-  //     const res = await fetch(`${API}/api/movies/history`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         userId: savedUser.userId,
-  //         movieId: movieId,
-  //       }),
-  //     });
-  
-  //     if (!res.ok) throw new Error("Failed to save to history");
-  //     const data = await res.json();
-  //     console.log("📚 History updated:", data);
-  
-  //     if (trailerUrl) {
-  //       window.open(trailerUrl, "_blank");
-  //     }
-  //   } catch (err) {
-  //     console.error("❌ Error playing movie:", err);
-  //   }
-  // };
-
 
   const handlePlay = async (movieId, trailerUrl) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -137,6 +109,9 @@ const StLikedMoviesPage = () => {
       setLikedMovies((prev) =>
         prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
+
+          // ✅ Re-fetch movies after deletion
+    await fetchLikedMovies(savedUser.userId);
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
