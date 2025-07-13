@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const StFilterRecPage = () => {
+const StFilterContent = ({searchQuery}) => {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [allMovies, setAllMovies] = useState([]);
@@ -13,7 +13,11 @@ const StFilterRecPage = () => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
+  
+  const [preferredGenres, setPreferredGenres] = useState([]);
+
   useEffect(() => {
+    console.log("📦 Running fetchMovies()");
     // Clear state and fetch fresh data every time page mounts
     setQuery("");
     setMovies([]);
@@ -25,57 +29,83 @@ const StFilterRecPage = () => {
 
     setIsLoading(true);
     try {
-      const res = await fetch(`${API}/api/movies/filter/${savedUser.userId}`);
-      const data = await res.json();
-      setAllMovies(data.movies || []);
-      setMovies(data.movies || []);
+      
+      let allMovieList = [];
+      const res = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+      allMovieList = res.data;
+
+      console.log("🎬 Frontend received:", allMovieList);
+   
+
+      setAllMovies(allMovieList);
+      setMovies(allMovieList);
     } catch (err) {
       console.error("Failed to fetch recommended movies:", err);
     }
     setIsLoading(false);
   };
 
+  const handleHistory = async (movieId) => {
+    if (!movieId || !savedUser?.userId) return;
+    try {
+      await fetch(`${API}/api/movies/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: savedUser.userId, movieId }),
+      });
+    } catch (err) {
+      console.error("❌ Error saving history:", err);
+    }
+  };
+
+  const handleWatchLater = async (movieId) => {
+    if (!movieId || !savedUser?.userId) return;
+    try {
+      await fetch(`${API}/api/movies/watchLater`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: savedUser.userId, movieId }),
+      });
+    } catch (err) {
+      console.error("Save movie:", err);
+    }
+  };
+
+  const handleLike = async (movieId) => {
+    if (!movieId || !savedUser?.userId) return;
+    try {
+      await fetch(`${API}/api/movies/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: savedUser.userId, movieId }),
+      });
+    } catch (err) {
+      console.error("Error liking movie:", err);
+    }
+  };
+
   // Update movie list based on search query
   useEffect(() => {
-    if (!query.trim()) {
-      setMovies(allMovies); // reset to all
+    if (!searchQuery?.trim()) {
+      const filteredByGenres = allMovies.filter(movie =>
+        movie.genres?.some(genre => preferredGenres.includes(genre))
+      );
+      setMovies(filteredByGenres);
       return;
     }
 
-    const lowerQuery = query.toLowerCase();
-    const filtered = allMovies.filter((movie) => {
-      return (
-        movie.title?.toLowerCase().includes(lowerQuery) ||
-        movie.director?.toLowerCase().includes(lowerQuery) ||
-        (Array.isArray(movie.genres) &&
-          movie.genres.some((g) => g.toLowerCase().includes(lowerQuery)))
-      );
-    });
-
+    const lowerQuery = searchQuery.toLowerCase();
+    const filtered = allMovies.filter(movie =>
+      movie.title?.toLowerCase().includes(lowerQuery) ||
+      movie.director?.toLowerCase().includes(lowerQuery) ||
+      (Array.isArray(movie.genres) && movie.genres.some(g => g.toLowerCase().includes(lowerQuery)))
+    );
     setMovies(filtered);
-  }, [query, allMovies]);
-
+  }, [searchQuery, allMovies, preferredGenres]);
 
   return (
-    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+    <div className="pt-50 px-8 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="p-6 max-w-3xl mx-auto">
-            <h1 className="text-2xl font-bold mb-4">What would you like to watch?</h1>
-                <div className="flex items-center space-x-2">
-                    <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="e.g., comedy, action..."
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    />
-                    <button
-                    onClick={handleSearch}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                    Search
-                    </button>
-                </div>
-
                 {isLoading && (
                 <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
@@ -84,17 +114,17 @@ const StFilterRecPage = () => {
                     </div>
                 </div>
                 )}
-
+              
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
                 {movies.map((movie) => (
                     <div
                     key={movie._id}
                     className="relative cursor-pointer group w-[180px] mx-auto"
-            
+                    onClick={() => setSelectedMovie(movie)}
                     >
                     <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
                     <img
-                    src={movie.poster_url || "https://via.placeholder.com/150"}
+                    src={movie.poster_url || "https://placehold.co/150x225?text=No+Image"}
                     alt={movie.title || "No title"}
                     className="w-full h-full object-cover"
                     />
@@ -151,15 +181,31 @@ const StFilterRecPage = () => {
             </div>
 
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+                onClick={() => {
+                  handleHistory(selectedMovie.movieId);
+                  if (selectedMovie?.trailer_url) {
+                    window.open(selectedMovie.trailer_url, "_blank");
+                  }
+                }}
+              >
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+                onClick={() => {
+                  handleLike(selectedMovie.movieId)}}
+              >
                 <Heart className="w-4 h-4 mr-1 fill-black" />
                 Like
               </button>
-              <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+              <button
+                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+                onClick={() => {
+                  handleWatchLater(selectedMovie.movieId)}}
+              >
                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
                 Save
               </button>
@@ -184,4 +230,5 @@ const StFilterRecPage = () => {
   );
 };
 
-export default StFilterRecPage
+export default StFilterContent
+

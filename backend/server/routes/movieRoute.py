@@ -376,17 +376,5 @@ def get_user_recommendations(user_id: str, request: Request):
         print("❌ Error fetching recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
-# for filter recommendation page
-@router.get("/filter/{userId}")
-async def get_recommended_movies(userId: str, request: Request):
-    db = request.app.state.movie_db
-    recommended_collection = db["recommended"]
-
-    movies = list(recommended_collection.find({ "userId": userId }))
-
-    for movie in movies:
-        movie["_id"] = str(movie["_id"])
-
-    return { "movies": movies }
 
 
