@@ -157,6 +157,104 @@
 //     );
 //   }
 
+//   // history 
+// const handleHistory = async (movieId) => {
+//   const savedUser = JSON.parse(localStorage.getItem("user"));
+//   if (!movieId || !savedUser?.userId) {
+//     console.warn("❌ Missing movieId or userId:", movieId, savedUser?.userId);
+//     return;
+//   }
+
+//   try {
+//     console.log("📤 Sending history (play) request for:", movieId);
+//     const res = await fetch(`${API}/api/movies/history`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         userId: savedUser.userId,
+//         movieId: movieId,
+//       }),
+//     });
+
+//     const data = await res.json();
+
+//     if (!res.ok) {
+//       console.error("❌ History POST failed:", res.status, data);
+//       return;
+//     }
+
+//     console.log("✅ History saved:", data);
+//   } catch (err) {
+//     console.error("❌ Error saving history:", err);
+//   }
+// };
+
+
+// // watch later 
+// const handleWatchLater = async (movieId) => {
+//   if (!movieId || !savedUser?.userId) {
+//     console.warn("Missing movieId or userId");
+//     return;
+//   }
+
+//   try {
+//     const res = await fetch(`${API}/api/movies/watchLater`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         userId: savedUser.userId,
+//         movieId: movieId,
+//       }),
+//     });
+
+//     if (!res.ok) {
+//       const errorText = await res.text();
+//       console.error("Save failed:", res.status, errorText);
+//       return;
+//     }
+
+//     const data = await res.json();
+//     console.log("Save response:", data);
+//   } catch (err) {
+//     console.error("Save  movie:", err);
+//   }
+// };
+
+// // like movies
+// const handleLike = async (movieId) => {
+//   if (!movieId || !savedUser?.userId) {
+//     console.warn("Missing movieId or userId");
+//     return;
+//   }
+
+//   try {
+//     const res = await fetch(`${API}/api/movies/like`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         userId: savedUser.userId,
+//         movieId: movieId,
+//       }),
+//     });
+
+//     if (!res.ok) {
+//       const errorText = await res.text();
+//       console.error("Like failed:", res.status, errorText);
+//       return;
+//     }
+
+//     const data = await res.json();
+//     console.log("Like response:", data);
+//   } catch (err) {
+//     console.error("Error liking movie:", err);
+//   }
+// };
 
 //   return (
 //     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
@@ -235,33 +333,66 @@
 //             </div>
 
 //             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
-//                 <Play className="w-3 h-3 mr-1 fill-black" />
-//                 Play
-//               </button>
-//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
-//                 <Heart className="w-4 h-4 mr-1 fill-black" />
-//                 Like
-//               </button>
-//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
-//                 <Bookmark className="w-4 h-4 mr-1 fill-black" />
-//                 Save
-//               </button>
-//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
-//                 <Trash2 className="w-4 h-4 mr-1 stroke-black" />
-//                 Delete
-//               </button>
-//             </div>
+//                 <button
+//                   className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+//                   onClick={() => {
+//                     console.log("▶️ Play clicked for:", selectedMovie?.movieId);
+//                     handleHistory(selectedMovie?.movieId);
+            
+//                        // Optional: open trailer
+//                          if (selectedMovie?.trailer_url) {
+//                            window.open(selectedMovie.trailer_url, "_blank");
+//                               }
+//                             }}
+//                          >
+//                           <Play className="w-3 h-3 mr-1 fill-black" />
+//                             Play
+//                   </button>
 
-//             <div className="flex justify-end pt-4">
-//               <button
-//                 onClick={() => setSelectedMovie(null)}
-//                 className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm"
-//               >
-//                 Close
+
+//                 <button
+//                     onClick={() => {
+//                        console.log(
+//                          "Like button clicked for movie:",
+//                           selectedMovie?.movieId
+//                           );
+//                            handleLike(selectedMovie.movieId);
+//                           }}
+//                         className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
+//                  >
+           
+//                    <Heart className="w-4 h-4 mr-1 fill-black" />
+//                      Like
+//                 </button>
+           
+//                  <button 
+//                      onClick={() => {
+//                       console.log(
+//                          "Save for movie:",
+//                         selectedMovie?.movieId
+//                        );
+//                       handleWatchLater(selectedMovie.movieId);
+//                     }}
+//                     className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+//                     <Bookmark className="w-4 h-4 mr-1 fill-black" />
+//                     Save
+//                  </button>
+           
+//               <button className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200">
+//                    <Trash2 className="w-4 h-4 mr-1 stroke-black" />
+//                    Delete
 //               </button>
-//             </div>
-//           </Dialog.Panel>
+//               </div>
+           
+//              <div className="flex justify-end pt-4">
+//               <button
+//                onClick={() => setSelectedMovie(null)}
+//               className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm"
+//                >
+//                   Close
+//               </button>
+//              </div>
+//          </Dialog.Panel>
 //         </div>
 //       </Dialog>
 //     </div>
@@ -270,6 +401,8 @@
 // }
 
 // export default StHomeContent;
+
+
 
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -287,138 +420,147 @@ function StHomeContent({ userId }) {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
 
-  useEffect(() => {
-    const fetchUserAndMovies = async () => {
-      if (!username || !savedUser?.userId) return;
-      setIsLoading(true);
-      try {
-        const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-        const userGenres = userRes.data.genres || [];
-        setPreferredGenres(userGenres);
+useEffect(() => {
+  const fetchUserAndMovies = async () => {
+    if (!username || !savedUser?.userId) return;
+    setIsLoading(true);
 
-        // Step 1: Try to load from recommendations
-        let fetchedMovies = [];
-        const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
-
-        if (!refreshNeeded) {
-          const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
-          fetchedMovies = recRes.data;
-        }
-
-        if (refreshNeeded || !fetchedMovies || fetchedMovies.length === 0) {
-          localStorage.removeItem("refreshAfterSettings");
-          
-          const allRes = await axios.get(`${API}/api/movies/all`);
-          const validMovies = allRes.data
-            .filter(
-              (movie) =>
-                movie.poster_url &&
-                movie.trailer_url &&
-                typeof movie.poster_url === "string" &&
-                typeof movie.trailer_url === "string" &&
-                movie.poster_url.toLowerCase() !== "nan" &&
-                movie.trailer_url.toLowerCase() !== "nan" &&
-                movie.poster_url.trim() !== "" &&
-                movie.trailer_url.trim() !== ""
-            )
-            .map((movie) => {
-              if (typeof movie.genres === "string") {
-                movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-              }
-              const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-              movie.trailer_key = match ? match[1] : null;
-              return movie;
-            });
-
-          const unique = [];
-          const seen = new Set();
-          for (const movie of validMovies) {
-            if (!seen.has(movie.title)) {
-              seen.add(movie.title);
-              unique.push(movie);
-            }
-          }
-
-          const normalizedPreferred = userGenres.map((g) => g.toLowerCase().trim());
-          fetchedMovies = unique.filter(
-            (movie) =>
-              Array.isArray(movie.genres) &&
-              movie.genres.some((genre) =>
-                normalizedPreferred.some((pref) => genre.toLowerCase().trim().includes(pref))
-              )
-          );
-
-          // Update DB with new list
-          await axios.post(`${API}/api/movies/store-recommendations`, {
-            userId: savedUser.userId,
-            movies: fetchedMovies,
-          });
-        }
-        
-        //setMovies(fetchedMovies);
-        setMovies(fetchedMovies.slice(0, 30));
-      } catch (err) {
-        console.error("Error loading movies:", err);
-        setMovies([]);
-        setPreferredGenres([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserAndMovies();
-  }, [username]);
-
-  const handleRegenerate = async () => {
     try {
-      console.log("🔁 Sending POST to /api/movies/regenerate...");
-      const response = await axios.post(`${API}/api/movies/regenerate`, {
-        genres: preferredGenres,
-        excludeTitles: movies.map((m) => m.title),
-      });
-      console.log("✅ Regenerated movies:", response.data);
+      const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+      const userGenres = userRes.data.genres || [];
+      setPreferredGenres(userGenres);
 
-      const regenerated = response.data
-        .filter(
-          (movie) =>
-            movie.poster_url &&
-            movie.trailer_url &&
-            typeof movie.poster_url === "string" &&
-            typeof movie.trailer_url === "string" &&
-            movie.poster_url.toLowerCase() !== "nan" &&
-            movie.trailer_url.toLowerCase() !== "nan" &&
-            movie.poster_url.trim() !== "" &&
-            movie.trailer_url.trim() !== ""
-        )
-        .map((movie) => {
-          if (typeof movie.genres === "string") {
-            movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-          }
-          const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-          movie.trailer_key = match ? match[1] : null;
-          return movie;
+      const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
+
+      let fullList = [];
+
+      // Step 1: Try from stored recommendations
+      if (!refreshNeeded) {
+        const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+        fullList = recRes.data;
+      }
+
+      // Step 2: Fallback to genre-filtered full movie list
+      if (refreshNeeded || !fullList || fullList.length === 0) {
+        localStorage.removeItem("refreshAfterSettings");
+
+        const allRes = await axios.get(`${API}/api/movies/all`);
+        const validMovies = allRes.data
+          .filter(
+            (movie) =>
+              movie.poster_url &&
+              movie.trailer_url &&
+              typeof movie.poster_url === "string" &&
+              typeof movie.trailer_url === "string" &&
+              movie.poster_url.toLowerCase() !== "nan" &&
+              movie.trailer_url.toLowerCase() !== "nan" &&
+              movie.poster_url.trim() !== "" &&
+              movie.trailer_url.trim() !== ""
+          )
+          .map((movie) => {
+            if (typeof movie.genres === "string") {
+              movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+            }
+            const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+            movie.trailer_key = match ? match[1] : null;
+            return movie;
+          });
+
+        const seen = new Set();
+        const unique = validMovies.filter((movie) => {
+          if (seen.has(movie.title)) return false;
+          seen.add(movie.title);
+          return true;
         });
 
-      const updated = [...regenerated, ...movies];
-      const seenTitles = new Set();
-      const deduped = updated.filter((m) => {
-        if (seenTitles.has(m.title)) return false;
-        seenTitles.add(m.title);
-        return true;
-      });
+        const normalizedPreferred = userGenres.map((g) => g.toLowerCase().trim());
 
-      setMovies(deduped);
-     
-      // Update saved list after regeneration
-      await axios.post(`${API}/api/movies/store-recommendations`, {
-        userId: savedUser.userId,
-        movies: deduped,
-      });
+        fullList = unique.filter(
+          (movie) =>
+            Array.isArray(movie.genres) &&
+            movie.genres.some((genre) =>
+              normalizedPreferred.some((pref) => genre.toLowerCase().trim().includes(pref))
+            )
+        );
 
+        await axios.post(`${API}/api/movies/store-recommendations`, {
+          userId: savedUser.userId,
+          movies: fullList,
+        });
+      }
+
+      // ✅ Only display 30 movies max on homepage
+      setMovies(fullList.slice(0, 30));
     } catch (err) {
-      console.error("❌ Failed to regenerate movies:", err);
+      console.error("Error loading movies:", err);
+      setMovies([]);
+      setPreferredGenres([]);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  fetchUserAndMovies();
+}, [username]);
+
+const handleRegenerate = async () => {
+  try {
+    setIsLoading(true); // Show loading while regenerating
+
+    // ✅ 1. Get the full list of stored recommendations
+    const fullStored = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+    const excludeTitles = fullStored.data.map((m) => m.title);
+
+    // ✅ 2. Send the full exclude list for accurate regeneration
+    const response = await axios.post(`${API}/api/movies/regenerate`, {
+      genres: preferredGenres,
+      excludeTitles: excludeTitles,
+    });
+
+    const regenerated = response.data
+      .filter(
+        (movie) =>
+          movie.poster_url &&
+          movie.trailer_url &&
+          typeof movie.poster_url === "string" &&
+          typeof movie.trailer_url === "string" &&
+          movie.poster_url.toLowerCase() !== "nan" &&
+          movie.trailer_url.toLowerCase() !== "nan" &&
+          movie.poster_url.trim() !== "" &&
+          movie.trailer_url.trim() !== ""
+      )
+      .map((movie) => {
+        if (typeof movie.genres === "string") {
+          movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+        }
+        const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+        movie.trailer_key = match ? match[1] : null;
+        return movie;
+      });
+
+    // ✅ 3. Merge with fullStored and deduplicate
+    const updated = [...regenerated, ...fullStored.data];
+    const seenTitles = new Set();
+    const deduped = updated.filter((m) => {
+      if (seenTitles.has(m.title)) return false;
+      seenTitles.add(m.title);
+      return true;
+    });
+
+    // ✅ 4. Save new full list
+    await axios.post(`${API}/api/movies/store-recommendations`, {
+      userId: savedUser.userId,
+      movies: deduped,
+    });
+
+    // ✅ 5. Show only 30 (or however many) on the page
+    setMovies(deduped.slice(0, 30));
+  } catch (err) {
+    console.error("❌ Failed to regenerate movies:", err);
+  } finally {
+    setIsLoading(false); // Done loading
+  }
+};
 
   if (isLoading) {
     return (
@@ -675,6 +817,8 @@ const handleLike = async (movieId) => {
 }
 
 export default StHomeContent;
+
+
 
 
 
