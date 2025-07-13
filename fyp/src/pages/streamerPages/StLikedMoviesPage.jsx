@@ -108,11 +108,14 @@ const StLikedMoviesPage = () => {
       console.log("Before removal:", likedMovies.map(m => typeof m.movieId), typeof movieId);
 
   
-    // ✅ Trigger re-fetch instead of manual state update
-    setRefreshTrigger(prev => !prev);
+    // // ✅ Trigger re-fetch instead of manual state update
+    // setRefreshTrigger(prev => !prev);
 
           // ✅ Re-fetch movies after deletion
-    await fetchLikedMovies(savedUser.userId);
+    // await fetchLikedMovies(savedUser.userId);
+
+    await fetchLikedMovies(localStorage.getItem("user")?.userId);
+
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
