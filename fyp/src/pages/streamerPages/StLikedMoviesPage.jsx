@@ -8,7 +8,7 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
-  const savedUser = JSON.parse(localStorage.getItem("user"));
+
 
   // const [refreshTrigger, setRefreshTrigger] = useState(false);
 
