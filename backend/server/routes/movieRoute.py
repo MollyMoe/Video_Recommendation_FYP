@@ -112,7 +112,7 @@ router = APIRouter()
 def get_all_movies(request: Request):
     db = request.app.state.movie_db
     try:
-        movies = list(db.hybridRecommendation2.find().limit(55000)) 
+        movies = list(db.hybridRecommendation2.find().limit(25000)) 
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])  # convert ObjectId to string

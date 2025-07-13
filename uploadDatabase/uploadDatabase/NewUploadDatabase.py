@@ -14,7 +14,8 @@ if not MONGO_URI:
     raise ValueError("MONGO_URI not found. Please check your .env file.")
 
 # Load Version 2 dataset
-csv_path = r"C:\Users\ufair\OneDrive\Desktop\venv\hybrid_recommendations2.csv"
+# csv_path = r"C:\Users\ufair\OneDrive\Desktop\venv\hybrid_recommendations2Edited.csv" 
+csv_path = r"C:\Users\ufair\OneDrive\Desktop\venv\hybrid_recommendations_final.csv"
 df = pd.read_csv(csv_path)
 data = df.to_dict(orient="records")
 
@@ -22,6 +23,8 @@ data = df.to_dict(orient="records")
 client = MongoClient(MONGO_URI)
 db = client["NewMovieDatabase"]  
 collection = db["hybridRecommendation2"]
+
+collection.delete_many({})
 
 # Batch insert setup
 batch_size = 1000
