@@ -103,7 +103,7 @@ const StWatchLaterPage = () => {
 
   
       // ✅ Remove movie from frontend UI state
-      setLikedMovies((prev) =>
+      setWatchLaterMovies((prev) =>
         prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
     } catch (err) {

@@ -299,3 +299,31 @@ async def remove_from_watchLater(request: Request):
         return {"message": "Movie removed from watch later list"}
     else:
         return {"message": "Movie not found or already removed"}
+    
+
+# @router.post("/history/delete")
+# async def remove_from_history(request: Request):
+#     data = await request.json()
+#     db = request.app.state.movie_db
+#     history_collection = db["history"]
+
+#     user_id = data.get("userId")
+#     movie_id = data.get("movieId")
+
+#     if not user_id or movie_id is None:
+#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+#     movie_id = str(movie_id)
+
+#     result = history_collection.update_one(
+#         {"userId": user_id},
+#         {"$pull": {"historyMovies": movie_id}}
+#     )
+
+#     print("🧹 Removed from history:", result.modified_count)
+
+#     if result.modified_count > 0:
+#         return {"message": "Movie removed from history"}
+#     else:
+#         return {"message": "Movie not found or already removed"}
+
