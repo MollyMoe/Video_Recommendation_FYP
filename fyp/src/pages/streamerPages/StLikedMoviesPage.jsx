@@ -8,13 +8,18 @@ const API = import.meta.env.VITE_API_BASE_URL;
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
-  const savedUser = JSON.parse(localStorage.getItem("user"));
+
+
+  // const [refreshTrigger, setRefreshTrigger] = useState(false);
+
 
 
   const fetchLikedMovies = async (userId) => {
     try {
       const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
       const data = await res.json();
+
+      console.log("🎬 Liked movies response:", data);
 
       // Remove duplicates by _id or movieId
       const uniqueMovies = [];
@@ -42,38 +47,12 @@ const StLikedMoviesPage = () => {
   }, []);
 
 
-  // play
-  
-  // const handlePlay = async (movieId, trailerUrl) => {
-  //   const savedUser = JSON.parse(localStorage.getItem("user")); // ✅ Add this
-  //   if (!movieId || !savedUser?.userId) return;
-  
-  //   try {
-  //     const res = await fetch(`${API}/api/movies/history`, {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         userId: savedUser.userId,
-  //         movieId: movieId,
-  //       }),
-  //     });
-  
-  //     if (!res.ok) throw new Error("Failed to save to history");
-  //     const data = await res.json();
-  //     console.log("📚 History updated:", data);
-  
-  //     if (trailerUrl) {
-  //       window.open(trailerUrl, "_blank");
-  //     }
-  //   } catch (err) {
-  //     console.error("❌ Error playing movie:", err);
-  //   }
-  // };
-
 
   const handlePlay = async (movieId, trailerUrl) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!movieId || !savedUser?.userId) return;
+
+    console.log("▶️ Trailer URL:", trailerUrl);
   
     // ✅ Open immediately before async/await
     let newTab = null;
@@ -103,36 +82,41 @@ const StLikedMoviesPage = () => {
   };
   
   
-  // const handleRemove = async (movieId) => {
-  //   const savedUser = JSON.parse(localStorage.getItem("user"));
-  //   if (!movieId || !savedUser?.userId) {
-  //     console.warn("Missing movieId or userId");
-  //     return;
-  //   }
+  const handleRemove = async (movieId) => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!movieId || !savedUser?.userId) {
+      console.warn("Missing movieId or userId");
+      return;
+    }
   
-  //   try {
-  //     const res = await fetch(`${API}/api/movies/unlike`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         userId: savedUser.userId,
-  //         movieId: movieId,
-  //       }),
-  //     });
-  
-  //     const data = await res.json();
-  //     console.log("❌ Remove response:", data);
-  
-  //     // Optionally update UI
-  //     setLikedMovies((prev) => prev.filter((m) => m.movieId !== movieId));
-  //   } catch (err) {
-  //     console.error("❌ Error removing liked movie:", err);
-  //   }
-  // };
+    try {
+      const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: savedUser.userId,
+          movieId: movieId,
+        }),
+      });
   
 
+      const data = await res.json();
+      console.log("🗑️ Remove response:", data);
+
+      console.log("Before removal:", likedMovies.map(m => typeof m.movieId), typeof movieId);
+
+  
+      // ✅ Remove movie from frontend UI state
+      setLikedMovies((prev) =>
+        prev.filter((m) => m.movieId.toString() !== movieId.toString())
+      );
+    } catch (err) {
+      console.error("❌ Error removing liked movie:", err);
+    }
+  };
+  
 
   return (
     <div className="p-4">
@@ -158,7 +142,6 @@ const StLikedMoviesPage = () => {
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
                     className="rounded mb-2 w-full h-60 object-cover"
-
                   />
                   <h3 className="text-sm font-semibold">{movie.title}</h3>
 
@@ -176,13 +159,13 @@ const StLikedMoviesPage = () => {
                     </button>
 
                     {/* remove btn */}
-                    {/* <button
+                    <button
                       onClick={() => handleRemove(movie.movieId)}
                       className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 mt-1"
                     >
                       <Trash2 className="w-3 h-3 mr-1 fill-black" />
                       Remove
-                    </button> */}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -194,6 +177,4 @@ const StLikedMoviesPage = () => {
   );
 };
 
-
 export default StLikedMoviesPage;
-
