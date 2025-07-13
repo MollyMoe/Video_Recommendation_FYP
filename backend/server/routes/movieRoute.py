@@ -259,7 +259,7 @@ async def remove_from_liked_movies(request: Request):
 
     movie_id = str(data.get("movieId"))
 
-    result = await liked_collection.update_one(
+    result = liked_collection.update_one(
         {"userId": user_id},
         {"$pull": {"likedMovies": movie_id}}
     )
