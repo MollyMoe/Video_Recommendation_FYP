@@ -355,7 +355,8 @@ function StHomeContent({ userId }) {
           });
         }
         
-        setMovies(fetchedMovies);
+        //setMovies(fetchedMovies);
+        setMovies(fetchedMovies.slice(0, 30));
       } catch (err) {
         console.error("Error loading movies:", err);
         setMovies([]);
