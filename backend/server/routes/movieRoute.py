@@ -116,12 +116,7 @@ async def add_to_history(request: Request):
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
     movie_id = str(movie_id) 
-    # delete segment
-    try:
-        movie_id = int(movie_id)
-    except (ValueError, TypeError):
-        pass  # Keep as string
-
+    
     try:
         # ✅ Remove existing entry (synchronously)
         history_collection.update_one(
