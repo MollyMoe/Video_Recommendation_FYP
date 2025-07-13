@@ -8,7 +8,7 @@ from typing import Optional, List, Union
 
 class Movie(BaseModel):
     _id: Optional[str]  # ObjectId as string
-    movieId: Union[str, int]
+    movieId: Union[str]
     predicted_rating: Optional[float]
     title: Optional[str]
     genres: Union[str, List[str], None]
