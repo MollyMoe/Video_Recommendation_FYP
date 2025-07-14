@@ -57,8 +57,9 @@ print("✅ Connected to support. Collections:", support_db.list_collection_names
 app = FastAPI()
 
 # CORS
-origins = [
+origins = [ 
     "http://localhost:3000",
+    "http://localhost:5173", 
     "https://cineit-frontend.onrender.com",
     "https://cineit.onrender.com",
 ]
