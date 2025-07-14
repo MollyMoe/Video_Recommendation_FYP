@@ -345,7 +345,6 @@ def regenerate_movies(
             }},
             {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
             {"$replaceRoot": {"newRoot": "$doc"}}
-            #,{"$limit": 30} commented this out 
         ]
 
         movies = list(db.hybridRecommendation2.aggregate(pipeline))

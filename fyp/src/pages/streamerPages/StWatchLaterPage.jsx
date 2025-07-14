@@ -118,11 +118,8 @@ const StWatchLaterPage = () => {
   return (
     <div className="p-4">
       <StNav />
-      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-        <StSearchBar />
-      </div>
       <StSideBar />
-      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
+      <div className="sm:ml-64 pt-20 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {watchLaterMovies.length === 0 ? (
             <p className="text-center mt-10 text-white">No saved movies found.</p>
