@@ -97,6 +97,7 @@ const StFilterContent = ({searchQuery}) => {
     const lowerQuery = searchQuery.toLowerCase();
     const filtered = allMovies.filter(movie =>
       movie.title?.toLowerCase().includes(lowerQuery) ||
+      movie.actors?.toLowerCase().includes(lowerQuery) ||
       movie.director?.toLowerCase().includes(lowerQuery) ||
       (Array.isArray(movie.genres) && movie.genres.some(g => g.toLowerCase().includes(lowerQuery)))
     );
@@ -174,8 +175,7 @@ const StFilterContent = ({searchQuery}) => {
                     <strong>Actors:</strong> {Array.isArray(selectedMovie?.actors) ? selectedMovie.actors.join(", ") : selectedMovie?.actors || "N/A"}
                     </p>
                     <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview || "N/A"}</p>
-                    <p className="text-sm text-gray-700">
-                    Predicted Rating: ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
+                    <p className="text-sm text-gray-700"><strong>Rating: ⭐</strong> {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                     </p>
                 </div>
             </div>

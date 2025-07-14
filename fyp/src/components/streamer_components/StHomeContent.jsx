@@ -167,6 +167,7 @@ function StHomeContent({ userId, searchQuery }) {
 
     const filtered = allFetchedMovies.filter(movie => {
       const title = movie.title?.toLowerCase() || "";
+      const actors = movie.actors?.toLowerCase() || "";
       const director = movie.director?.toLowerCase() || "";
       const genres = Array.isArray(movie.genres)
         ? movie.genres.map(g => g.toLowerCase())
@@ -174,6 +175,7 @@ function StHomeContent({ userId, searchQuery }) {
 
       return (
         title.includes(lowerQuery) ||
+        actors.includes(lowerQuery) ||
         director.includes(lowerQuery) ||
         genres.some(g => g.includes(lowerQuery))
       );
@@ -323,12 +325,16 @@ const handleWatchLater = async (movieId) => {
                 className="rounded-lg w-40 h-auto object-cover"
               />
               <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
-                <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview}</p>
-                <p className="text-sm text-gray-700"><strong>Genres:</strong> {selectedMovie?.genres?.join(", ")}</p>
-                <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
-                <p className="text-sm text-gray-700"><strong>Rating:</strong> ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}</p>
-              </div>
+                  <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
+                    <p className="text-sm text-gray-700">{selectedMovie?.genres?.join(", ")}</p>
+                    <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
+                    <p className="text-sm text-gray-700">
+                    <strong>Actors:</strong> {Array.isArray(selectedMovie?.actors) ? selectedMovie.actors.join(", ") : selectedMovie?.actors || "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview || "N/A"}</p>
+                    <p className="text-sm text-gray-700"><strong>Rating: ⭐</strong> {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
+                    </p>
+                </div>
             </div>
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
               <button onClick={() => {
