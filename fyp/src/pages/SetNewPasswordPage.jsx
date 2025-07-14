@@ -4,6 +4,8 @@ import { BadgeCheck } from "lucide-react";
 import logoPic from "../images/Cine-It.png";
 import { useSearchParams } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const SetNewPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
@@ -43,7 +45,7 @@ const SetNewPasswordPage = () => {
     if (!validatePassword()) return;
 
     try {
-      const res = await fetch("http://localhost:3001/api/auth/reset-password", {
+      const res = await fetch(`${API}/api/auth/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

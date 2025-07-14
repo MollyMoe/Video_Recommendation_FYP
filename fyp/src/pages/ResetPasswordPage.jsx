@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState({});
@@ -26,7 +28,7 @@ function ResetPasswordPage() {
 
   setIsLoading(true);
   try {
-    const res = await fetch('http://localhost:3001/api/auth/request-password-reset', {
+    const res = await fetch(`${API}/api/auth/request-password-reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),

@@ -230,4 +230,7 @@ const StFilterContent = ({searchQuery}) => {
   );
 };
 
+
 export default StFilterContent
+
+

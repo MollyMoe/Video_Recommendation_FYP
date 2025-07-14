@@ -4,6 +4,10 @@ import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+console.log("API =", API); 
+const defaultImage = `${API}/uploads/profile.jpg`;
+
 function SignUpPage() {
   const [formData, setFormData] = useState({
     email: "",
@@ -69,7 +73,7 @@ function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:3001/api/auth/signup", {
+      const res = await fetch(`${API}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,10 +103,11 @@ function SignUpPage() {
         });
 
         // Navigate only if successful
-        if (formData.userType === "guest") {
-          localStorage.setItem("user", JSON.stringify({ username: data.username })); 
+        if (formData.userType === "streamer") {
+          localStorage.removeItem("streamer_profileImage");
           navigate("/inputgenre");
         } else if (formData.userType === "admin") {
+          localStorage.removeItem("admin_profileImage");
           navigate("/signin");
         }
       } else {
@@ -167,7 +172,7 @@ function SignUpPage() {
                 <span>
                   {formData.userType === "admin"
                     ? "System Admin"
-                    : formData.userType === "guest"
+                    : formData.userType === "streamer"
                       ? "Streamer"
                       : "Choose"}
                 </span>
@@ -195,7 +200,7 @@ function SignUpPage() {
                       type="button"
                       onClick={() => {
                         handleChange({
-                          target: { name: "userType", value: "guest" },
+                          target: { name: "userType", value: "streamer" },
                         });
                         setDropdownOpen(false);
                       }}

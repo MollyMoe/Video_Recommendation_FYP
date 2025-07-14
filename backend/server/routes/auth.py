@@ -225,4 +225,6 @@ def get_user_by_id(request: Request, userType: str, userId: str):
     user = collection.find_one({"userId": userId}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
     return user
+

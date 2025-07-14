@@ -91,3 +91,4 @@ def get_movies():
     movies = list(app.state.movie_db.movies.find({}, {"_id": 0}))
 
     return movies
+

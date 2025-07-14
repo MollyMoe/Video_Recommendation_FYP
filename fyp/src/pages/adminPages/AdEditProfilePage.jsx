@@ -3,11 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BadgeCheck } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdEditProfilePage = () => {
   const [formData, setFormData] = useState({
     username: '',
     contact: '',
-    genre: '',
     profileImage: null,
   });
 
@@ -30,46 +31,116 @@ const AdEditProfilePage = () => {
   const fileInputRef = useRef(null);
   const modalRef = useRef(null);
   const navigate = useNavigate();
-
-  const savedUser = JSON.parse(localStorage.getItem('user'));
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
+  const savedUser = JSON.parse(localStorage.getItem('user'));
+  const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
   useEffect(() => {
-    if (savedUser) {
-      setFormData(prev => ({
-        ...prev,
-        username: savedUser.username || '',
-        contact: savedUser.email || '',
-      }));
-    }
-    setCurrentRole('admin');
+    const fetchUser = async () => {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+      if (!savedUser?.userId) return;
+
+      // Step 1: Use cached image or fallback first
+      const cachedImage = localStorage.getItem("admin_profileImage");
+      const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
+      updateProfileImage(fallbackImage, "admin");
+
+      try {
+        const res = await fetch(`${API}/api/auth/users/admin/${savedUser.userId}`);
+        const data = await res.json();
+
+        console.log("Fetched user from backend:", data);
+
+        setFormData((prev) => ({
+          ...prev,
+          username: data.username || "",
+          contact: data.email || ""
+        }));
+
+        // ✅ Directly use profileImage if it's a full Cloudinary URL
+        if (data.profileImage && data.profileImage !== "") {
+          updateProfileImage(data.profileImage, "admin");
+          localStorage.setItem("admin_profileImage", data.profileImage);
+        } else {
+          updateProfileImage(defaultImage, "admin");
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      }
+    };
+
+    fetchUser();
+    setCurrentRole("admin");
   }, []);
 
-  const handleChange = (e) => {
+const handleChange = async (e) => {
     const { name, value, files } = e.target;
-    if (name === 'profileImage') {
+    const user = JSON.parse(localStorage.getItem("user"));
+  
+    if (name === "profileImage") {
       const file = files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64 = reader.result;
-          updateProfileImage(base64, 'admin');
-          setPreviewImage(base64);
-          setFormData(prev => ({ ...prev, profileImage: file }));
-        };
-        reader.readAsDataURL(file);
+      if (file && user) {
+        setPreviewImage(URL.createObjectURL(file)); // immediate preview
+        setFormData((prev) => ({ ...prev, profileImage: file }));
+  
+        const formDataToSend = new FormData();
+        formDataToSend.append("profileImage", file);
+  
+        try {
+          const res = await fetch(
+            `${API}/api/profile/upload/admin/${user.userId}`, //backend connect
+            {
+              method: "PUT",
+              body: formDataToSend,
+            }
+          );
+          const data = await res.json();
+          if (res.ok) {
+            const imageUrl = data.profileImage;
+            updateProfileImage(imageUrl, "admin");
+            localStorage.setItem("admin_profileImage", imageUrl);
+            setPreviewImage(imageUrl); // update preview to final version
+          } else {
+            alert("Upload failed: " + data.error);
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          alert("Something went wrong.");
+        }
       }
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
-    setSuccessMessage('Changes have been saved!');
-    setRedirectAfterModal(false);
-    setShowSuccessModal(true);
+    try {
+      const savedUser = JSON.parse(localStorage.getItem("user"));
+
+  console.log("Using ID for update:", savedUser.userId); 
+
+  const res = await fetch(`${API}/api/editProfile/admin/${savedUser.userId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      username: formData.username
+    }),
+  });
+
+
+      if (!res.ok) throw new Error("Failed to update");
+
+      const updated = await res.json();
+      setSuccessMessage("Profile updated!");
+      setShowSuccessModal(true);
+      localStorage.setItem("user", JSON.stringify(updated));
+    } catch (err) {
+      console.error("Update error:", err);
+      alert("Could not update profile.");
+    }
   };
 
   const triggerFileInput = () => {
@@ -83,7 +154,7 @@ const AdEditProfilePage = () => {
 
   const handleDelete = async (userType, username) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/auth/delete/${userType}/${username}`, {
+      const res = await fetch(`${API}/api/auth/delete/${userType}/${username}`, {
         method: 'DELETE',
       });
       const data = await res.json();
@@ -113,7 +184,7 @@ const AdEditProfilePage = () => {
   const verifyCurrentPassword = async () => {
     setIsVerifying(true);
     try {
-      const res = await fetch('http://localhost:3001/api/password/verify-password', {
+      const res = await fetch(`${API}/api/password/verify-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,7 +213,8 @@ const AdEditProfilePage = () => {
     }
 
     try {
-      const updateRes = await fetch('http://localhost:3001/api/password/update-password', {
+
+      const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -189,7 +261,7 @@ const AdEditProfilePage = () => {
         <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
-              src={profileImage || previewImage}
+              src={profileImage|| defaultImage}
               className="w-32 h-32 rounded-full shadow-lg border border-gray-300"
             />
             <div className="flex flex-col space-y-2">
@@ -212,33 +284,36 @@ const AdEditProfilePage = () => {
             </div>
           </div>
 
-          <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Username</label>
+          {/* Form Fields */}
+          {["username", "contact"].map((field) => (
+          <div className="mb-5" key={field}>
+            <label className="block mb-2 text-sm font-medium">
+              {field === "contact" ? "Contact Info" : field.charAt(0).toUpperCase() + field.slice(1)}
+            </label>
             <input
               type="text"
-              name="username"
-              value={formData.username}
+              name={field}
+              value={formData[field]}
               onChange={handleChange}
-              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
-              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+              disabled={field === "contact"}
+              className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+                dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
+                ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
             />
           </div>
+        ))}
 
           <div className="mb-5">
-            <label className="block mb-2 text-sm font-medium">Contact Info</label>
-            <input
-              type="text"
-              name="contact"
-              value={formData.contact}
-              onChange={handleChange}
-              className="shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-              focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
-              dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-            />
+            <button
+              type="submit"
+              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+            >
+              Save Changes
+            </button>
           </div>
 
-          <div className="mb-5">
+          <div className="flex flex-col items-end space-y-2 mt-4">
             <button
               type="button"
               onClick={() => setShowPasswordModal(true)}
@@ -246,15 +321,7 @@ const AdEditProfilePage = () => {
             >
               Change Password
             </button>
-          </div>
 
-          <div className="flex flex-col items-end space-y-2 mt-4">
-            <button
-              type="submit"
-              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
-            >
-              Save Changes
-            </button>
 
             <div className="relative">
               <button

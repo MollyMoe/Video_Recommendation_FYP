@@ -130,4 +130,6 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   );
 };
 
+
 export default StFilterBar;
+
