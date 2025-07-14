@@ -1,4 +1,3 @@
-
 import math
 from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
@@ -400,7 +399,5 @@ def get_user_recommendations(user_id: str, request: Request):
         return JSONResponse(content=record.get("recommended", []))
     except Exception as e:
         print("❌ Error fetching recommendations:", e)
+
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
-
-
-

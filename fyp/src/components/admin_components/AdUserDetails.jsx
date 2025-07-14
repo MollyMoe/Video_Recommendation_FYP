@@ -142,4 +142,3 @@ const [page, setPage] = useState(restoredPage);
 };
 
 export default AdUserDetails;
-
