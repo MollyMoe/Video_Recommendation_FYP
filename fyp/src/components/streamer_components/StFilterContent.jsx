@@ -105,7 +105,7 @@ const StFilterContent = ({searchQuery}) => {
   }, [searchQuery, allMovies, preferredGenres]);
 
   return (
-    <div className="pt-50 px-8 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
+    <div className="sm:ml-64 pt-50 px-8 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="p-6 max-w-3xl mx-auto">
                 {isLoading && (
                 <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
