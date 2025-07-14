@@ -136,14 +136,15 @@ function StHomeContent({ userId, searchQuery }) {
           return true;
         });
 
-        // ✅ Only display the first 100 *after* adding the next batch
-        setMovies(deduped.slice(0, movies.length + 99));
+        // ✅ Only display the first 99 *after* adding the next batch
+        setMovies(regenerated.slice(0, 99)); //change this 
 
-        // Save full set back to backend
-        await axios.post(`${API}/api/movies/store-recommendations`, {
-          userId: savedUser.userId,
-          movies: deduped,
-        });
+
+        // Save full set back to backend (delete this)
+        // await axios.post(`${API}/api/movies/store-recommendations`, {
+        //   userId: savedUser.userId,
+        //   movies: regenerated.slice(0, 99), 
+        // });
       } catch (err) {
         console.error("❌ Failed to regenerate movies:", err);
       }
@@ -159,7 +160,7 @@ function StHomeContent({ userId, searchQuery }) {
           preferredGenres.map(g => g.toLowerCase()).includes(genre.toLowerCase())
         )
       );
-      setMovies(filteredByGenres.slice(0, 100));
+      setMovies(filteredByGenres.slice(0, 99));
       return;
     }
 
@@ -181,7 +182,7 @@ function StHomeContent({ userId, searchQuery }) {
       );
     });
 
-    setMovies(filtered.slice(0, 100));
+    setMovies(filtered.slice(0, 99));
   }, [searchQuery, allFetchedMovies, preferredGenres]);
 
 
