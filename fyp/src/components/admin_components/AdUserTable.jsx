@@ -1,17 +1,21 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchStreamers = async () => {
       try {
         const res = await fetch(
-          "http://localhost:3001/api/auth/users/streamer"
+          `${API}/api/auth/users/streamer`
         );
         const data = await res.json();
+        console.log("Fetched streamers:", data);
         setUsers(data);
       } catch (err) {
         console.error("Error loading users:", err);
@@ -21,9 +25,19 @@ const AdUserTable = ({ searchQuery }) => {
     fetchStreamers();
   }, []);
 
+  useEffect(() => {
+  const fetchUser = async () => {
+    const res = await fetch(`${API}/api/auth/users/streamer/${user.userId}`);
+    const data = await res.json();
+    setUser(data);
+  };
+
+  fetchUser();
+}, []);
+
   const handleToggleSuspend = async (userId) => {
     const updatedUsers = users.map((user) =>
-      user._id === userId
+      user.userId === userId
         ? {
             ...user,
             status: user.status === "Suspended" ? "Active" : "Suspended",
@@ -33,10 +47,10 @@ const AdUserTable = ({ searchQuery }) => {
 
     setUsers(updatedUsers);
 
-    const newStatus = updatedUsers.find((user) => user._id === userId)?.status;
+    const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
 
     try {
-      await fetch(`http://localhost:3001/api/auth/users/${userId}/status`, {
+      await fetch(`${API}/api/auth/users/${userId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -108,7 +122,7 @@ const AdUserTable = ({ searchQuery }) => {
                       View
                     </button>
                     <button
-                      onClick={() => handleToggleSuspend(user._id)}
+                      onClick={() => handleToggleSuspend(user.userId)}
                       className={`min-w-[90px] px-3 py-1 text-xs rounded text-white ${
                         user.status === "Suspended"
                           ? "bg-green-500 hover:bg-green-600"

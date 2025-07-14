@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import StHomeContent from "../../components/streamer_components/StHomeContent";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-import StSearchBar from "../../components/streamer_components/StSearchBar";
+import StFilterContent from "../../components/streamer_components/StFilterContent";
+import StFilterBar from "../../components/streamer_components/StFilterBar";
 
-const StHomePage = () => {
+const StFilterPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (query) => {
@@ -14,17 +14,18 @@ const StHomePage = () => {
   return (
     <>
       <StNav />
-      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-        <StSearchBar
+      <div className="top-[85px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5 
+      fixed bg-white dark:bg-gray-800 ">
+        <StFilterBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearch={handleSearch}
         />
       </div>
       <StSideBar />
-      <StHomeContent searchQuery={searchQuery} />
+      <StFilterContent searchQuery={searchQuery} />
     </>
   );
 };
 
-export default StHomePage;
+export default StFilterPage;

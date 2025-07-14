@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AdUserTable from "./AdUserTable";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const AdUserDetails = () => {
   const SideButton = ({ to, label, current, children }) => {
     return (
@@ -36,12 +38,16 @@ const [page, setPage] = useState(restoredPage);
   useEffect(() => {
     const fetchUser = async (userId) => {
       try {
-        const res = await fetch(`http://localhost:3001/api/auth/users/${userId}`);
+        const res = await fetch(`${API}/api/auth/users/streamer/${userId}`);
         if (!res.ok) {
           throw new Error("User not found");
         }
         const data = await res.json();
-        setUser(data);
+          if (data.profileImage) {
+            data.profileImage = data.profileImage;
+          }
+
+          setUser(data);
       } catch (err) {
         console.error("Failed to fetch user:", err);
         setUser(null);
@@ -67,8 +73,7 @@ const [page, setPage] = useState(restoredPage);
 
       <div className="p-6 w-[500px] h-[500px] mx-auto bg-white border border-gray-300 rounded shadow flex flex-col">
           <img
-            src={user.avatarUrl}
-            alt={user.username}
+            src={user.profileImage}
             className="w-25 h-25 mt-7 ml-7 rounded-full border-3 border-neutral-50 shadow-xl"
           />
         {/* User info */}
@@ -108,7 +113,7 @@ const [page, setPage] = useState(restoredPage);
               <span className="absolute left-0 top-0 bottom-0 w-px bg-gray-400"></span>
               <input
                 type="text"
-                value={Array.isArray(user.genres) ? user.genres.join(", ") : ""}
+                value={user.genre}
                 disabled
                 className="bg-white border border-white pl-6 pr-3 py-1.5 shadow-sm w-full h-9 leading-6"
               />
@@ -137,4 +142,3 @@ const [page, setPage] = useState(restoredPage);
 };
 
 export default AdUserDetails;
-

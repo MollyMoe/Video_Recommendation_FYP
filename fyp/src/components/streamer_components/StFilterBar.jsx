@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
-const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
+const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   const [history, setHistory] = useState(() => {
     const stored = localStorage.getItem("searchHistory");
     return stored ? JSON.parse(stored) : [];
@@ -58,7 +58,10 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 
   return (
     <div className="flex-1 px-5 hidden md:flex justify-center" ref={wrapperRef}>
-      <div className="relative w-full max-w-md z-60">
+      <div className="w-full max-w-md z-60">
+        <div className=" w-screen h-27 bg-white w-full" >
+        <h1 className="mt-[20px] text-xl font-bold text-gray-700 mb-4">What would you like to watch?</h1>
+         
         <input
           type="text"
           value={searchQuery}
@@ -66,14 +69,15 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
           onFocus={() => setIsFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search..."
-          className="w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-104 pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Search movies"
         />
+       </div>
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery("")}
-            className="absolute inset-y-0 right-10 flex items-center text-gray-500 hover:text-gray-700 px-2"
+            className="absolute inset-y-0 right-10 flex items-center text-gray-500 hover:text-gray-700 px-2 mt-[50px]"
             aria-label="Clear search input"
           >
             <FaTimes />
@@ -89,7 +93,7 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
               setIsFocused(false);
             }
           }}
-          className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+          className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 mt-[48px]"
           aria-label="Submit search"
         >
           <FaSearch />
@@ -126,4 +130,4 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   );
 };
 
-export default StSearchBar;
+export default StFilterBar;

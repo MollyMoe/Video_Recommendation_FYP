@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
@@ -6,20 +6,26 @@ import { Play, Trash2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const StHistoryPage = () => {
-  const [historyMovies, setHistoryMovies] = useState([]);
+const StLikedMoviesPage = () => {
+  const [likedMovies, setLikedMovies] = useState([]);
 
-  const fetchHistoryMovies = async (userId) => {
+
+  // const [refreshTrigger, setRefreshTrigger] = useState(false);
+
+
+
+  const fetchLikedMovies = async (userId) => {
     try {
-      const res = await fetch(`${API}/api/movies/historyMovies/${userId}`);
+      const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
       const data = await res.json();
 
-      console.log("📽 History movies response:", data);
+      console.log("🎬 Liked movies response:", data);
 
+      // Remove duplicates by _id or movieId
       const uniqueMovies = [];
       const seen = new Set();
 
-      for (const movie of data.historyMovies || []) {
+      for (const movie of data.likedMovies || []) {
         const id = movie._id || movie.movieId;
         if (!seen.has(id)) {
           seen.add(id);
@@ -27,18 +33,19 @@ const StHistoryPage = () => {
         }
       }
 
-      setHistoryMovies(uniqueMovies);
+      setLikedMovies(uniqueMovies);
     } catch (err) {
-      console.error("❌ Failed to fetch history movies:", err);
+      console.error("❌ Failed to fetch liked movies:", err);
     }
   };
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
-      fetchHistoryMovies(savedUser.userId);
+      fetchLikedMovies(savedUser.userId);
     }
   }, []);
+
 
 
   const handlePlay = async (movieId, trailerUrl) => {
@@ -73,7 +80,8 @@ const StHistoryPage = () => {
       if (newTab) newTab.close(); // if error, close tab
     }
   };
-
+  
+  
   const handleRemove = async (movieId) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!movieId || !savedUser?.userId) {
@@ -82,7 +90,7 @@ const StHistoryPage = () => {
     }
   
     try {
-      const res = await fetch(`${API}/api/movies/historyMovies/delete`, {
+      const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -97,20 +105,18 @@ const StHistoryPage = () => {
       const data = await res.json();
       console.log("🗑️ Remove response:", data);
 
-      console.log("Before removal:", historyMovies.map(m => typeof m.movieId), typeof movieId);
+      console.log("Before removal:", likedMovies.map(m => typeof m.movieId), typeof movieId);
 
   
       // ✅ Remove movie from frontend UI state
-      setHistoryMovies((prev) =>
+      setLikedMovies((prev) =>
         prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
   };
-
-
-
+  
 
   return (
     <div className="p-4">
@@ -121,12 +127,17 @@ const StHistoryPage = () => {
       <StSideBar />
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
-          {historyMovies.length === 0 ? (
-            <p className="text-center mt-10 text-white">No history movies found.</p>
+          {likedMovies.length === 0 ? (
+            <p className="text-center mt-10 text-white">
+              No liked movies found.
+            </p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
-              {historyMovies.map((movie) => (
-                <div key={movie._id || movie.movieId} className="bg-white rounded-lg shadow p-2">
+              {likedMovies.map((movie) => (
+                <div
+                  key={movie._id || movie.movieId}
+                  className="bg-white rounded-lg shadow p-2"
+                >
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
@@ -156,8 +167,6 @@ const StHistoryPage = () => {
                       Remove
                     </button>
                   </div>
-
-
                 </div>
               ))}
             </div>
@@ -168,4 +177,4 @@ const StHistoryPage = () => {
   );
 };
 
-export default StHistoryPage;
+export default StLikedMoviesPage;

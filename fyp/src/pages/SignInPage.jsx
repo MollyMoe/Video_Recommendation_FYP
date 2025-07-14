@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 function SignInPage() {
   const navigate = useNavigate();
@@ -61,7 +62,7 @@ function SignInPage() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("http://localhost:3001/api/auth/signin", {
+      const res = await fetch(`${API}/api/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -72,29 +73,99 @@ function SignInPage() {
       });
 
       const data = await res.json();
+      console.log("Login API response data:", data);
 
       if (res.ok) {
         setMessage({ type: "success", text: "Login successful!" });
-        localStorage.setItem("token", data.token); 
+        localStorage.setItem("token", data.token);
+
+        // Clear old profile images
+        localStorage.removeItem("streamer_profileImage");
+        localStorage.removeItem("admin_profileImage");
+
+        localStorage.setItem("token", data.token);
+
         localStorage.setItem("user", JSON.stringify(data.user));
 
+        if (formData.userType === "streamer") {
+          localStorage.removeItem("streamer_profileImage");
+        } else if (formData.userType === "admin") {
+          localStorage.removeItem("admin_profileImage");
+        }
 
+        // ✅ Fetch profile image only after successful login
+        if (data.user?.userId && formData.userType) {
+          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${
+            data.user.userId
+          }`;
+          try {
+            const imageRes = await fetch(endpoint);
+            const userInfo = await imageRes.json();
+
+            if (userInfo.profileImage) {
+              const key = `${formData.userType.toLowerCase()}_profileImage`;
+              localStorage.setItem(key, userInfo.profileImage);
+            }
+          } catch (error) {
+            console.warn("⚠️ Could not fetch profile image:", error);
+          }
+        }
+
+        // Navigate based on user type
+        if (formData.userType === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/home");
+        }
+      } else if (
+        res.status === 403 &&
+        data.detail?.toLowerCase().includes("suspend")
+      ) {
+
+        // 👉 Add this block BELOW:
+        // Set profile image for context to pick up on next reload
+        const baseUrl = "http://localhost:3001";
+        const profileImageUrl = data.user.profileImage
+          ? data.user.profileImage.startsWith("http")
+            ? data.user.profileImage
+            : `${baseUrl}${data.user.profileImage}`
+          : baseUrl + "/uploads/profile.png";
+        if (formData.userType === "streamer") {
+          localStorage.setItem("streamer_profileImage", profileImageUrl);
+        } else if (formData.userType === "admin") {
+          localStorage.setItem("admin_profileImage", profileImageUrl);
+        }
+
+        // Navigation...
         if (formData.userType === "admin") {
           navigate("/admin");
         } else if (formData.userType === "streamer") {
           navigate("/home");
         } else {
-          navigate("/home"); // Fallback
+          navigate("/home");
         }
-      } else if (res.status === 403 && data.error?.toLowerCase().includes("suspend")) {
+
+      } else if (
+        res.status === 403 &&
+        data.error?.toLowerCase().includes("suspend")
+      ) {
+
         setMessage({
           type: "error",
           text: "Your account is suspended. Please contact support.",
         });
+      } else if (
+        res.status === 400 &&
+        data.detail?.toLowerCase().includes("invalid")
+      ) {
+        setMessage({
+          type: "error",
+          text: "Invalid username or password.",
+        });
       } else {
         setMessage({
           type: "error",
-          text: data.error || "Login failed. Please try again.",
+          text: data.detail || "Login failed. Please try again.",
         });
       }
     } catch (error) {
@@ -155,8 +226,8 @@ function SignInPage() {
                   {formData.userType === "admin"
                     ? "System Admin"
                     : formData.userType === "streamer"
-                      ? "Streamer"
-                      : "Choose"}
+                    ? "Streamer"
+                    : "Choose"}
                 </span>
                 <ChevronDownIcon className="w-5 h-5 ml-2 text-gray-500 dark:text-white" />
               </button>

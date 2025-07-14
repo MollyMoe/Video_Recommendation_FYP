@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
 import StHomePage from "./pages/streamerPages/StHomePage";
 import InputGenrePage from "./pages/InputGenrePage";
@@ -15,85 +15,51 @@ import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
 import AdUserDetails from "./components/admin_components/AdUserDetails";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
+import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
+import StHelpPage from "./pages/streamerPages/StHelpPage";
+import StFilterPage from "./pages/streamerPages/StFilterPage";
 
-const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Signin />,
-  },
 
-  {
-    path: "/home",
-    element: <StreamerLayout />,
-    children: [
-      {
-        index: true,
-        element: <StHomePage />,
-      },
-      {
-        path: "history",
-        element: <StHistoryPage />,
-      },
-      {
-        path: "setting",
-        element: <StSettingPage />,
-      },
-    ],
-  },
-  // Admin Layout
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      {
-        index: true,
-        element: <AdDashboardPage />,
-      },
-      {
-        path: "videoHomePage",
-        element: <AdVideoHomePage />,
-      },
-      {
-        path: "editProfile",
-        element: <AdEditProfilePage />,
-      },
-      {
-        path: "manageUser",
-        element: <AdUserManagePage />,
-      },
-      {
-        path: "view/:id",
-        element: <AdUserDetails />,
-      },
-    
-    ],
-  },
-  {
-    path: "/inputgenre",
-    element: <InputGenrePage />,
-  },
-  {
-    path: "/signin",
-    element: <Signin />,
-  },
-  {
-    path: "/signup",
-    element: <Signup />,
-  },
-  {
-    path: "/reset-password",
-    element: <ResetPasswordPage />,
-  },
-  {
-    path: "/reset-password-form",
-    element: <SetNewPasswordPage />,
-  }
-]);
+
+
 
 function App() {
+
   return (
     <UserProvider>
-      <RouterProvider router={router} />
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<Signin />} />
+          <Route path="/signin" element={<Signin />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/inputgenre" element={<InputGenrePage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/reset-password-form" element={<SetNewPasswordPage />} />
+
+          {/* Streamer Layout */}
+          <Route path="/home" element={<StreamerLayout />}>
+            <Route index element={<StHomePage />} />
+            <Route path="history" element={<StHistoryPage />} />
+            <Route path="liked" element={<StLikedMoviesPage />} />
+            <Route path="setting" element={<StSettingPage />} />
+            <Route path="like" element={<StLikedMoviesPage />} />
+            <Route path="watchLater" element={<StWatchLaterPage />} />
+            <Route path="filter" element={<StFilterPage />} />
+            <Route path="help" element={<StHelpPage />} />
+
+          </Route>
+
+          {/* Admin Layout */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdDashboardPage />} />
+            <Route path="videoHomePage" element={<AdVideoHomePage />} />
+            <Route path="editProfile" element={<AdEditProfilePage />} />
+            <Route path="manageUser" element={<AdUserManagePage />} />
+            <Route path="view/:id" element={<AdUserDetails />} />
+          </Route>
+        </Routes>
+      </HashRouter>
     </UserProvider>
   );
 }

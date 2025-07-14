@@ -1,24 +1,49 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
-import defaultImage from "../../images/User-profile.png";
+import { Link, useNavigate } from "react-router-dom";
 
-function AdUserProfile({ userProfile }) {
+const API = import.meta.env.VITE_API_BASE_URL;
+const defaultImage =
+  "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
+
+function AdUserProfile() {
   const [open, setOpen] = useState(false);
-  const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
 
-  const { profileImage, setCurrentRole } = useUser();
+  const { profileImage, updateProfileImage, setCurrentRole } = useUser();
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.userType !== "admin") return;
+
     setCurrentRole("admin");
+
+    const cached = localStorage.getItem("admin_profileImage");
+
+    // 1. Fallback to cached or default immediately
+    const fallbackImage = cached || user.profileImage || defaultImage;
+    updateProfileImage(fallbackImage, "admin");
+
+    // 2. Try fetching latest from backend (if online)
+    fetch(`${API}/api/auth/users/admin/${user.userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.profileImage) {
+          updateProfileImage(data.profileImage, "admin");
+          localStorage.setItem("admin_profileImage", data.profileImage);
+        }
+      })
+      .catch((err) => {
+        console.warn("Offline or failed to fetch image:", err);
+      });
   }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
-    if (savedTheme === "true") {
-      setDarkMode(true);
-    }
+    if (savedTheme === "true") setDarkMode(true);
   }, []);
 
   useEffect(() => {
@@ -30,27 +55,26 @@ function AdUserProfile({ userProfile }) {
     localStorage.setItem("darkMode", darkMode);
   }, [darkMode]);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  const toggleDarkMode = () => setDarkMode(!darkMode);
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setOpen(false);
       }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
     };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleSignOut = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("admin_profileImage");
+    navigate("/signin");
+  };
+
   return (
-    // User Profile
     <div className="relative inline-block text-left" ref={dropdownRef}>
-      {/* Profile Button */}
       <button
         onClick={() => setOpen(!open)}
         className="flex text-sm bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-300"
@@ -62,17 +86,16 @@ function AdUserProfile({ userProfile }) {
         />
       </button>
 
-      {/* Dropdown Menu */}
       {open && (
         <div className="absolute right-0 mt-2 w-48 origin-top-right bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100 rounded-md shadow-lg ring-1 ring-gray-300 dark:ring-gray-600 ring-opacity-5 z-10">
           <ul className="py-1">
             <li>
-              <a
-                href="/admin/editProfile"
+              <Link
+                to="/admin/editProfile"
                 className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 <FaUserEdit className="mr-2" /> Edit Profile
-              </a>
+              </Link>
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
             <li
@@ -92,13 +115,11 @@ function AdUserProfile({ userProfile }) {
               )}
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
-            <li>
-              <a
-                href="/signin"
-                className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-              >
-                <FaSignOutAlt className="mr-2" /> Sign Out
-              </a>
+            <li
+              onClick={handleSignOut}
+              className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <FaSignOutAlt className="mr-2" /> Sign Out
             </li>
           </ul>
         </div>

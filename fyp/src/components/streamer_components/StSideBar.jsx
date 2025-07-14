@@ -45,47 +45,29 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Watch Later
-            </a>
+
+            <StSidebarButton
+              to="/home/watchLater"
+              label="Watch Later"
+              current={location.pathname === "/home/watchLater"}
+            />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Liked Movies
-            </a>
+            <StSidebarButton
+              to="/home/liked"
+              label="Liked Movies"
+              current={location.pathname === "/home/liked"}
+            />
           </li>
 
           <hr className="my-2 border-gray-300" />
-
+          
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Hide Recommendations
-            </a>
-          </li>
-          <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Regenerate Recommendations
-            </a>
-          </li>
-          <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Filter Recommendations
-            </a>
+            <StSidebarButton
+              to="/home/filter"
+              label="Filter Recommendations"
+              current={location.pathname === "/home/filter"}
+            />
           </li>
 
           <hr className="my-2 border-gray-300" />
@@ -98,12 +80,11 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Help
-            </a>
+            <StSidebarButton
+              to="/home/help"
+              label="Help"
+              current={location.pathname === "/home/help"}
+            />
           </li>
           <li>
             <a
