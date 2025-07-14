@@ -181,7 +181,7 @@ function StHomeContent({ userId, searchQuery }) {
       );
     });
 
-    setMovies(filtered.slice(0, 100));
+    setMovies(filtered.slice(0, 99));
   }, [searchQuery, allFetchedMovies, preferredGenres]);
 
 
