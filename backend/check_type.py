@@ -1,6 +1,6 @@
-from pymongo import MongoClient
+# from pymongo import MongoClient
 
-# ✅ Use the correct connection URI (direct connection to NewMovieDatabase)
+
 # MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
 
 # # Connect to MongoDB
@@ -30,7 +30,7 @@ from pymongo import MongoClient
 # # Count total documents for progress bar
 # total_docs = collection.count_documents({})
 
-# Type counters
+
 # type_counts = {}
 
 # # Loop with progress bar
@@ -50,35 +50,37 @@ from pymongo import MongoClient
 #     print(f"{t}: {count}")
 
 
-# from pymongo import MongoClient
-# from tqdm import tqdm  # Progress bar
 
-# # MongoDB connection
-# MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
-# client = MongoClient(MOVIE_DB_URI)
-# db = client["NewMovieDatabase"]
-# collection = db["hybridRecommendation2"]
 
-# # Count how many need updating (int type)
-# total_to_update = collection.count_documents({ "movieId": { "$type": "int" } })
+from pymongo import MongoClient
+from tqdm import tqdm  # Progress bar
 
-# # Confirm total
-# print(f"🔍 Found {total_to_update} documents with int movieId")
+# MongoDB connection
+MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
+client = MongoClient(MOVIE_DB_URI)
+db = client["NewMovieDatabase"]
+collection = db["hybridRecommendation2"]
 
-# # Update with progress bar
-# updated = 0
-# cursor = collection.find({ "movieId": { "$type": "int" } }, { "_id": 1, "movieId": 1 })
+# Count how many need updating (int type)
+total_to_update = collection.count_documents({ "movieId": { "$type": "int" } })
 
-# for doc in tqdm(cursor, total=total_to_update, desc="🔁 Converting movieId to string"):
-#     int_id = doc["movieId"]
-#     collection.update_one(
-#         { "_id": doc["_id"] },
-#         { "$set": { "movieId": str(int_id) } }
-#     )
-#     updated += 1
+# Confirm total
+print(f"🔍 Found {total_to_update} documents with int movieId")
 
-# # ✅ Done
-# print(f"\n✅ Finished: Updated {updated} movieId values from int to string.")
+# Update with progress bar
+updated = 0
+cursor = collection.find({ "movieId": { "$type": "int" } }, { "_id": 1, "movieId": 1 })
+
+for doc in tqdm(cursor, total=total_to_update, desc="🔁 Converting movieId to string"):
+    int_id = doc["movieId"]
+    collection.update_one(
+        { "_id": doc["_id"] },
+        { "$set": { "movieId": str(int_id) } }
+    )
+    updated += 1
+
+# ✅ Done
+print(f"\n✅ Finished: Updated {updated} movieId values from int to string.")
 
 
 
@@ -96,48 +98,48 @@ from pymongo import MongoClient
 # print(f"🔎 Remaining documents with movieId as int: {remaining_ints}")
 
 
-from pymongo import MongoClient, UpdateOne
-from tqdm import tqdm
+# from pymongo import MongoClient, UpdateOne
+# from tqdm import tqdm
 
-# === 1. MongoDB Connection ===
-MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
-client = MongoClient(MOVIE_DB_URI)
-db = client["NewMovieDatabase"]
-collection = db["hybridRecommendation2"]
+# # === 1. MongoDB Connection ===
+# MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
+# client = MongoClient(MOVIE_DB_URI)
+# db = client["NewMovieDatabase"]
+# collection = db["hybridRecommendation2"]
 
-# === 2. Count how many documents need to be updated ===
-total_to_update = collection.count_documents({ "movieId": { "$type": "int" } })
-print(f"🔍 Found {total_to_update} documents with movieId as int")
+# # === 2. Count how many documents need to be updated ===
+# total_to_update = collection.count_documents({ "movieId": { "$type": "int" } })
+# print(f"🔍 Found {total_to_update} documents with movieId as int")
 
-# === 3. Optional: Create index on movieId (skip if already exists) ===
-collection.create_index("movieId")
+# # === 3. Optional: Create index on movieId (skip if already exists) ===
+# collection.create_index("movieId")
 
-# === 4. Find only documents with int movieId and get _id + movieId fields ===
-cursor = collection.find({ "movieId": { "$type": "int" } }, { "_id": 1, "movieId": 1 })
+# # === 4. Find only documents with int movieId and get _id + movieId fields ===
+# cursor = collection.find({ "movieId": { "$type": "int" } }, { "_id": 1, "movieId": 1 })
 
-# === 5. Prepare for batched updates ===
-batch_size = 1000
-operations = []
-updated_count = 0
+# # === 5. Prepare for batched updates ===
+# batch_size = 1000
+# operations = []
+# updated_count = 0
 
-# === 6. Process with progress bar ===
-for doc in tqdm(cursor, total=total_to_update, desc="🔁 Converting movieId to string"):
-    int_id = doc["movieId"]
-    operations.append(
-        UpdateOne({ "_id": doc["_id"] }, { "$set": { "movieId": str(int_id) } })
-    )
+# # === 6. Process with progress bar ===
+# for doc in tqdm(cursor, total=total_to_update, desc="🔁 Converting movieId to string"):
+#     int_id = doc["movieId"]
+#     operations.append(
+#         UpdateOne({ "_id": doc["_id"] }, { "$set": { "movieId": str(int_id) } })
+#     )
 
-    # When batch is full, write to DB
-    if len(operations) == batch_size:
-        result = collection.bulk_write(operations)
-        updated_count += result.modified_count
-        operations = []
+#     # When batch is full, write to DB
+#     if len(operations) == batch_size:
+#         result = collection.bulk_write(operations)
+#         updated_count += result.modified_count
+#         operations = []
 
-# === 7. Write any remaining documents ===
-if operations:
-    result = collection.bulk_write(operations)
-    updated_count += result.modified_count
+# # === 7. Write any remaining documents ===
+# if operations:
+#     result = collection.bulk_write(operations)
+#     updated_count += result.modified_count
 
-# === 8. Done! ===
-print(f"✅ Finished converting movieId for {updated_count} documents.")
+# # === 8. Done! ===
+# print(f"✅ Finished converting movieId for {updated_count} documents.")
 

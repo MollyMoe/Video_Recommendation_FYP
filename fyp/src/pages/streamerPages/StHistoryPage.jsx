@@ -6,6 +6,7 @@ import { Play, Trash2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
+
 const StHistoryPage = () => {
   const [historyMovies, setHistoryMovies] = useState([]);
 
@@ -109,6 +110,30 @@ const StHistoryPage = () => {
     }
   };
 
+  const handleRemoveAllHistory = async () => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!savedUser?.userId) return;
+  
+    try {
+      const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: savedUser.userId }),
+      });
+  
+      const result = await res.json();
+      console.log("🧹 Clear history response:", result);
+  
+      // Clear the local state
+      setHistoryMovies([]);
+    } catch (err) {
+      console.error("❌ Error clearing history:", err);
+    }
+  };
+  
+
 
 
 
@@ -119,8 +144,19 @@ const StHistoryPage = () => {
         <StSearchBar />
       </div>
       <StSideBar />
+
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
+
+
+        <div className="-mt-4 flex justify-end mb-5">
+          <button
+            onClick={handleRemoveAllHistory}
+            className="bg-white text-black font-medium border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm shadow-md"
+          >
+            Remove all History
+          </button>
+        </div>
           {historyMovies.length === 0 ? (
             <p className="text-center mt-10 text-white">No history movies found.</p>
           ) : (
