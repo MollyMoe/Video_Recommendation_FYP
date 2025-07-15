@@ -94,13 +94,13 @@ def get_movies():
     return movies
 
 
-@app.options("/{rest_of_path:path}")
-async def preflight_handler():
-    return JSONResponse(
-        content={"message": "preflight ok"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
-            "Access-Control-Allow-Headers": "*",
-        }
-    )
+# @app.options("/{rest_of_path:path}")
+# async def preflight_handler():
+#     return JSONResponse(
+#         content={"message": "preflight ok"},
+#         headers={
+#             "Access-Control-Allow-Origin": "*",
+#             "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
+#             "Access-Control-Allow-Headers": "*",
+#         }
+#     )
