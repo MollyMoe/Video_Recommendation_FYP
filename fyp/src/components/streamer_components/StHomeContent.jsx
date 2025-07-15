@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
+import { debounce } from "lodash";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,6 +12,7 @@ function StHomeContent({ userId, searchQuery }) {
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
@@ -87,6 +89,7 @@ function StHomeContent({ userId, searchQuery }) {
 
         // ✅ Show only recommended ones at first
         setMovies(fetchedMovies.slice(0, 100));
+        setLastRecommendedMovies(fetchedMovies.slice(0, 99));
       } catch (err) {
         console.error("Error loading movies:", err);
         setMovies([]);
@@ -138,51 +141,60 @@ function StHomeContent({ userId, searchQuery }) {
 
         // ✅ Only display the first 100 *after* adding the next batch
         setMovies(deduped.slice(0, movies.length + 100));
+        setLastRecommendedMovies(deduped.slice(0, 99));
+
 
         // Save full set back to backend
-        await axios.post(`${API}/api/movies/store-recommendations`, {
+        await axios.post('${API}/api/movies/store-recommendations', {
           userId: savedUser.userId,
-          movies: deduped,
+          movies: regenerated.slice(0, 99), 
         });
       } catch (err) {
         console.error("❌ Failed to regenerate movies:", err);
       }
     };
 
-  useEffect(() => {
-    if (!preferredGenres.length) return;
-    
-    if (!searchQuery?.trim()) {
-      const filteredByGenres = allFetchedMovies.filter(movie =>
-        Array.isArray(movie.genres) &&
-        movie.genres.some(genre =>
-          preferredGenres.map(g => g.toLowerCase()).includes(genre.toLowerCase())
-        )
-      );
-      setMovies(filteredByGenres.slice(0, 100));
-      return;
+useEffect(() => {
+  const trimmed = searchQuery?.trim();
+  if (!trimmed) {
+    setMovies(lastRecommendedMovies.slice(0, 99));
+    return;
+  }
+
+  const debouncedFetch = debounce(async () => {
+    try {
+      const res = await axios.get(`${API}/api/movies/search`, {
+        params: { q: trimmed },
+      });
+
+      const seen = new Set();
+      const deduped = res.data
+        .filter((movie) => {
+          if (!movie.title || seen.has(movie.title)) return false;
+          seen.add(movie.title);
+          return true;
+        })
+        .map((movie) => {
+          if (typeof movie.genres === "string") {
+            movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+          }
+
+          const match = movie.trailerurl?.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+          movie.trailer_key = match ? match[1] : null;
+
+          return movie;
+        });
+
+      setMovies(deduped.slice(0, 99));
+    } catch (err) {
+      console.error("Search failed:", err);
+      setMovies([]);
     }
+  }, 500);
 
-    const lowerQuery = searchQuery.toLowerCase();
-
-    const filtered = allFetchedMovies.filter(movie => {
-      const title = movie.title?.toLowerCase() || "";
-      const director = movie.director?.toLowerCase() || "";
-      const actors = movie.actors?.toLowerCase() || ""; 
-      const genres = Array.isArray(movie.genres)
-        ? movie.genres.map(g => g.toLowerCase())
-        : [];
-
-      return (
-        title.includes(lowerQuery) ||
-        director.includes(lowerQuery) ||
-        actors.includes(lowerQuery) ||
-        genres.some(g => g.includes(lowerQuery))
-      );
-    });
-
-    setMovies(filtered.slice(0, 100));
-  }, [searchQuery, allFetchedMovies, preferredGenres]);
+  debouncedFetch();
+  return () => debouncedFetch.cancel();
+}, [searchQuery]);
 
 
 const handleHistory = async (movieId) => {
@@ -265,10 +277,10 @@ const handleWatchLater = async (movieId) => {
   return (
     <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-end mb-4">
+        <div className="fixed top-[23px] left-4/10 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
           <button
             onClick={handleRegenerate}
-            className="bg-white text-black border border-gray-400 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm shadow-md"
+            className="bg-white font-medium text-black border border-gray-400 hover:bg-gray-200 px-7.5 py-2.5 rounded-lg text-sm shadow-md"
           >
             Regenerate Movies
           </button>

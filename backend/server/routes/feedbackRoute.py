@@ -50,8 +50,7 @@ async def submit_streamer_feedback(
                 msg["Subject"] = "Thanks for Your Feedback - CineIt"
                 msg["From"] = email_user
                 msg["To"] = user["email"]
-                msg.set_content(f"""
-Hi {user.get('fullName', 'there')},
+                msg.set_content(f"""Hi {user.get('username', 'there')},
 
 Thank you for your feedback to CineIt!
 
@@ -59,7 +58,7 @@ We appreciate your input and will review it promptly.
 
 Best Regards,  
 CineIt Support Team
-                """)
+""")
 
                 context = ssl.create_default_context()
                 with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
