@@ -370,15 +370,13 @@ async def store_recommendations(
     except Exception as e:
         print("❌ Error saving recommendations:", e)
         return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
-    
-
 
 # when new data is regenrated it will stay that way 
-@router.get("/recommendations/{user_id}")
-def get_user_recommendations(user_id: str, request: Request):
+@router.get("/recommendations/{userId}")
+def get_user_recommendations(userId: str, request: Request):
     db = request.app.state.movie_db
     try:
-        record = db.recommended.find_one({ "userId": user_id })
+        record = db.recommended.find_one({ "userId": userId })
         if not record:
             return JSONResponse(content=[])  
 
