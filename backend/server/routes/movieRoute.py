@@ -347,6 +347,43 @@ async def remove_history(request: Request):
         raise HTTPException(status_code=500, detail="Server error")
 
 
+
+@router.post("/regenerate")
+def regenerate_movies(
+    request: Request,
+    body: dict = Body(...)
+):
+    db = request.app.state.movie_db
+    genres: List[str] = body.get("genres", [])
+    exclude_titles: List[str] = body.get("excludeTitles", [])
+
+    try:
+        pipeline = [
+            {"$match": {
+                "genres": {"$in": genres},
+                "title": {"$nin": exclude_titles},
+                "poster_url": {"$ne": None}
+            }},
+            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
+            {"$replaceRoot": {"newRoot": "$doc"}},
+            #{"$limit": 30}
+        ]
+
+        movies = list(db.hybridRecommendation2.aggregate(pipeline))
+        
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])
+            for key, value in movie.items():
+                if isinstance(value, float) and math.isnan(value):
+                    movie[key] = None
+
+        return JSONResponse(content=movies)
+
+    except Exception as e:
+        print("❌ Failed to regenerate movies:", e)
+        
+    raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+
 # store recommendations in a collection
 @router.post("/store-recommendations")
 async def store_recommendations(
