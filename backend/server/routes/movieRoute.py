@@ -423,3 +423,25 @@ def search_movies(request: Request, q: str = Query(..., min_length=1)):
         print("❌ Search failed:", e)
         raise HTTPException(status_code=500, detail="Search failed")
 
+@router.post("/historyMovies/removeAllHistory")
+async def remove_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+
+    try:
+        result = history_collection.update_one(
+            {"userId": user_id},
+            {"$set": {"historyMovies": []}}
+        )
+
+        print("🧹 Cleared history count:", result.modified_count)
+
+        return {"message": "History cleared"}
+    except Exception as e:
+        print("❌ Failed to clear history:", e)
+        raise HTTPException(status_code=500, detail="Server error")
