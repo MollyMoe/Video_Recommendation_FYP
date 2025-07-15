@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
+import { debounce } from "lodash";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -154,35 +155,48 @@ function StHomeContent({ userId, searchQuery }) {
       setIsLoading(false); // added 
     };
 
-  useEffect(() => {
-    if (!preferredGenres.length) return;
-    
-   if (!searchQuery?.trim()) {
-      // Use last regenerated or genre-based recommendations
-      setMovies(lastRecommendedMovies.slice(0, 99));
-      return;
-    }
+// add search
+    useEffect(() => {
+      const trimmed = searchQuery?.trim();
+      if (!trimmed) {
+        setMovies(lastRecommendedMovies.slice(0, 99));
+        return;
+      }
 
-    const lowerQuery = searchQuery.toLowerCase();
+      const debouncedFetch = debounce(async () => {
+        try {
+          const res = await axios.get(`${API}/api/movies/search`, {
+            params: { q: trimmed },
+          });
 
-    const filtered = allFetchedMovies.filter(movie => {
-      const title = movie.title?.toLowerCase() || "";
-      const director = movie.director?.toLowerCase() || "";
-      const actors = movie.actors?.toLowerCase() || ""; 
-      const genres = Array.isArray(movie.genres)
-        ? movie.genres.map(g => g.toLowerCase())
-        : [];
+          const seen = new Set();
+          const deduped = res.data
+            .filter((movie) => {
+              if (!movie.title || seen.has(movie.title)) return false;
+              seen.add(movie.title);
+              return true;
+            })
+            .map((movie) => {
+              if (typeof movie.genres === "string") {
+                movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+              }
 
-      return (
-        title.includes(lowerQuery) ||
-        director.includes(lowerQuery) ||
-        actors.includes(lowerQuery) ||
-        genres.some(g => g.includes(lowerQuery))
-      );
-    });
+              const match = movie.trailerurl?.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+              movie.trailer_key = match ? match[1] : null;
 
-    setMovies(filtered.slice(0, 99));
-  }, [searchQuery, allFetchedMovies, preferredGenres, lastRecommendedMovies]);
+              return movie;
+            });
+
+          setMovies(deduped.slice(0, 99));
+        } catch (err) {
+          console.error("Search failed:", err);
+          setMovies([]);
+        }
+      }, 500);
+
+      debouncedFetch();
+      return () => debouncedFetch.cancel();
+    }, [searchQuery]);
 
 
 const handleHistory = async (movieId) => {

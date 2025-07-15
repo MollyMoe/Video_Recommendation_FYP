@@ -1,6 +1,6 @@
 import math
 from typing import List
-from fastapi import APIRouter, Request, HTTPException, Body
+from fastapi import APIRouter, Request, HTTPException, Body, Query
 from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
 from pydantic import BaseModel
@@ -400,5 +400,26 @@ def get_user_recommendations(user_id: str, request: Request):
         print("❌ Error fetching recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
+@router.get("/search")
+def search_movies(request: Request, q: str = Query(..., min_length=1)):
+    db = request.app.state.movie_db
+    try:
+        results = db.hybridRecommendation2.find({
+            "$text": { "$search": f"{q}" },
+            "poster_url": { "$nin": ["", None, "nan", "NaN"] },
+            "trailer_url": { "$nin": ["", None, "nan", "NaN"] }
+            })
 
+        movies = []
+        for movie in results:
+            movie["_id"] = str(movie["_id"])
+            for key, value in movie.items():
+                if isinstance(value, float) and math.isnan(value):
+                    movie[key] = None
+            movies.append(movie)
+
+        return JSONResponse(content=movies)
+    except Exception as e:
+        print("❌ Search failed:", e)
+        raise HTTPException(status_code=500, detail="Search failed")
 
