@@ -62,7 +62,7 @@ async def add_to_liked_movies(request: Request):
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
     # Use $addToSet to avoid duplicates
-    await liked_collection.update_one(
+    liked_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"likedMovies": movie_id}},
         upsert=True  # Create the document if it doesn't exist
@@ -191,7 +191,7 @@ async def add_to_watchLater(request: Request):
     movie_id = str(movie_id) 
 
     # Use $addToSet to avoid duplicate entries in history
-    await watchLater_collection.update_one(
+    watchLater_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"SaveMovies": movie_id}},
         upsert=True
