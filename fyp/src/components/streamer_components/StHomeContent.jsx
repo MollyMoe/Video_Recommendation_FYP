@@ -12,6 +12,17 @@ function StHomeContent({ userId, searchQuery }) {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+
+  const triggerPopup = (message) => {
+    setPopupMessage(message);
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 2000); // Hide after 2 seconds
+  };
+  
+
+
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
 
@@ -300,6 +311,8 @@ function StHomeContent({ userId, searchQuery }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: savedUser.userId, movieId }),
       });
+      triggerPopup("Added to Likes!");
+
     } catch (err) {
       console.error("Error liking movie:", err);
     }
@@ -371,13 +384,6 @@ function StHomeContent({ userId, searchQuery }) {
                 alt={selectedMovie?.title}
                 className="rounded-lg w-40 h-auto object-cover"
               />
-              {/* <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
-                <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview}</p>
-                <p className="text-sm text-gray-700"><strong>Genres:</strong> {selectedMovie?.genres?.join(", ")}</p>
-                <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
-                <p className="text-sm text-gray-700"><strong>Rating:</strong> ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}</p>
-              </div> */}
 
               <div className="flex flex-col justify-center space-y-3 flex-grow">
                 <h2 className="text-2xl font-semibold">
@@ -405,16 +411,6 @@ function StHomeContent({ userId, searchQuery }) {
               </div>
             </div>
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              {/* <button onClick={() => {
-                  console.log("▶️ Play clicked for:", selectedMovie?.movieId);
-                  handleHistory(selectedMovie?.movieId);
-
-                  // Optional: open trailer
-                  if (selectedMovie?.trailer_url) {
-                    window.open(selectedMovie.trailer_url, "_blank");
-                  }
-                }} className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"><Play className="w-3 h-3 mr-1 fill-black" />Play</button> */}
-
               <button
                 onClick={() =>
                   handlePlay(selectedMovie?.movieId, selectedMovie?.trailer_url)
@@ -424,7 +420,7 @@ function StHomeContent({ userId, searchQuery }) {
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
               </button>
-              
+
               <button
                 onClick={() => handleLike(selectedMovie.movieId)}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
@@ -462,6 +458,12 @@ function StHomeContent({ userId, searchQuery }) {
             <p className="text-lg font-semibold">Loading movies...</p>
             <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
           </div>
+        </div>
+      )}
+
+      {showPopup && (
+        <div className="fixed bottom-6 right-6 bg-black text-white px-4 py-2 rounded-lg shadow-lg z-50 text-sm transition-opacity duration-300">
+          {popupMessage}
         </div>
       )}
     </div>

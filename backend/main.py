@@ -11,6 +11,7 @@ from server.routes.passwordRoute import router as password_router
 from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 
 
@@ -59,7 +60,8 @@ origins = [
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    # allow_origins=origins,
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -90,3 +92,15 @@ def get_users():
 def get_movies():
     movies = list(app.state.movie_db.movies.find({}, {"_id": 0}))
     return movies
+
+
+@app.options("/{rest_of_path:path}")
+async def preflight_handler():
+    return JSONResponse(
+        content={"message": "preflight ok"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, GET, OPTIONS, PUT, DELETE",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )

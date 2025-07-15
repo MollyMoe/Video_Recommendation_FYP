@@ -2,19 +2,23 @@ import { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
-import { Play, Trash2 } from "lucide-react";
+import { Play, Trash2, CheckCircle } from "lucide-react";
+
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-
-  // const [refreshTrigger, setRefreshTrigger] = useState(false);
-
-
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const fetchLikedMovies = async (userId) => {
+    // if (!username || !savedUser?.userId) return;
+    if (!userId) return;
+    setIsLoading(true);
+
+    const start = Date.now(); // Track start time
     try {
       const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
       const data = await res.json();
@@ -36,6 +40,13 @@ const StLikedMoviesPage = () => {
       setLikedMovies(uniqueMovies);
     } catch (err) {
       console.error("❌ Failed to fetch liked movies:", err);
+    } finally {
+      const elapsed = Date.now() - start;
+      const minDelay = 500; // milliseconds
+
+      setTimeout(() => {
+        setIsLoading(false);
+      }, Math.max(0, minDelay - elapsed)); // ensure at least 500ms visible
     }
   };
 
@@ -46,20 +57,18 @@ const StLikedMoviesPage = () => {
     }
   }, []);
 
-
-
   const handlePlay = async (movieId, trailerUrl) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!movieId || !savedUser?.userId) return;
 
     console.log("▶️ Trailer URL:", trailerUrl);
-  
+
     // ✅ Open immediately before async/await
     let newTab = null;
     if (trailerUrl) {
       newTab = window.open("", "_blank"); // open empty tab immediately
     }
-  
+
     try {
       const res = await fetch(`${API}/api/movies/history`, {
         method: "POST",
@@ -69,26 +78,26 @@ const StLikedMoviesPage = () => {
           movieId: movieId,
         }),
       });
-  
+
       if (!res.ok) throw new Error("Failed to save to history");
-  
+
       if (newTab && trailerUrl) {
-        newTab.location.href = trailerUrl;  // ✅ now load trailer
+        newTab.location.href = trailerUrl; // ✅ now load trailer
       }
     } catch (err) {
       console.error("❌ Error playing movie:", err);
       if (newTab) newTab.close(); // if error, close tab
     }
   };
-  
-  
+
   const handleRemove = async (movieId) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
+
     if (!movieId || !savedUser?.userId) {
       console.warn("Missing movieId or userId");
       return;
     }
-  
+
     try {
       const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
         method: "POST",
@@ -100,23 +109,27 @@ const StLikedMoviesPage = () => {
           movieId: movieId,
         }),
       });
-  
 
       const data = await res.json();
       console.log("🗑️ Remove response:", data);
 
-      console.log("Before removal:", likedMovies.map(m => typeof m.movieId), typeof movieId);
+      console.log(
+        "Before removal:",
+        likedMovies.map((m) => typeof m.movieId),
+        typeof movieId
+      );
 
-  
       // ✅ Remove movie from frontend UI state
       setLikedMovies((prev) =>
         prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
+
+      setShowSuccess(true); // ✅ show popup
+      setTimeout(() => setShowSuccess(false), 2000); // auto-hide
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
   };
-  
 
   return (
     <div className="p-4">
@@ -173,6 +186,26 @@ const StLikedMoviesPage = () => {
           )}
         </div>
       </div>
+
+      {isLoading && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+            <p className="text-lg font-semibold">Loading Liked Movies</p>
+            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+          </div>
+        </div>
+      )}
+
+      {showSuccess && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+            <div className="flex justify-center mb-2">
+              <CheckCircle className="w-8 h-8 text-violet-500" />
+            </div>
+            <span className="font-medium">Movie removed from liked list!</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
