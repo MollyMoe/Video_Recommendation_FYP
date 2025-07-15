@@ -110,9 +110,41 @@ const StHistoryPage = () => {
     }
   };
 
+  // const handleRemoveAllHistory = async () => {
+  //   const savedUser = JSON.parse(localStorage.getItem("user"));
+  //   if (!savedUser?.userId) return;
+  
+  //   try {
+
+  //     const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ userId: savedUser.userId }),
+  //     });
+  
+  //     const result = await res.json();
+  //     console.log("🧹 Clear history response:", result);
+  
+  //     // Clear the local state
+  //     setHistoryMovies([]);
+  //   } catch (err) {
+  //     console.error("❌ Error clearing history:", err);
+  //   }
+  // };
+  
+
   const handleRemoveAllHistory = async () => {
+    console.log("🧹 handleRemoveAllHistory called");
+  
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!savedUser?.userId) return;
+    console.log("🔍 savedUser:", savedUser);
+  
+    if (!savedUser?.userId) {
+      console.warn("⚠️ No userId found");
+      return;
+    }
   
     try {
       const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
@@ -123,11 +155,12 @@ const StHistoryPage = () => {
         body: JSON.stringify({ userId: savedUser.userId }),
       });
   
-      const result = await res.json();
-      console.log("🧹 Clear history response:", result);
+      console.log("✅ HTTP status:", res.status);
   
-      // Clear the local state
-      setHistoryMovies([]);
+      const result = await res.json();
+      console.log("📦 Backend response:", result);
+  
+      setHistoryMovies([]);  // Clear state
     } catch (err) {
       console.error("❌ Error clearing history:", err);
     }

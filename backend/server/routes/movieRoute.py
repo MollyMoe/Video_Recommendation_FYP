@@ -323,6 +323,30 @@ async def remove_from_history(request: Request):
         return {"message": "Movie not found or already removed"}
 
 
+@router.post("/historyMovies/removeAllHistory")
+async def remove_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+
+    try:
+        result = history_collection.update_one(
+            {"userId": user_id},
+            {"$set": {"historyMovies": []}}
+        )
+
+        print("🧹 Cleared history count:", result.modified_count)
+
+        return {"message": "History cleared"}
+    except Exception as e:
+        print("❌ Failed to clear history:", e)
+        raise HTTPException(status_code=500, detail="Server error")
+
+
 # store recommendations in a collection
 @router.post("/store-recommendations")
 async def store_recommendations(
@@ -347,29 +371,6 @@ async def store_recommendations(
         print("❌ Error saving recommendations:", e)
         return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
     
-
-@router.post("/historyMovies/removeAllHistory")
-async def remove_history(request: Request):
-    data = await request.json()
-    db = request.app.state.movie_db
-    history_collection = db["history"]
-
-    user_id = data.get("userId")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Missing userId")
-
-    try:
-        result = history_collection.update_one(
-            {"userId": user_id},
-            {"$set": {"historyMovies": []}}
-        )
-
-        print("🧹 Cleared history count:", result.modified_count)
-
-        return {"message": "History cleared"}
-    except Exception as e:
-        print("❌ Failed to clear history:", e)
-        raise HTTPException(status_code=500, detail="Server error")
 
 
 # when new data is regenrated it will stay that way 

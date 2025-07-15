@@ -12,6 +12,8 @@ from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
 from fastapi.staticfiles import StaticFiles
 
+
+
 # Load .env
 env_path = Path(__file__).resolve().parent / 'server' / '.env'
 load_dotenv(dotenv_path=env_path)
