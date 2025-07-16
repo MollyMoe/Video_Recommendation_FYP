@@ -11,6 +11,9 @@ from server.routes.passwordRoute import router as password_router
 from server.routes.editProfileRoute import router as edit_router
 from server.routes.profileRoute import router as profile_router
 from fastapi.staticfiles import StaticFiles
+from server.routes.subscriptionRoute import router as subscription_router
+from server.routes.stripeRoute import router as stripe_router
+
 
 # Load .env
 env_path = Path(__file__).resolve().parent / 'server' / '.env'
@@ -23,6 +26,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # Load environment variables
 USER_DB_URI = os.getenv("MONGO_URI", "").strip()
 MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
+SUPPORT_DB_URI = os.getenv("SUPPORT_DB_URI")
 JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
 
 print("🔗 USER_DB_URI:", repr(USER_DB_URI))
@@ -33,6 +37,8 @@ if not USER_DB_URI.startswith("mongodb"):
     raise ValueError("❌ Invalid USER_DB_URI format")
 if not MOVIE_DB_URI.startswith("mongodb"):
     raise ValueError("❌ Invalid MOVIE_DB_URI format")
+if not SUPPORT_DB_URI.startswith("mongodb"):
+    raise ValueError("❌ Invalid SUPPORT_DB_URI format")
 
 # Connect to MongoDB
 user_client = MongoClient(USER_DB_URI)
@@ -41,6 +47,10 @@ user_db = user_client["users"]
 movie_client = MongoClient(MOVIE_DB_URI)
 movie_db = movie_client["NewMovieDatabase"]
 print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
+
+support_client = MongoClient(SUPPORT_DB_URI)
+support_db = support_client["support"]
+print("✅ Connected to support database. Collections:", support_db.list_collection_names())
 
 # Initialize FastAPI
 app = FastAPI()
@@ -62,6 +72,7 @@ app.add_middleware(
 # Store DB in state
 app.state.user_db = user_db
 app.state.movie_db = movie_db
+app.state.support_db = support_db 
 
 # Routes
 app.include_router(auth_router, prefix="/api/auth")
@@ -70,6 +81,9 @@ app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
+app.include_router(subscription_router, prefix="/api")
+app.include_router(stripe_router, prefix="/api")
+
 
 @app.get("/")
 def read_root():

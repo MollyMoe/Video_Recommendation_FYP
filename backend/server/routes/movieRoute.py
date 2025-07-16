@@ -5,6 +5,8 @@ from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
 from pydantic import BaseModel
 from typing import Optional, List, Union
+from fastapi import APIRouter, Request, HTTPException, Query
+
 
 class Movie(BaseModel):
     _id: Optional[str]  # ObjectId as string
@@ -62,10 +64,10 @@ async def add_to_liked_movies(request: Request):
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
     # Use $addToSet to avoid duplicates
-    await liked_collection.update_one(
+    liked_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"likedMovies": movie_id}},
-        upsert=True  # Create the document if it doesn't exist
+        upsert=True
     )
 
     return {"message": "Movie added to liked list"}
@@ -85,7 +87,7 @@ def get_liked_movies(userId: str, request: Request):
     # Get all matching movies
     movies_cursor = movies_collection.find(
         {"movieId": {"$in": liked_ids}},
-        {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
+        {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
     )
 
     # Remove duplicates by movieId
@@ -100,43 +102,6 @@ def get_liked_movies(userId: str, request: Request):
 
     return {"likedMovies": unique_movies}
 
-# @router.post("/history")
-# async def add_to_history(request: Request):
-#     data = await request.json()
-#     db = request.app.state.movie_db
-#     history_collection = db["history"]
-
-#     user_id = data.get("userId")
-#     movie_id = data.get("movieId")
-
-#     if not user_id or movie_id is None:
-#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-#     # Ensure movie_id matches the data type stored in MongoDB
-#     try:
-#         movie_id = int(movie_id)
-#     except (ValueError, TypeError):
-#         pass  # keep as string if it fails
-
-#     try:
-#         # Remove from history if it exists
-#         await history_collection.update_one(
-#             {"userId": user_id},
-#             {"$pull": {"historyMovies": movie_id}},
-#         )
-
-#         # Add to end
-#         await history_collection.update_one(
-#             {"userId": user_id},
-#             {"$push": {"historyMovies": movie_id}},
-#             upsert=True
-#         )
-
-#         return {"message": "Movie moved to end of history"}
-#     except Exception as e:
-#         print("❌ Error saving history:", e)
-#         raise HTTPException(status_code=500, detail="Failed to save history")
-
 
 @router.post("/history")
 async def add_to_history(request: Request):
@@ -147,14 +112,12 @@ async def add_to_history(request: Request):
     user_id = data.get("userId")
     movie_id = data.get("movieId")
 
+
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    try:
-        movie_id = int(movie_id)
-    except (ValueError, TypeError):
-        pass  # Keep as string
-
+    movie_id = str(movie_id) 
+    
     try:
         # ✅ Remove existing entry (synchronously)
         history_collection.update_one(
@@ -187,11 +150,12 @@ def get_history_movies(userId: str, request: Request):
         if not history_doc or not history_doc.get("historyMovies"):
             return {"historyMovies": []}
 
-        history_ids = history_doc["historyMovies"]
+        history_ids = [str(mid) for mid in history_doc["historyMovies"]]
+
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
+            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
         )
 
         # Remove duplicates by movieId
@@ -204,13 +168,14 @@ def get_history_movies(userId: str, request: Request):
                 movie["_id"] = str(movie["_id"])
                 unique_movies.append(movie)
 
+
+
         return {"historyMovies": unique_movies}
 
     except Exception as e:
         print("❌ Error fetching history movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch history movies")
     
-
     
 @router.post("/watchLater")
 async def add_to_watchLater(request: Request):
@@ -224,15 +189,16 @@ async def add_to_watchLater(request: Request):
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
+    movie_id = str(movie_id) 
+
     # Use $addToSet to avoid duplicate entries in history
-    await watchLater_collection.update_one(
+    watchLater_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"SaveMovies": movie_id}},
         upsert=True
     )
 
     return {"message": "Movie saved to watch later"}
-
 
 
 @router.get("/watchLater/{userId}")
@@ -246,11 +212,11 @@ def get_watchLater_movies(userId: str, request: Request):
         if not save or not save.get("SaveMovies"):
             return {"SaveMovies": []}
 
-        saveMovie_ids = save["SaveMovies"]
+        saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": saveMovie_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1}
+            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
         )
 
         # Remove duplicates by movieId
@@ -269,32 +235,92 @@ def get_watchLater_movies(userId: str, request: Request):
         print("❌ Error fetching saved movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
     
-# @router.post("/unlike")
-# def remove_from_liked_movies(request: Request, data: dict = Body(...)):
-#     db = request.app.state.movie_db
-#     liked_collection = db["liked"]
 
-#     user_id = data.get("userId")
-#     movie_id = data.get("movieId")
+@router.post("/likedMovies/delete")
+async def remove_from_liked_movies(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
 
-#     if not user_id or movie_id is None:
-#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
 
-#     try:
-#         movie_id = int(movie_id)
-#     except (ValueError, TypeError):
-#         pass
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-#     result = liked_collection.update_one(
-#         {"userId": user_id},
-#         {"$pull": {"likedMovies": movie_id}}
-#     )
+    try:
+        movie_id = int(movie_id)
+    except (ValueError, TypeError):
+        pass
 
-#     if result.modified_count > 0:
-#         return {"message": "Movie removed from liked list"}
-#     else:
-#         return {"message": "Movie not found or already removed"}
-# POST /api/movies/regenerate — fetch new movies excluding current ones
+    movie_id = str(data.get("movieId"))
+
+    result = liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": movie_id}}
+    )
+
+    print("💥 MongoDB modified count:", result.modified_count)
+
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from liked list"}
+    else:
+        return {"message": "Movie not found or already removed"}
+
+
+@router.post("/watchLater/delete")
+async def remove_from_watchLater(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    watchLater_collection = db["saved"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    movie_id = str(movie_id)
+
+    result = watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"SaveMovies": movie_id}}
+    )
+
+    print("💥 WatchLater delete modified count:", result.modified_count)
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from watch later list"}
+    else:
+        return {"message": "Movie not found or already removed"}
+    
+
+@router.post("/historyMovies/delete")
+async def remove_from_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    movie_id = str(movie_id)
+
+    result = history_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"historyMovies": movie_id}}
+    )
+
+    print("🧹 Removed from history:", result.modified_count)
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from history"}
+    else:
+        return {"message": "Movie not found or already removed"}
 
 @router.post("/regenerate")
 def regenerate_movies(
@@ -314,7 +340,7 @@ def regenerate_movies(
             }},
             {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
             {"$replaceRoot": {"newRoot": "$doc"}},
-            {"$limit": 30}
+            #{"$limit": 30}
         ]
 
         movies = list(db.hybridRecommendation2.aggregate(pipeline))
@@ -369,3 +395,49 @@ def get_user_recommendations(userId: str, request: Request):
     except Exception as e:
         print("❌ Error fetching recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
+
+@router.get("/search")
+def search_movies(request: Request, q: str = Query(..., min_length=1)):
+    db = request.app.state.movie_db
+    try:
+        results = db.hybridRecommendation2.find({
+            "$text": { "$search": f"\"{q}\"" },
+            "poster_url": { "$nin": ["", None, "nan", "NaN"] },
+            "trailer_url": { "$nin": ["", None, "nan", "NaN"] }
+        })
+
+        movies = []
+        for movie in results:
+            movie["_id"] = str(movie["_id"])
+            for key, value in movie.items():
+                if isinstance(value, float) and math.isnan(value):
+                    movie[key] = None
+            movies.append(movie)
+
+        return JSONResponse(content=movies)
+    except Exception as e:
+        print("❌ Search failed:", e)
+        raise HTTPException(status_code=500, detail="Search failed")
+
+@router.post("/historyMovies/removeAllHistory")
+async def remove_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+
+    try:
+        result = history_collection.update_one(
+            {"userId": user_id},
+            {"$set": {"historyMovies": []}}
+        )
+
+        print("🧹 Cleared history count:", result.modified_count)
+
+        return {"message": "History cleared"}
+    except Exception as e:
+        print("❌ Failed to clear history:", e)
+        raise HTTPException(status_code=500, detail="Server error")

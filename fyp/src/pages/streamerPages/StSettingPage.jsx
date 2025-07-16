@@ -152,7 +152,6 @@ const StSettingPage = () => {
       setShowSuccessModal(true);
       localStorage.setItem("user", JSON.stringify(updated));
       localStorage.setItem("refreshAfterSettings", "true"); //add
-
     } catch (err) {
       console.error("Update error:", err);
       alert("Could not update profile.");
