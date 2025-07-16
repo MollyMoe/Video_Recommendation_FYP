@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-import StSearchBar from "../../components/streamer_components/StSearchBar";
+
 import { Play, Trash2, CheckCircle } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -193,9 +193,8 @@ const StHistoryPage = () => {
   return (
     <div className="p-4">
       <StNav />
-      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-        <StSearchBar />
-      </div>
+
+
       <StSideBar />
 
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">

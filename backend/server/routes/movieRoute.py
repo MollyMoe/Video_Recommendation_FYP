@@ -1,6 +1,6 @@
 import math
 from typing import List
-from fastapi import APIRouter, Request, HTTPException, Body
+from fastapi import APIRouter, Request, HTTPException, Body, Query
 from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
 from pydantic import BaseModel
@@ -421,3 +421,54 @@ def get_user_recommendations(userId: str, request: Request):
     except Exception as e:
         print("❌ Error fetching recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
+    
+
+@router.get("/search")
+def search_movies(request: Request, q: str = Query(..., min_length=1)):
+    db = request.app.state.movie_db
+    try:
+        results = db.hybridRecommendation2.find({
+            "$text": { "$search": f"{q}" },
+            "poster_url": { "$nin": ["", None, "nan", "NaN"] },
+            "trailer_url": { "$nin": ["", None, "nan", "NaN"] }
+            })
+
+        movies = []
+        for movie in results:
+            movie["_id"] = str(movie["_id"])
+            for key, value in movie.items():
+                if isinstance(value, float) and math.isnan(value):
+                    movie[key] = None
+            movies.append(movie)
+
+        return JSONResponse(content=movies)
+    except Exception as e:
+        print("❌ Search failed:", e)
+        raise HTTPException(status_code=500, detail="Search failed")
+    
+
+# delete from recommendation
+@router.post("/recommended/delete")
+async def remove_from_recommended(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    recommended_collection = db["recommended"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    # Pull from array of objects where movieId matches
+    result = recommended_collection.update_one(
+        {"userId": user_id},
+        {"$pull": { "recommended": { "movieId": str(movie_id) } }}
+    )
+
+    print("🗑️ Removed from recommendations:", result.modified_count)
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from recommendations"}
+    else:
+        return {"message": "Movie not found or already removed"}
