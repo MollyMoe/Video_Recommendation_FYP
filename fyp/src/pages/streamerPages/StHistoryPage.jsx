@@ -4,6 +4,7 @@ import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
 
+
 const API = import.meta.env.VITE_API_BASE_URL;
 
 
@@ -123,40 +124,15 @@ const StHistoryPage = () => {
       setHistoryMovies((prev) =>
         prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
-
-      
       setShowSuccess(true); // ✅ show popup
       setTimeout(() => setShowSuccess(false), 2000); // auto-hide
+
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
   };
 
-  // const handleRemoveAllHistory = async () => {
-  //   const savedUser = JSON.parse(localStorage.getItem("user"));
-  //   if (!savedUser?.userId) return;
-  
-  //   try {
-
-  //     const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ userId: savedUser.userId }),
-  //     });
-  
-  //     const result = await res.json();
-  //     console.log("🧹 Clear history response:", result);
-  
-  //     // Clear the local state
-  //     setHistoryMovies([]);
-  //   } catch (err) {
-  //     console.error("❌ Error clearing history:", err);
-  //   }
-  // };
-  
-
+ 
   const handleRemoveAllHistory = async () => {
     console.log("🧹 handleRemoveAllHistory called");
   
@@ -188,8 +164,6 @@ const StHistoryPage = () => {
     }
   };
   
-
-
   return (
     <div className="p-4">
       <StNav />

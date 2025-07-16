@@ -25,4 +25,5 @@ async def update_genres(data: GenreRequest, request: Request):
         return JSONResponse(content={"message": "Preferences updated successfully"}, status_code=200)
     except Exception as e:
         print("Error saving preferences:", e)
+
         raise HTTPException(status_code=500, detail="Internal server error")

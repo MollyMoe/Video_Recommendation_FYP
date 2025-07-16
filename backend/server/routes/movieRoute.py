@@ -35,21 +35,23 @@ router = APIRouter()
 def get_all_movies(request: Request):
     db = request.app.state.movie_db
     try:
+
         # Fetch from your actual collection
         movies = list(db.hybridRecommendation2.find().limit(50000))
 
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
 
-            # Replace all NaN values with None
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])  # convert ObjectId to string
             for key, value in movie.items():
                 if isinstance(value, float) and math.isnan(value):
-                    movie[key] = None
+                    movie[key] = None  # replace NaN with None
 
         return JSONResponse(content=movies)
+
     except Exception as e:
         print("❌ Failed to fetch movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
+
 
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
@@ -111,7 +113,6 @@ async def add_to_history(request: Request):
 
     user_id = data.get("userId")
     movie_id = data.get("movieId")
-
 
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
@@ -268,7 +269,6 @@ async def remove_from_liked_movies(request: Request):
     else:
         return {"message": "Movie not found or already removed"}
 
-
 @router.post("/watchLater/delete")
 async def remove_from_watchLater(request: Request):
     data = await request.json()
@@ -388,6 +388,7 @@ def get_user_recommendations(userId: str, request: Request):
     db = request.app.state.movie_db
     try:
         record = db.recommended.find_one({ "userId": userId })
+
         if not record:
             return JSONResponse(content=[])  
 
@@ -441,3 +442,4 @@ async def remove_history(request: Request):
     except Exception as e:
         print("❌ Failed to clear history:", e)
         raise HTTPException(status_code=500, detail="Server error")
+

@@ -22,6 +22,7 @@ import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription
 import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
 
+
 function App() {
 
   return (
@@ -40,12 +41,16 @@ function App() {
           <Route path="/home" element={<StreamerLayout />}>
             <Route index element={<StHomePage />} />
             <Route path="history" element={<StHistoryPage />} />
+            <Route path="liked" element={<StLikedMoviesPage />} />
             <Route path="setting" element={<StSettingPage />} />
             <Route path="like" element={<StLikedMoviesPage />} />
             <Route path="watchLater" element={<StWatchLaterPage />} />
             <Route path="filter" element={<StFilterPage />} />
             <Route path="help" element={<StHelpPage />} />
             <Route path="subscription" element={<StManageSubscriptionPage />} />
+
+
+
           </Route>
 
           {/* Admin Layout */}

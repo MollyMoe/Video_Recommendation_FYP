@@ -4,6 +4,7 @@ import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 import { debounce } from "lodash";
 
+
 const API = import.meta.env.VITE_API_BASE_URL;
 
 function StHomeContent({ userId, searchQuery }) {
@@ -15,13 +16,16 @@ function StHomeContent({ userId, searchQuery }) {
   const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
   const [notification, setNotification] = useState("");
 
+
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
+
 
     const showNotification = (msg) => {
       setNotification(msg);
       setTimeout(() => setNotification(""), 3000); // Hide after 3s
   };
+
     useEffect(() => {
     const fetchUserAndMovies = async () => {
       if (!username || !savedUser?.userId) return;
@@ -50,6 +54,7 @@ function StHomeContent({ userId, searchQuery }) {
               movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
             }
             const match = movie.trailer_url?.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+
             movie.trailer_key = match ? match[1] : null;
             return movie;
           });
@@ -95,6 +100,7 @@ function StHomeContent({ userId, searchQuery }) {
         // ✅ Show only recommended ones at first
         setMovies(fetchedMovies.slice(0, 99));
         setLastRecommendedMovies(fetchedMovies.slice(0, 99));
+
       } catch (err) {
         console.error("Error loading movies:", err);
         setMovies([]);
@@ -106,7 +112,6 @@ function StHomeContent({ userId, searchQuery }) {
 
     fetchUserAndMovies();
   }, [username]);
-
 
     const handleRegenerate = async () => {
        setIsLoading(true); // added 
@@ -278,6 +283,7 @@ const handleWatchLater = async (movieId) => {
         body: JSON.stringify({ userId: savedUser.userId, movieId }),
       });
       showNotification("You liked this movie!");
+
     } catch (err) {
       console.error("Error liking movie:", err);
     }

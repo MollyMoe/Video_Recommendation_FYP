@@ -42,3 +42,4 @@ def update_password(data: UpdatePasswordRequest, request: Request):
     )
 
     return {"message": "Password updated successfully."}
+

@@ -84,6 +84,7 @@ function SignInPage() {
         localStorage.removeItem("admin_profileImage");
 
         localStorage.setItem("token", data.token);
+
         localStorage.setItem("user", JSON.stringify(data.user));
 
         if (formData.userType === "streamer") {
@@ -120,6 +121,7 @@ function SignInPage() {
         res.status === 403 &&
         data.detail?.toLowerCase().includes("suspend")
       ) {
+
         // 👉 Add this block BELOW:
         // Set profile image for context to pick up on next reload
         const baseUrl = "http://localhost:3001";
@@ -142,10 +144,12 @@ function SignInPage() {
         } else {
           navigate("/home");
         }
+
       } else if (
         res.status === 403 &&
         data.error?.toLowerCase().includes("suspend")
       ) {
+
         setMessage({
           type: "error",
           text: "Your account is suspended. Please contact support.",

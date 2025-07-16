@@ -59,9 +59,9 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   return (
     <div className="flex-1 px-5 hidden md:flex justify-center" ref={wrapperRef}>
       <div className="w-full max-w-md z-60">
-        <div className="w-screen h-27 bg-white w-full" >
-        <h1 className="mt-[10px] text-2xl font-bold mb-4">What would you like to watch?</h1>
-         
+        <div className=" w-screen h-27 bg-white w-full" >
+        <h1 className="mt-[20px] text-xl font-bold text-gray-700 mb-4">What would you like to watch?</h1>
+
         <input
           type="text"
           value={searchQuery}
@@ -131,3 +131,4 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 };
 
 export default StFilterBar;
+

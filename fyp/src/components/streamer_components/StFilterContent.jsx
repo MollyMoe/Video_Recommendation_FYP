@@ -9,6 +9,7 @@ const StFilterContent = ({searchQuery}) => {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [allMovies, setAllMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
@@ -26,6 +27,8 @@ const StFilterContent = ({searchQuery}) => {
   const fetchMovies = async () => {
     if (!savedUser?.userId) return;
 
+    setIsLoading(true);
+
     try {
       
       let allMovieList = [];
@@ -40,6 +43,9 @@ const StFilterContent = ({searchQuery}) => {
     } catch (err) {
       console.error("Failed to fetch recommended movies:", err);
     }
+
+    setIsLoading(false);
+
   };
 
   const handleHistory = async (movieId) => {
@@ -96,6 +102,7 @@ const StFilterContent = ({searchQuery}) => {
       movie.title?.toLowerCase().includes(lowerQuery) ||
       movie.director?.toLowerCase().includes(lowerQuery) ||
       movie.actors?.toLowerCase().includes(lowerQuery) ||
+
       (Array.isArray(movie.genres) && movie.genres.some(g => g.toLowerCase().includes(lowerQuery)))
     );
     setMovies(filtered);
@@ -104,6 +111,14 @@ const StFilterContent = ({searchQuery}) => {
   return (
     <div className="pt-50 px-8 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="p-6 max-w-3xl mx-auto">
+                {isLoading && (
+                <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+                    <p className="text-lg font-semibold">Loading movies...</p>
+                    <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+                    </div>
+                </div>
+                )}
               
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
                 {movies.map((movie) => (
@@ -138,7 +153,7 @@ const StFilterContent = ({searchQuery}) => {
                             ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
                             </div>
                         </div>
-                        </div>
+                      </div>
                     )}
                 </div>
                 ))}
@@ -164,8 +179,7 @@ const StFilterContent = ({searchQuery}) => {
                     <strong>Actors:</strong> {Array.isArray(selectedMovie?.actors) ? selectedMovie.actors.join(", ") : selectedMovie?.actors || "N/A"}
                     </p>
                     <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview || "N/A"}</p>
-                    <p className="text-sm text-gray-700">
-                    Predicted Rating: ⭐ {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
+                    <p className="text-sm text-gray-700"><strong>Rating: ⭐</strong> {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
                     </p>
                 </div>
             </div>
@@ -229,3 +243,4 @@ const StFilterContent = ({searchQuery}) => {
 };
 
 export default StFilterContent;
+

@@ -72,6 +72,7 @@ router.post('/signin', async (req, res) => {
         userType: user.userType,
       }
 
+
     });
   } catch (err) {
     console.error('Login error:', err);

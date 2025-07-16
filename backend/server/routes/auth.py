@@ -70,6 +70,7 @@ def signup(request: Request, user: SignUpRequest):
         "genres": [],
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
+        "likedMovies": [],
         "__v": 0
     }
 
@@ -224,6 +225,6 @@ def get_user_by_id(request: Request, userType: str, userId: str):
     user = collection.find_one({"userId": userId}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return user
 
+    return user
 
