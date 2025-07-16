@@ -64,7 +64,7 @@ async def add_to_liked_movies(request: Request):
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
     # Use $addToSet to avoid duplicates
-    await liked_collection.update_one(
+    liked_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"likedMovies": movie_id}},
         upsert=True  # Create the document if it doesn't exist
@@ -193,7 +193,7 @@ async def add_to_watchLater(request: Request):
     movie_id = str(movie_id) 
 
     # Use $addToSet to avoid duplicate entries in history
-    await watchLater_collection.update_one(
+    watchLater_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"SaveMovies": movie_id}},
         upsert=True
@@ -324,7 +324,29 @@ async def remove_from_history(request: Request):
     else:
         return {"message": "Movie not found or already removed"}
     
-    
+@router.post("/historyMovies/removeAllHistory")
+async def remove_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+
+    try:
+        result = history_collection.update_one(
+            {"userId": user_id},
+            {"$set": {"historyMovies": []}}
+        )
+
+        print("🧹 Cleared history count:", result.modified_count)
+
+        return {"message": "History cleared"}
+    except Exception as e:
+        print("❌ Failed to clear history:", e)
+        raise HTTPException(status_code=500, detail="Server error")
+
     
 @router.post("/regenerate")
 def regenerate_movies(
@@ -423,3 +445,29 @@ def search_movies(request: Request, q: str = Query(..., min_length=1)):
     except Exception as e:
         print("❌ Search failed:", e)
         raise HTTPException(status_code=500, detail="Search failed")
+
+# delete from recommendation    
+@router.post("/recommended/delete")
+async def remove_from_recommended(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    recommended_collection = db["recommended"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    # Pull from array of objects where movieId matches
+    result = recommended_collection.update_one(
+        {"userId": user_id},
+        {"$pull": { "recommended": { "movieId": str(movie_id) } }}
+    )
+
+    print("🗑️ Removed from recommendations:", result.modified_count)
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from recommendations"}
+    else:
+        return {"message": "Movie not found or already removed"}

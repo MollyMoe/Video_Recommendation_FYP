@@ -2,14 +2,26 @@ import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
-import { Play, Trash2 } from "lucide-react";
+import { Play, Trash2, CheckCircle } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
+
 const StHistoryPage = () => {
   const [historyMovies, setHistoryMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
 
   const fetchHistoryMovies = async (userId) => {
+    if (!userId) return;
+    setIsLoading(true);
+
+    const start = Date.now(); // Track start time
+
+
     try {
       const res = await fetch(`${API}/api/movies/historyMovies/${userId}`);
       const data = await res.json();
@@ -30,6 +42,13 @@ const StHistoryPage = () => {
       setHistoryMovies(uniqueMovies);
     } catch (err) {
       console.error("❌ Failed to fetch history movies:", err);
+    }  finally {
+      const elapsed = Date.now() - start;
+      const minDelay = 500; // milliseconds
+  
+      setTimeout(() => {
+        setIsLoading(false);
+      }, Math.max(0, minDelay - elapsed)); // ensure at least 500ms visible
     }
   };
 
@@ -104,26 +123,110 @@ const StHistoryPage = () => {
       setHistoryMovies((prev) =>
         prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
+
+      
+      setShowSuccess(true); // ✅ show popup
+      setTimeout(() => setShowSuccess(false), 2000); // auto-hide
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
   };
 
+  // const handleRemoveAllHistory = async () => {
+  //   const savedUser = JSON.parse(localStorage.getItem("user"));
+  //   if (!savedUser?.userId) return;
+  
+  //   try {
 
+  //     const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ userId: savedUser.userId }),
+  //     });
+  
+  //     const result = await res.json();
+  //     console.log("🧹 Clear history response:", result);
+  
+  //     // Clear the local state
+  //     setHistoryMovies([]);
+  //   } catch (err) {
+  //     console.error("❌ Error clearing history:", err);
+  //   }
+  // };
+  
+
+  const handleRemoveAllHistory = async () => {
+    console.log("🧹 handleRemoveAllHistory called");
+  
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    console.log("🔍 savedUser:", savedUser);
+  
+    if (!savedUser?.userId) {
+      console.warn("⚠️ No userId found");
+      return;
+    }
+  
+    try {
+      const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: savedUser.userId }),
+      });
+  
+      console.log("✅ HTTP status:", res.status);
+  
+      const result = await res.json();
+      console.log("📦 Backend response:", result);
+  
+      setHistoryMovies([]);  // Clear state
+    } catch (err) {
+      console.error("❌ Error clearing history:", err);
+    }
+  };
+  
 
 
   return (
     <div className="p-4">
       <StNav />
+      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
+        <StSearchBar />
+      </div>
       <StSideBar />
-      <div className="sm:ml-64 pt-20 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
+
+      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
+          <div className="-mt-4 flex justify-end mb-5">
+            {/* play all history btn */}
+            {/* <button
+              onClick={handleRemoveAllHistory}
+              className="bg-white text-black font-medium border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm shadow-md"
+            >
+              Remove all History
+            </button> */}
+
+            <button
+              onClick={() => setShowConfirm(true)}
+              className="bg-white text-black font-medium border border-gray-300 hover:bg-gray-100 px-4 py-2 rounded-lg text-sm shadow-md"
+            >
+              Remove all History
+            </button>
+          </div>
           {historyMovies.length === 0 ? (
-            <p className="text-center mt-10 text-white">No history movies found.</p>
+            <p className="text-center mt-10 text-white">
+              No history movies found.
+            </p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
               {historyMovies.map((movie) => (
-                <div key={movie._id || movie.movieId} className="bg-white rounded-lg shadow p-2">
+                <div
+                  key={movie._id || movie.movieId}
+                  className="bg-white rounded-lg shadow p-2"
+                >
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
@@ -153,14 +256,73 @@ const StHistoryPage = () => {
                       Remove
                     </button>
                   </div>
-
-
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {isLoading && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+            <p className="text-lg font-semibold">Loading Liked Movies</p>
+            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+          </div>
+        </div>
+      )}
+
+      {showSuccess && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+            <div className="flex justify-center mb-2">
+              <CheckCircle className="w-8 h-8 text-violet-500" />
+            </div>
+            <span className="font-medium">Movie removed from history!</span>
+          </div>
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white w-full max-w-md rounded-lg shadow-lg p-6 text-center">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-4">
+
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Message */}
+            <p className="mb-6 text-gray-700">
+              Are you sure you want to remove all history?
+            </p>
+
+            {/* Actions */}
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => {
+                  handleRemoveAllHistory();
+                  setShowConfirm(false);
+                }}
+                className="bg-green-500 hover:bg-green-600 text-white px-5 py-2 rounded-lg"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-lg"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

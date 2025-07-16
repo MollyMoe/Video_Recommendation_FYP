@@ -20,6 +20,8 @@ import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
 import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
 import StFilterPage from "./pages/streamerPages/StFilterPage";
+import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
+import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
 
 function App() {
 
@@ -33,6 +35,8 @@ function App() {
           <Route path="/inputgenre" element={<InputGenrePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/reset-password-form" element={<SetNewPasswordPage />} />
+          <Route path="/success" element={<StPaymentSuccess />} />
+
 
           {/* Streamer Layout */}
           <Route path="/home" element={<StreamerLayout />}>
@@ -44,6 +48,7 @@ function App() {
             <Route path="filter" element={<StFilterPage />} />
             <Route path="help" element={<StHelpPage />} />
             <Route path="sendfeedback" element={<StSendFeedbackPage />} />
+            <Route path="subscription" element={<StManageSubscriptionPage />} />            
           </Route>
 
           {/* Admin Layout */}
