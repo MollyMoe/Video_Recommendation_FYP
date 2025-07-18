@@ -45,20 +45,17 @@ const StSideBar = () => {
             />
           </li>
           <li>
-
             <StSidebarButton
               to="/home/watchLater"
               label="Watch Later"
               current={location.pathname === "/home/watchLater"}
             />
           </li>
-          <li>
             <StSidebarButton
-              to="/home/liked"
-              label="Liked Movies"
-              current={location.pathname === "/home/liked"}
+              to="/home/like"
+              label="Liked Movie"
+              current={location.pathname === "/home/like"}
             />
-          </li>
 
           <hr className="my-2 border-gray-300" />
           
@@ -87,20 +84,24 @@ const StSideBar = () => {
             />
           </li>
           <li>
+            <StSidebarButton
+              to="/home/sendfeedback"
+              label="Send Feedback"
+              current={location.pathname === "/home/sendfeedback"}
+            />
+          </li>
+          <li>
             <a
               href="#"
               className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
             >
-              Send Feedback
-            </a>
-          </li>
-          <li>
-            <StSidebarButton
+             <StSidebarButton
               to="/home/subscription"
               label="Subscription"
               current={location.pathname === "/home/subscription"}
               Manage Subscriptions
             />
+            </a>
           </li>
         </ul>
       </div>

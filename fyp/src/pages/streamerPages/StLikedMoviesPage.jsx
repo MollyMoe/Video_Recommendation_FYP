@@ -11,8 +11,6 @@ const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // const [refreshTrigger, setRefreshTrigger] = useState(false);
-
   const [showSuccess, setShowSuccess] = useState(false);
 
   const fetchLikedMovies = async (userId) => {
@@ -59,7 +57,6 @@ const StLikedMoviesPage = () => {
     }
   }, []);
 
-
   const handlePlay = async (movieId, trailerUrl) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!movieId || !savedUser?.userId) return;
@@ -96,7 +93,6 @@ const StLikedMoviesPage = () => {
   const handleRemove = async (movieId) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
 
-
     if (!movieId || !savedUser?.userId) {
       console.warn("Missing movieId or userId");
       return;
@@ -130,7 +126,6 @@ const StLikedMoviesPage = () => {
 
       setShowSuccess(true); // ✅ show popup
       setTimeout(() => setShowSuccess(false), 2000); // auto-hide
-
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }

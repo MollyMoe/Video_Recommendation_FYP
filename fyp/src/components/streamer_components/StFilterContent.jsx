@@ -35,11 +35,13 @@ const StFilterContent = ({searchQuery}) => {
       const res = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
       allMovieList = res.data;
 
-      console.log("🎬 Frontend received:", allMovieList);
+      const finalMovieSet = allMovieList.slice(0, 1000); // ⬅️ slice the first 1000
+     
+      console.log("🎬 Frontend received:", finalMovieSet);
    
 
-      setAllMovies(allMovieList);
-      setMovies(allMovieList);
+      setAllMovies(finalMovieSet);
+      setMovies(finalMovieSet);
     } catch (err) {
       console.error("Failed to fetch recommended movies:", err);
     }

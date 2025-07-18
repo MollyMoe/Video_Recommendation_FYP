@@ -4,7 +4,6 @@ import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
 
-
 const API = import.meta.env.VITE_API_BASE_URL;
 
 
@@ -124,15 +123,40 @@ const StHistoryPage = () => {
       setHistoryMovies((prev) =>
         prev.filter((m) => m.movieId.toString() !== movieId.toString())
       );
+
+      
       setShowSuccess(true); // ✅ show popup
       setTimeout(() => setShowSuccess(false), 2000); // auto-hide
-
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
   };
 
- 
+  // const handleRemoveAllHistory = async () => {
+  //   const savedUser = JSON.parse(localStorage.getItem("user"));
+  //   if (!savedUser?.userId) return;
+  
+  //   try {
+
+  //     const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ userId: savedUser.userId }),
+  //     });
+  
+  //     const result = await res.json();
+  //     console.log("🧹 Clear history response:", result);
+  
+  //     // Clear the local state
+  //     setHistoryMovies([]);
+  //   } catch (err) {
+  //     console.error("❌ Error clearing history:", err);
+  //   }
+  // };
+  
+
   const handleRemoveAllHistory = async () => {
     console.log("🧹 handleRemoveAllHistory called");
   
@@ -164,10 +188,11 @@ const StHistoryPage = () => {
     }
   };
   
+
+
   return (
     <div className="p-4">
       <StNav />
-      <StSideBar />
 
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
@@ -237,7 +262,7 @@ const StHistoryPage = () => {
       {isLoading && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <p className="text-lg font-semibold">Loading Liked Movies</p>
+            <p className="text-lg font-semibold">Loading Movie History</p>
             <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
           </div>
         </div>

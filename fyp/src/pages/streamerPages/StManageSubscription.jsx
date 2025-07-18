@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import StPlans from "../../components/streamer_components/StPlans";
-import StPaymentForm from "../../components/streamer_components/StPaymentForm";
 import StBillingForm from "../../components/streamer_components/StBillingForm";
 import { FaChevronRight } from "react-icons/fa";
 

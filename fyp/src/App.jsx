@@ -16,11 +16,14 @@ import AdUserDetails from "./components/admin_components/AdUserDetails";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
+
+import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
+import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
 import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
-import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
+
 
 
 function App() {
@@ -47,9 +50,8 @@ function App() {
             <Route path="watchLater" element={<StWatchLaterPage />} />
             <Route path="filter" element={<StFilterPage />} />
             <Route path="help" element={<StHelpPage />} />
+            <Route path="sendfeedback" element={<StSendFeedbackPage />} />
             <Route path="subscription" element={<StManageSubscriptionPage />} />
-
-
 
           </Route>
 

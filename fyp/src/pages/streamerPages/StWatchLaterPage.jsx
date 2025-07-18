@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-import StSearchBar from "../../components/streamer_components/StSearchBar";
-import {Play, Trash2, CheckCircle} from "lucide-react";
 
+import {Play, Trash2, CheckCircle} from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -130,7 +129,6 @@ const StWatchLaterPage = () => {
 
       setShowSuccess(true); // ✅ show popup
       setTimeout(() => setShowSuccess(false), 2000); // auto-hide
-
     } catch (err) {
       console.error("❌ Error removing liked movie:", err);
     }
@@ -143,6 +141,7 @@ const StWatchLaterPage = () => {
   return (
     <div className="p-4">
       <StNav />
+
       <StSideBar />
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">

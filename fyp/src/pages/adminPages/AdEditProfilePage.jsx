@@ -130,7 +130,6 @@ const handleChange = async (e) => {
     }),
   });
 
-
       if (!res.ok) throw new Error("Failed to update");
 
       const updated = await res.json();
@@ -213,8 +212,7 @@ const handleChange = async (e) => {
     }
 
     try {
-
-      const updateRes = await fetch(`${API}/api/password/update-password`, {
+       const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

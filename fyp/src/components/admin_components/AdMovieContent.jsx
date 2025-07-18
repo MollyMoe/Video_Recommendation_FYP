@@ -4,19 +4,18 @@ import axios from 'axios';
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const AdMovieContent = ({ searchQuery }) => {
+
+const AdMovieContent = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState(null);
   const [movies, setMovies] = useState([]);
-  const [allFetchedMovies, setAllFetchedMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // 🔄 Loading state
 
-
-  // 🧠 Fetch movies on load
+  // Fetch movies from MongoDB collection hybridRecommendation2
   useEffect(() => {
-    setIsLoading(true);
+    setIsLoading(true); // Start loading
     axios
-      .get(`${API}/api/movies/all`)
+      .get(`${API}/api/movies/all`) // Adjust if deployed
       .then((res) => {
         const unique = [];
         const seenTitles = new Set();
@@ -37,40 +36,23 @@ const AdMovieContent = ({ searchQuery }) => {
         }
 
         setMovies(unique);
-        setAllFetchedMovies(unique);
       })
       .catch((err) => {
         console.error('❌ Failed to fetch movies', err);
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsLoading(false); // Done loading
       });
   }, []);
 
-  // 🔍 Filter movies when searchQuery changes
-  useEffect(() => {
-    const trimmed = searchQuery?.trim().toLowerCase();
-
-    if (!trimmed) {
-      setMovies(allFetchedMovies);
-      return;
-    }
-
-    const filtered = allFetchedMovies.filter(
-      (movie) =>
-        movie.title?.toLowerCase().includes(trimmed) ||
-        movie.director?.toLowerCase().includes(trimmed)
-    );
-
-    setMovies(filtered);
-  }, [searchQuery, allFetchedMovies]);
-
-  // 🗑️ Delete logic
   const handleDelete = (id) => {
     setMovies(movies.filter((movie) => movie._id !== id));
 
-    setAllFetchedMovies(allFetchedMovies.filter((movie) => movie._id !== id));
-
+    // OPTIONAL: delete from backend
+    // axios.delete(`http://localhost:3001/api/movies/${id}`)
+    //   .then(() => console.log('Deleted from DB'))
+    //   .catch(err => console.error('❌ Failed to delete from DB', err));
+  };
 
   const openConfirm = (id) => {
     setSelectedMovieId(id);
@@ -90,8 +72,7 @@ const AdMovieContent = ({ searchQuery }) => {
     setSelectedMovieId(null);
   };
 
-  // ⏳ Loading state
-
+  // ⏳ Show loading screen
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-800 text-white">
@@ -105,8 +86,6 @@ const AdMovieContent = ({ searchQuery }) => {
 
   return (
     <div className="sm:ml-40 px-4 pt-30 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
-
-      {/* 🎬 Movie Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {movies.map((movie) => (
           <div
@@ -131,8 +110,7 @@ const AdMovieContent = ({ searchQuery }) => {
         ))}
       </div>
 
-
-      {/* 🧾 Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {isConfirmOpen && (
         <div
           onClick={cancelDelete}
@@ -164,7 +142,6 @@ const AdMovieContent = ({ searchQuery }) => {
       )}
     </div>
   );
-};
 };
 
 export default AdMovieContent;

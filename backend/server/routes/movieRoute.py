@@ -1,12 +1,10 @@
 import math
 from typing import List
-from fastapi import APIRouter, Request, HTTPException, Body
+from fastapi import APIRouter, Request, HTTPException, Body, Query
 from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
 from pydantic import BaseModel
 from typing import Optional, List, Union
-from fastapi import APIRouter, Request, HTTPException, Query
-
 
 class Movie(BaseModel):
     _id: Optional[str]  # ObjectId as string
@@ -37,7 +35,7 @@ def get_all_movies(request: Request):
     try:
 
         # Fetch from your actual collection
-        movies = list(db.hybridRecommendation2.find().limit(50000))
+        movies = list(db.hybridRecommendation2.find().limit(25000))
 
 
         for movie in movies:
@@ -69,7 +67,7 @@ async def add_to_liked_movies(request: Request):
     liked_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"likedMovies": movie_id}},
-        upsert=True
+        upsert=True  # Create the document if it doesn't exist
     )
 
     return {"message": "Movie added to liked list"}
@@ -113,6 +111,8 @@ async def add_to_history(request: Request):
 
     user_id = data.get("userId")
     movie_id = data.get("movieId")
+
+    
 
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
@@ -269,6 +269,8 @@ async def remove_from_liked_movies(request: Request):
     else:
         return {"message": "Movie not found or already removed"}
 
+
+
 @router.post("/watchLater/delete")
 async def remove_from_watchLater(request: Request):
     data = await request.json()
@@ -321,7 +323,9 @@ async def remove_from_history(request: Request):
         return {"message": "Movie removed from history"}
     else:
         return {"message": "Movie not found or already removed"}
-
+    
+    
+    
 @router.post("/regenerate")
 def regenerate_movies(
     request: Request,
@@ -336,11 +340,11 @@ def regenerate_movies(
             {"$match": {
                 "genres": {"$in": genres},
                 "title": {"$nin": exclude_titles},
-                "poster_url": {"$ne": None}
+                "poster_url": {"$ne": None},
+                "trailer_url": {"$ne": None}
             }},
             {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
-            {"$replaceRoot": {"newRoot": "$doc"}},
-            #{"$limit": 30}
+            {"$replaceRoot": {"newRoot": "$doc"}}
         ]
 
         movies = list(db.hybridRecommendation2.aggregate(pipeline))
@@ -383,12 +387,11 @@ async def store_recommendations(
         return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
 
 # when new data is regenrated it will stay that way 
-@router.get("/recommendations/{userId}")
-def get_user_recommendations(userId: str, request: Request):
+@router.get("/recommendations/{user_id}")
+def get_user_recommendations(user_id: str, request: Request):
     db = request.app.state.movie_db
     try:
-        record = db.recommended.find_one({ "userId": userId })
-
+        record = db.recommended.find_one({ "userId": user_id })
         if not record:
             return JSONResponse(content=[])  
 
@@ -402,10 +405,10 @@ def search_movies(request: Request, q: str = Query(..., min_length=1)):
     db = request.app.state.movie_db
     try:
         results = db.hybridRecommendation2.find({
-            "$text": { "$search": f"\"{q}\"" },
+            "$text": { "$search": f"{q}" },
             "poster_url": { "$nin": ["", None, "nan", "NaN"] },
             "trailer_url": { "$nin": ["", None, "nan", "NaN"] }
-        })
+            })
 
         movies = []
         for movie in results:
@@ -442,4 +445,29 @@ async def remove_history(request: Request):
     except Exception as e:
         print("❌ Failed to clear history:", e)
         raise HTTPException(status_code=500, detail="Server error")
+    
+# delete from recommendation
+@router.post("/recommended/delete")
+async def remove_from_recommended(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    recommended_collection = db["recommended"]
 
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    # Pull from array of objects where movieId matches
+    result = recommended_collection.update_one(
+        {"userId": user_id},
+        {"$pull": { "recommended": { "movieId": str(movie_id) } }}
+    )
+
+    print("🗑️ Removed from recommendations:", result.modified_count)
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from recommendations"}
+    else:
+        return {"message": "Movie not found or already removed"}
