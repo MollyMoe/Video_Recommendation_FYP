@@ -3,12 +3,17 @@ import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
 
 const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
-  const [history, setHistory] = useState(() => {
-    const stored = localStorage.getItem("searchHistory");
-    return stored ? JSON.parse(stored) : [];
-  });
-  const [isFocused, setIsFocused] = useState(false);
-  const wrapperRef = useRef(null);
+const savedUser = JSON.parse(localStorage.getItem("user"));
+const userId = savedUser?.userId || "default";
+const [isFocused, setIsFocused] = useState(false);
+const wrapperRef = useRef(null);
+
+const storageKey = `searchHistory_${userId}`;
+
+const [history, setHistory] = useState(() => {
+  const stored = localStorage.getItem(storageKey);
+  return stored ? JSON.parse(stored) : [];
+});
 
   const handleClickOutside = (event) => {
     if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -24,8 +29,8 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("searchHistory", JSON.stringify(history));
-  }, [history]);
+    localStorage.setItem(storageKey, JSON.stringify(history));
+  }, [history, storageKey]);
 
   const addToHistory = (term) => {
     const normalizedTerm = term.toLowerCase();

@@ -28,21 +28,26 @@ const StFilterContent = ({searchQuery}) => {
     if (!savedUser?.userId) return;
 
     setIsLoading(true);
+
     try {
       
       let allMovieList = [];
       const res = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
       allMovieList = res.data;
 
-      console.log("🎬 Frontend received:", allMovieList);
+      const finalMovieSet = allMovieList.slice(0, 1000); // ⬅️ slice the first 1000
+     
+      console.log("🎬 Frontend received:", finalMovieSet);
    
 
-      setAllMovies(allMovieList);
-      setMovies(allMovieList);
+      setAllMovies(finalMovieSet);
+      setMovies(finalMovieSet);
     } catch (err) {
       console.error("Failed to fetch recommended movies:", err);
     }
+
     setIsLoading(false);
+
   };
 
   const handleHistory = async (movieId) => {
@@ -98,7 +103,8 @@ const StFilterContent = ({searchQuery}) => {
     const filtered = allMovies.filter(movie =>
       movie.title?.toLowerCase().includes(lowerQuery) ||
       movie.director?.toLowerCase().includes(lowerQuery) ||
-      movie.actors?.toLowerCase().includes(lowerQuery) || 
+      movie.actors?.toLowerCase().includes(lowerQuery) ||
+
       (Array.isArray(movie.genres) && movie.genres.some(g => g.toLowerCase().includes(lowerQuery)))
     );
     setMovies(filtered);
@@ -149,7 +155,7 @@ const StFilterContent = ({searchQuery}) => {
                             ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
                             </div>
                         </div>
-                        </div>
+                      </div>
                     )}
                 </div>
                 ))}
@@ -167,7 +173,7 @@ const StFilterContent = ({searchQuery}) => {
                 alt={selectedMovie?.title}
                 className="rounded-lg w-40 h-auto object-cover"
               />
-              <div className="flex flex-col justify-center space-y-3 flex-grow">
+                <div className="flex flex-col justify-center space-y-3 flex-grow">
                   <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
                     <p className="text-sm text-gray-700">{selectedMovie?.genres?.join(", ")}</p>
                     <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
