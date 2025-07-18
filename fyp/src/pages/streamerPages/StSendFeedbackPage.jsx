@@ -14,13 +14,8 @@ const StSendFeedbackPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const fileInputRef = useRef(null);
 
-  // You will no longer destructure 'user' directly from useUser() for userId
-  // const { user } = useUser(); // Keep this if you need profileImage, etc.
-
-  // New state to hold the userId fetched from localStorage
   const [currentUserId, setCurrentUserId] = useState(null);
 
-  // Use a useEffect to load userId from localStorage when the component mounts
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser && savedUser.userId) {
@@ -29,7 +24,7 @@ const StSendFeedbackPage = () => {
       // If no user is found or userId is missing, set an error message
       setErrorMessage("User not logged in. Please log in to submit feedback.");
     }
-  }, []); // Empty dependency array means this runs once on mount
+  }, []); 
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -43,7 +38,6 @@ const StSendFeedbackPage = () => {
       return;
     }
 
-    // Use currentUserId state here
     if (!currentUserId) {
       setErrorMessage("User ID is missing. Cannot submit feedback. Please ensure you are logged in.");
       console.error("User ID is missing. Cannot submit feedback.");
@@ -53,14 +47,10 @@ const StSendFeedbackPage = () => {
     const formData = new FormData();
     formData.append("feedback", feedback);
     if (file) formData.append("file", file);
-    formData.append("userId", currentUserId); // <--- Use the state variable here
-
-    // Removed the console.logs for 'user' and 'user?.userId' as 'user' might not be available or used for userId here
-    // console.log("User object:", user);
-    // console.log("User ID from context:", user?.userId);
+    formData.append("userId", currentUserId); 
 
     try {
-      const res = await fetch(`${API}/api/feedback/streamer`, {
+      const res = await fetch(`${API}/api/streamer`, {
         method: "POST",
         body: formData,
       });

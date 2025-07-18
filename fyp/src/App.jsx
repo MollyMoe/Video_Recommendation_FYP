@@ -22,6 +22,7 @@ import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
 import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
 import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
+import AdUserFeedback from "./components/admin_components/AdUserFeedback";
 
 function App() {
 
@@ -58,6 +59,7 @@ function App() {
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
             <Route path="view/:id" element={<AdUserDetails />} />
+            <Route path="feedback" element={<AdUserFeedback />} />
           </Route>
         </Routes>
       </HashRouter>

@@ -85,7 +85,7 @@ app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
-app.include_router(feedback_router, prefix="/api/feedback")
+app.include_router(feedback_router, prefix="/api")
 app.include_router(subscription_router, prefix="/api")
 app.include_router(stripe_router, prefix="/api")
 
@@ -105,8 +105,9 @@ def get_movies():
     movies = list(app.state.movie_db.movies.find({}, {"_id": 0}))
     return movies
 
-@app.get("/support/feedback_items")
-def get_feedback_items():
-    # Access the 'feedback' collection within the 'support_db'
-    feedback_items = list(app.state.support_db.feedback.find({}, {"_id": 0}))
-    return feedback_items
+# 
+# @app.get("/support/feedback_items")
+# def get_feedback_items():
+#     # Access the 'feedback' collection within the 'support_db'
+#     feedback_items = list(app.state.support_db.feedback.find({}, {"_id": 0}))
+#     return feedback_items
