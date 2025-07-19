@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException
 from bson import ObjectId
 from pymongo import ReturnDocument
@@ -54,7 +55,8 @@ def signup(request: Request, user: SignUpRequest):
         {"_id": f"{user.userType}Id"},
         {"$inc": {"sequence_value": 1}},
         upsert=True,
-        return_document=True
+        # return_document=True
+        return_document=ReturnDocument.AFTER
     )
 
     user_id = f"U{str(counter['sequence_value']).zfill(3)}"
@@ -70,6 +72,8 @@ def signup(request: Request, user: SignUpRequest):
         "genres": [],
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
+        "signinTime": datetime.utcnow(),       # Stored as Date for queries
+        "lastSignout": datetime.utcnow(),      # Stored as Date, not ISO string
         "__v": 0
     }
 
@@ -100,12 +104,32 @@ def signin(data: SigninRequest, request: Request):
 
     if not user or user["password"] != password:
         raise HTTPException(status_code=400, detail="Invalid username or password")
+    print("🚨 Checking status for:", user["username"], "| Status:", user.get("status"))
 
-    if user.get("status") == "Suspended":
-        raise HTTPException(status_code=403, detail="Account is suspended.")
+     # ✅ For testing: Suspended account if lastSignout > 2 minutes ago
+    if user_type == "streamer":
+        if user.get("lastSignout") and user.get("status") != "Active":
+            inactive_minutes = (datetime.utcnow() - user["lastSignout"]).total_seconds() / 60
+            if inactive_minutes >= 2:
+                Model.update_one(
+                    { "userId": user["userId"] },
+                    { "$set": { "status": "Suspended" } }
+                )
+                raise HTTPException(status_code=403, detail="Account Suspended after 2 minutes of inactivity (test mode).")
 
-    return {"message": "Login successful", "user": user}
+        if user.get("status") == "Suspended":
+            raise HTTPException(status_code=403, detail="Account is suspended.")
 
+    # ✅ Update signinTime on successful login
+    Model.update_one(
+        { "userId": user["userId"] },
+        { "$set": { "signinTime": datetime.utcnow() } }
+    )
+    
+    return {
+        "message": "Login successful",
+        "user": user
+    }
 
 @router.delete("/delete/{userType}/{username}")
 def delete_user(request: Request, userType: str, username: str):
@@ -164,22 +188,29 @@ def reset_password(request: Request, body: dict):
 
 from fastapi.encoders import jsonable_encoder
 
+#Suspended
 @router.put("/users/{userId}/status")
 def update_status(request: Request, userId: str, body: dict):
     db = request.app.state.user_db
     status = body.get("status")
 
+    if status not in ["Active", "Suspended"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+
+    # Try updating in streamer collection first
     result = db.streamer.find_one_and_update(
-        {"userId": userId},  # ✅ using userId now
+        {"userId": userId},
         {"$set": {"status": status}},
         return_document=ReturnDocument.AFTER
     )
 
     if result:
-        result["_id"] = str(result["_id"])  # still safe to convert
+        result["_id"] = str(result["_id"])
         return JSONResponse(content=result)
 
     raise HTTPException(status_code=404, detail="User not found")
+
+
 
 @router.post("/preferences")
 def update_preferences(request: Request, body: dict):
@@ -227,3 +258,23 @@ def get_user_by_id(request: Request, userType: str, userId: str):
 
     return user
 
+@router.post("/update-signout-time")
+async def update_signout_time(request: Request):
+    body = await request.json()
+    user_id = body.get("userId")
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+
+    db = request.app.state.user_db
+    users_collection = db["streamer"]
+
+    result = users_collection.update_one(
+        {"userId": user_id},
+        {"$set": { "lastSignout": datetime.utcnow() }}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"message": "Sign-out time updated"}

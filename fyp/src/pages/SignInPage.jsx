@@ -117,42 +117,42 @@ function SignInPage() {
         } else {
           navigate("/home");
         }
-      } else if (
+      // } else if (
+      //   res.status === 403 &&
+      //   data.detail?.toLowerCase().includes("Suspended")
+      // ) {
+
+      //   // 👉 Add this block BELOW:
+      //   // Set profile image for context to pick up on next reload
+      //   const baseUrl = "http://localhost:3001";
+      //   const profileImageUrl = data.user.profileImage
+      //     ? data.user.profileImage.startsWith("http")
+      //       ? data.user.profileImage
+      //       : `${baseUrl}${data.user.profileImage}`
+      //     : baseUrl + "/uploads/profile.png";
+      //   if (formData.userType === "streamer") {
+      //     localStorage.setItem("streamer_profileImage", profileImageUrl);
+      //   } else if (formData.userType === "admin") {
+      //     localStorage.setItem("admin_profileImage", profileImageUrl);
+      //   }
+
+      //   // Navigation...
+      //   if (formData.userType === "admin") {
+      //     navigate("/admin");
+      //   } else if (formData.userType === "streamer") {
+      //     navigate("/home");
+      //   } else {
+      //     navigate("/home");
+      //   }
+
+      } 
+      else if (
         res.status === 403 &&
-        data.detail?.toLowerCase().includes("suspend")
+        data.error?.toLowerCase().includes("Suspended")
       ) {
-
-        // 👉 Add this block BELOW:
-        // Set profile image for context to pick up on next reload
-        const baseUrl = "http://localhost:3001";
-        const profileImageUrl = data.user.profileImage
-          ? data.user.profileImage.startsWith("http")
-            ? data.user.profileImage
-            : `${baseUrl}${data.user.profileImage}`
-          : baseUrl + "/uploads/profile.png";
-        if (formData.userType === "streamer") {
-          localStorage.setItem("streamer_profileImage", profileImageUrl);
-        } else if (formData.userType === "admin") {
-          localStorage.setItem("admin_profileImage", profileImageUrl);
-        }
-
-        // Navigation...
-        if (formData.userType === "admin") {
-          navigate("/admin");
-        } else if (formData.userType === "streamer") {
-          navigate("/home");
-        } else {
-          navigate("/home");
-        }
-
-      } else if (
-        res.status === 403 &&
-        data.error?.toLowerCase().includes("suspend")
-      ) {
-
         setMessage({
           type: "error",
-          text: "Your account is suspended. Please contact support.",
+          text: "Your account has been Suspendeded due to prolonged inactivity (3 months). Please contact support at cineit.helpdesk@gmail.com.",
         });
       } else if (
         res.status === 400 &&

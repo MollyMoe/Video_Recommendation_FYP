@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
+import axios from "axios";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -78,6 +79,45 @@ function StUserProfile({ userProfile }) {
     };
   }, []);
 
+ 
+const handleSignout = async () => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const API = import.meta.env.VITE_API_BASE_URL;
+
+  if (savedUser?.userId) {
+    try {
+      await axios.post(`${API}/api/auth/update-signout-time`, { 
+        userId: savedUser.userId,
+        time: new Date().toISOString(), // optional if backend auto-generates
+        reason: "manual",
+      });
+      console.log("✅ Signout time recorded");
+    } catch (err) {
+      console.error("❌ Failed to record signout time:", err);
+    }
+  }
+
+  // Clear browser session
+  localStorage.removeItem("user");
+  localStorage.removeItem("signinTime");
+
+  // Optional: also clear Electron offline session
+  if (window.electron?.clearOfflineSignout) {
+    try {
+      window.electron.clearOfflineSignout();
+    } catch (err) {
+      console.warn("⚠️ Failed to clear offline session:", err);
+    }
+  }
+
+  // Redirect to signin — supports HashRouter and BrowserRouter
+  if (window.location.hash.includes("#")) {
+    window.location.hash = "#/signin"; // For HashRouter
+  } else {
+    window.location.href = "/signin"; // For BrowserRouter
+  }
+};
+
   return (
     // User Profile
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -123,13 +163,9 @@ function StUserProfile({ userProfile }) {
               )}
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
-            <li>
-              <Link
-                to="/signin"
-                className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-              >
+            <li onClick={handleSignout}
+            className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"> 
                 <FaSignOutAlt className="mr-2" /> Sign Out
-              </Link>
             </li>
           </ul>
         </div>

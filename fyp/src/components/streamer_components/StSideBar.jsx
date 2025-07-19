@@ -91,17 +91,12 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
              <StSidebarButton
               to="/home/subscription"
               label="Subscription"
               current={location.pathname === "/home/subscription"}
               Manage Subscriptions
             />
-            </a>
           </li>
         </ul>
       </div>
