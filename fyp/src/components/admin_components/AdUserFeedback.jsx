@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import AdNav from "../../components/admin_components/AdNav";
+import AdSearch from "../../components/admin_components/AdSearch";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -6,6 +9,7 @@ const AdUserFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchFeedback = async () => {
@@ -136,6 +140,12 @@ const AdUserFeedback = () => {
     }
   };
 
+  const filteredFeedbackList = feedbackList.filter(
+    (feedback) =>
+      feedback.userId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      feedback.feedback.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen pt-20">
@@ -153,93 +163,91 @@ const AdUserFeedback = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 px-4 sm:px-8 dark:bg-gray-800">
-      <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 shadow-lg rounded-lg p-6 mt-10">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">User Feedback</h1>
+    <>
+      <AdNav /> {/* This should be at the very top of your page content */}
 
-        {feedbackList.length === 0 ? (
-          <p className="text-gray-600 dark:text-gray-400">No feedback submitted yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    User ID
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Feedback
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Timestamp
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Attachment
-                  </th>
-                  {/* Changed "Addressed" to "Not Solved" */}
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Not Solved
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Solved
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {feedbackList.map((feedback) => (
-                  <tr key={feedback._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {feedback.userId}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
-                      {feedback.feedback}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {formatTimestamp(feedback.timestamp)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {feedback.fileName ? (
-                        <button
-                          onClick={() => handleDownload(feedback._id, feedback.fileName)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 underline"
-                        >
-                          {feedback.fileName}
-                        </button>
-                      ) : (
-                        "N/A"
-                      )}
-                    </td>
-                    {/* Checkbox for "Not Solved" */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                      <input
-                        type="checkbox"
-                        checked={feedback.is_not_solved}
-                        onChange={(e) =>
-                          handleStatusChange(feedback._id, 'is_not_solved', e.target.checked)
-                        }
-                        className="form-checkbox h-5 w-5 text-red-600 rounded focus:ring-red-500"
-                      />
-                    </td>
-                    {/* Checkbox for "Solved" */}
-                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                      <input
-                        type="checkbox"
-                        checked={feedback.is_solved}
-                        onChange={(e) =>
-                          handleStatusChange(feedback._id, 'is_solved', e.target.checked)
-                        }
-                        className="form-checkbox h-5 w-5 text-green-600 rounded focus:ring-green-500"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* AdSearch Component positioned at the top like AdUserManagePage */}
+      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
+        <AdSearch
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSearch={setSearchQuery} // Passes the function to update searchQuery
+        />
       </div>
-    </div>
+
+      {/* Sidebar */}
+      <aside
+        id="logo-sidebar"
+        className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
+        aria-label="Sidebar"
+      >
+        <div className="py-4 overflow-y-auto">
+          <ul className="space-y-2 font-medium">
+            <li>
+              <Link to="/admin/manageUser">
+                <button className="flex items-center p-2 text-black rounded-lg dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 group w-full text-left">
+                  <span className="ml-3">← Back</span>
+                </button>
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      {/* Added `pt-[80px]` or similar to account for the fixed AdNav and AdSearch bar */}
+      <div className="min-h-screen pt-20 pl-60 dark:bg-gray-800">
+        <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 shadow-lg rounded-lg p-6 mt-10">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">User Feedback</h1>
+
+          {filteredFeedbackList.length === 0 && searchQuery !== "" ? (
+            <p className="text-gray-600 dark:text-gray-400">No feedback found matching "{searchQuery}".</p>
+          ) : filteredFeedbackList.length === 0 ? (
+            <p className="text-gray-600 dark:text-gray-400">No feedback submitted yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Feedback</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Timestamp</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Attachment</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Not Solved</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Solved</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredFeedbackList.map((feedback) => (
+                    <tr key={feedback._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{feedback.userId}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{feedback.feedback}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{formatTimestamp(feedback.timestamp)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        {feedback.fileName ? (
+                          <button onClick={() => handleDownload(feedback._id, feedback.fileName)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 underline">
+                            {feedback.fileName}
+                          </button>
+                        ) : "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                        <input type="checkbox" checked={feedback.is_not_solved} onChange={(e) =>
+                          handleStatusChange(feedback._id, 'is_not_solved', e.target.checked)} className="form-checkbox h-5 w-5 text-red-600" />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                        <input type="checkbox" checked={feedback.is_solved} onChange={(e) =>
+                          handleStatusChange(feedback._id, 'is_solved', e.target.checked)} className="form-checkbox h-5 w-5 text-green-600" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+    </>
   );
 };
-
 export default AdUserFeedback;
