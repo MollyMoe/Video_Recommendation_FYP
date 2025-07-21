@@ -23,6 +23,9 @@ import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
 import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
 import AdUserFeedback from "./components/admin_components/AdUserFeedback";
+import AdUserLikedMovies from "./components/admin_components/AdUserLikedMovies";
+import AdUserHistory from "./components/admin_components/AdUserHistory";
+import AdUserWatchLater from "./components/admin_components/AdUserWatchLater";
 
 function App() {
 
@@ -60,6 +63,9 @@ function App() {
             <Route path="manageUser" element={<AdUserManagePage />} />
             <Route path="view/:id" element={<AdUserDetails />} />
             <Route path="feedback" element={<AdUserFeedback />} />
+            <Route path="view/:id/like" element={<AdUserLikedMovies />} />
+            <Route path="view/:id/history" element={<AdUserHistory />} />
+            <Route path="view/:id/watchLater" element={<AdUserWatchLater />} />
           </Route>
         </Routes>
       </HashRouter>

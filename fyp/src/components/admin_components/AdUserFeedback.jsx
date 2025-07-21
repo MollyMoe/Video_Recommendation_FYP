@@ -186,7 +186,7 @@ const AdUserFeedback = () => {
             <li>
               <Link to="/admin/manageUser">
                 <button className="flex items-center p-2 text-black rounded-lg dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 group w-full text-left">
-                  <span className="ml-3">← Back</span>
+                  <span className="ml-3">Back</span>
                 </button>
               </Link>
             </li>

@@ -6,6 +6,7 @@ import { ChevronDownIcon } from "@heroicons/react/20/solid";
 const API = import.meta.env.VITE_API_BASE_URL;
 
 
+
 function SignInPage() {
   const navigate = useNavigate();
 
@@ -33,6 +34,9 @@ function SignInPage() {
     const newErrors = {};
     if (!formData.userType) newErrors.userType = "Please select user type";
     if (!formData.username.trim()) newErrors.username = "Username required";
+    // Keep email validation if your backend uses email for sign-in validation,
+    // even if the backend POST body uses 'username' for the primary identifier.
+    // Otherwise, you might consider if 'email' input is truly necessary for sign-in.
     if (!/^\S+@\S+\.\S+$/.test(formData.email))
       newErrors.email = "Invalid email";
     if (formData.password.length < 6)
@@ -56,7 +60,7 @@ function SignInPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(null);
+    setMessage(null); // Clear previous messages
 
     if (!validateForm()) return;
 
@@ -79,32 +83,26 @@ function SignInPage() {
       if (res.ok) {
         setMessage({ type: "success", text: "Login successful!" });
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user)); // Store user object
 
-        // Clear old profile images
+        // Clear old profile images based on type
         localStorage.removeItem("streamer_profileImage");
         localStorage.removeItem("admin_profileImage");
 
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        if (formData.userType === "streamer") {
-          localStorage.removeItem("streamer_profileImage");
-        } else if (formData.userType === "admin") {
-          localStorage.removeItem("admin_profileImage");
-        }
-
-        // ✅ Fetch profile image only after successful login
+        // Fetch profile image only after successful login
         if (data.user?.userId && formData.userType) {
-          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${
-            data.user.userId
-          }`;
+          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
           try {
             const imageRes = await fetch(endpoint);
             const userInfo = await imageRes.json();
 
             if (userInfo.profileImage) {
               const key = `${formData.userType.toLowerCase()}_profileImage`;
-              localStorage.setItem(key, userInfo.profileImage);
+              // Ensure the profile image URL is relative to the base URL if it's not absolute
+              const profileImageUrl = userInfo.profileImage.startsWith("http")
+                ? userInfo.profileImage
+                : `${API}${userInfo.profileImage}`; // Assuming API is your base URL for static files too
+              localStorage.setItem(key, profileImageUrl);
             }
           } catch (error) {
             console.warn("⚠️ Could not fetch profile image:", error);
@@ -117,64 +115,69 @@ function SignInPage() {
         } else {
           navigate("/home");
         }
-      } else if (
-        res.status === 403 &&
-        data.detail?.toLowerCase().includes("suspend")
-      ) {
-        // 👉 Add this block BELOW:
-        // Set profile image for context to pick up on next reload
-        const baseUrl = "http://localhost:3001";
-        const profileImageUrl = data.user.profileImage
-          ? data.user.profileImage.startsWith("http")
-            ? data.user.profileImage
-            : `${baseUrl}${data.user.profileImage}`
-          : baseUrl + "/uploads/profile.png";
-        if (formData.userType === "streamer") {
-          localStorage.setItem("streamer_profileImage", profileImageUrl);
-        } else if (formData.userType === "admin") {
-          localStorage.setItem("admin_profileImage", profileImageUrl);
+      }
+      // --- Consolidated Suspension Handling ---
+      else if (res.status === 403 && (data.detail || data.error)) {
+        let suspensionReason = "";
+        const rawMessage = data.detail || data.error;
+
+        // Attempt to extract the reason if the message contains "suspended"
+        if (rawMessage.toLowerCase().includes("suspend")) {
+          // Remove common suspension prefixes to isolate the reason
+          let cleanedMessage = rawMessage
+            .replace(/your account (?:has been )?suspended/i, '')
+            .replace(/due to/i, '')
+            .replace(/because of/i, '')
+            .replace(/^:\s*/, '') // Remove leading colon and space
+            .trim();
+
+          // If there's still content, it's likely the reason
+          if (cleanedMessage) {
+            suspensionReason = cleanedMessage;
+          }
         }
 
-        // Navigation...
-        if (formData.userType === "admin") {
-          navigate("/admin");
-        } else if (formData.userType === "streamer") {
-          navigate("/home");
-        } else {
-          navigate("/home");
+        let fullMessage = "Your account is suspended.";
+        if (suspensionReason) {
+          fullMessage += ` Reason: ${suspensionReason}.`;
         }
-      } else if (
-        res.status === 403 &&
-        data.error?.toLowerCase().includes("suspend")
-      ) {
+        fullMessage += " Please contact cineit.helpdesk@gmail.com for assistance.";
+
         setMessage({
           type: "error",
-          text: "Your account is suspended. Please contact support.",
+          text: fullMessage,
         });
-      } else if (
-        res.status === 400 &&
-        data.detail?.toLowerCase().includes("invalid")
-      ) {
+
+        // IMPORTANT: Do NOT navigate here if you want the user to see the message.
+        // If you intended to redirect them to a specific suspended page, you would add
+        // navigate('/suspended-account-info') here instead.
+        // The previous code had navigation here which would hide the message.
+
+      }
+      // Handle other 400 status codes (e.g., invalid credentials, not related to suspension)
+      else if (res.status === 400 && data.detail?.toLowerCase().includes("invalid")) {
         setMessage({
           type: "error",
           text: "Invalid username or password.",
         });
-      } else {
+      }
+      // Fallback for any other errors (e.g., 500 server errors, other unhandled 4xx)
+      else {
         setMessage({
           type: "error",
           text: data.detail || "Login failed. Please try again.",
         });
       }
     } catch (error) {
+      console.error("Fetch error during sign-in:", error);
       setMessage({ type: "error", text: "Server error. Please try again." });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // FIXED: Return needs to be inside the component
   return (
-    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto flex flex-col">
         {/* Header */}
         <div className="text-center py-4">
@@ -215,9 +218,9 @@ function SignInPage() {
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md 
-                      bg-white text-gray-900 dark:bg-gray-700 dark:text-white 
-                      focus:outline-none focus:ring-2 focus:ring-purple-400 text-left flex justify-between items-center"
+                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md
+                           bg-white text-gray-900 dark:bg-gray-700 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-purple-400 text-left flex justify-between items-center"
               >
                 <span>
                   {formData.userType === "admin"
@@ -281,11 +284,11 @@ function SignInPage() {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full px-4 py-2 text-sm 
-                border border-gray-300 rounded-md 
-                bg-white text-gray-900 
-                dark:bg-gray-700 dark:text-white 
-                focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-4 py-2 text-sm
+                           border border-gray-300 rounded-md
+                           bg-white text-gray-900
+                           dark:bg-gray-700 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-purple-400"
                 placeholder="Choose a username"
                 required
               />
@@ -308,11 +311,11 @@ function SignInPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 text-sm 
-                border border-gray-300 rounded-md 
-                bg-white text-gray-900 
-                dark:bg-gray-700 dark:text-white 
-                focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-4 py-2 text-sm
+                           border border-gray-300 rounded-md
+                           bg-white text-gray-900
+                           dark:bg-gray-700 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-purple-400"
                 placeholder="Enter your email"
                 required
               />
@@ -335,11 +338,11 @@ function SignInPage() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 text-sm 
-             border border-gray-300 rounded-md 
-             bg-white text-gray-900 
-             dark:bg-gray-700 dark:text-white 
-             focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-4 py-2 text-sm
+                           border border-gray-300 rounded-md
+                           bg-white text-gray-900
+                           dark:bg-gray-700 dark:text-white
+                           focus:outline-none focus:ring-2 focus:ring-purple-400"
                 placeholder="Enter your password"
                 required
               />
@@ -388,4 +391,3 @@ function SignInPage() {
 }
 
 export default SignInPage;
-
