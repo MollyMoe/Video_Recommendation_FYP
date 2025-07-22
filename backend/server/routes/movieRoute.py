@@ -472,3 +472,69 @@ async def remove_from_recommended(request: Request):
         return {"message": "Movie removed from recommendations"}
     else:
         return {"message": "Movie not found or already removed"}
+
+@router.get("/limit")
+def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = ""):
+    db = request.app.state.movie_db
+    skip = (page - 1) * limit
+
+    query = {}
+    if search:
+        query = {
+            "$or": [
+                {"title": {"$regex": search, "$options": "i"}},
+                {"director": {"$regex": search, "$options": "i"}}
+            ]
+        }
+
+    try:
+        cursor = db.hybridRecommendation2.find(query, {"_id": 1, "title": 1, "poster_url": 1, "director": 1})
+        total = db.hybridRecommendation2.count_documents(query)
+        movies = list(cursor.skip(skip).limit(limit))
+
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])
+
+        return {"data": movies, "total": total, "page": page}
+    except Exception as e:
+        print("❌ Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch movies")
+    
+@router.get("/top-liked")
+async def get_top_liked_movies(request: Request):
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
+
+    try:
+        pipeline = [
+            { "$unwind": "$likedMovies" },
+            { "$group": { "_id": "$likedMovies", "likeCount": { "$sum": 1 } } },
+            { "$sort": { "likeCount": -1 } },
+            { "$limit": 10 }
+        ]
+        liked_result = list(liked_collection.aggregate(pipeline))
+
+        movie_ids = [m["_id"] for m in liked_result]
+
+        movie_docs = list(db["hybridRecommendation2"].find({ "movieId": { "$in": movie_ids } }))
+
+        movie_dict = {str(movie["movieId"]): movie for movie in movie_docs}
+
+        response = []
+        for movie in liked_result:
+            movie_id_str = str(movie["_id"])
+            details = movie_dict.get(movie_id_str, None)
+            if details and "_id" in details:
+                del details["_id"]
+
+            response.append({
+                "movieId": movie_id_str,
+                "likeCount": movie["likeCount"],
+                "details": details
+            })
+
+        return response
+
+    except Exception as e:
+        print("❌ Backend Error:", e)
+        raise HTTPException(status_code=500, detail=str(e))

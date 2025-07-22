@@ -22,7 +22,7 @@ const StHomePage = () => {
         />
       </div>
       <StSideBar />
-      <StHomeContent searchQuery={searchQuery} />
+      <StHomeContent searchQuery={searchQuery} userId={JSON.parse(localStorage.getItem("user"))?.userId} />
     </>
   );
 };
