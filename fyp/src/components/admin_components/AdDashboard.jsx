@@ -33,7 +33,7 @@ const AdDashboard = () => {
         </Link>
 
 
-        <Link to="/admin/videoHomePage">
+        <Link to="/admin/video">
           <div className="bg-neutral-50 px-20 py-4 rounded shadow-md text-center hover:bg-gray-300 cursor-pointer dark:text-gray-800 dark:bg-gray-200 dark:hover:bg-white">
             <h3 className="text-lg mb-2 mt-2">Manage Video Content</h3>
             <div className="flex flex-col items-center">

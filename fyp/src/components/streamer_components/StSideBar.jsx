@@ -84,12 +84,11 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Send Feedback
-            </a>
+            <StSidebarButton
+              to="/home/sendfeedback"
+              label="Send Feedback"
+              current={location.pathname === "/home/sendfeedback"}
+            />
           </li>
           <li>
             <StSidebarButton

@@ -13,6 +13,7 @@ from server.routes.profileRoute import router as profile_router
 from fastapi.staticfiles import StaticFiles
 from server.routes.subscriptionRoute import router as subscription_router
 from server.routes.stripeRoute import router as stripe_router
+from server.routes.feedbackRout import router as feedback_router
 
 
 # Load .env
@@ -83,6 +84,7 @@ app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
 app.include_router(subscription_router, prefix="/api")
 app.include_router(stripe_router, prefix="/api")
+app.include_router(feedback_router, prefix="/api/feedback")
 
 
 @app.get("/")

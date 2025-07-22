@@ -19,8 +19,15 @@ import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
 import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
 import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
-import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
+import StFilterPage from "./pages/streamerPages/StFilterPage";
+import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
+import AdVideoManagePage from "./pages/adminPages/AdVideoManagePage";
+import AdVideoManageLayout from "./layouts/AdVideoManageLayout";
+import AdUserDetailsLayout from "./layouts/AdUserDetailsLayout";
+import Overview from "./pages/adminPages/Overview";
+import { Navigate } from "react-router-dom";
+
 
 function App() {
 
@@ -45,6 +52,7 @@ function App() {
             <Route path="watchLater" element={<StWatchLaterPage />} />
             <Route path="filter" element={<StFilterPage />} />
             <Route path="help" element={<StHelpPage />} />
+            <Route path="sendfeedback" element={<StSendFeedbackPage />} />
             <Route path="subscription" element={<StManageSubscriptionPage />} />
           </Route>
 
@@ -55,6 +63,19 @@ function App() {
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
             <Route path="view/:id" element={<AdUserDetails />} />
+            
+              {/* Video Manage Layout */}
+              <Route path="video" element={<AdVideoManageLayout />}>
+                <Route index element={<Navigate to="videoHomePage" replace />} />
+                <Route path="videoHomePage" element={<AdVideoHomePage />} />
+                <Route path="manage" element={<AdVideoManagePage />} />
+              </Route>
+
+              {/* User Details Layout */}
+              <Route path="/admin/view/:id" element={<AdUserDetailsLayout />}>
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<Overview />} />
+              </Route>
           </Route>
         </Routes>
       </HashRouter>
