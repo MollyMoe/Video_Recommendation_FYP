@@ -23,7 +23,7 @@ const StFilterPage = () => {
         />
       </div>
       <StSideBar />
-      <StFilterContent searchQuery={searchQuery} />
+      <StFilterContent searchQuery={searchQuery} userId={JSON.parse(localStorage.getItem("user"))?.userId} />
     </>
   );
 };

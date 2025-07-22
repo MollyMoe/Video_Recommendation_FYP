@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
 from pydantic import BaseModel
 from typing import Optional, List, Union
+from collections import Counter #added
 
 class Movie(BaseModel):
     _id: Optional[str]  # ObjectId as string
@@ -471,3 +472,150 @@ async def remove_from_recommended(request: Request):
         return {"message": "Movie removed from recommendations"}
     else:
         return {"message": "Movie not found or already removed"}
+
+
+
+# new for the because you like/save/watch
+@router.post("/als-liked")
+async def als_liked(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "liked", request, set(body.get("excludeIds", [])))
+
+@router.post("/als-saved")
+async def als_saved(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "saved", request, set(body.get("excludeIds", [])))
+
+@router.post("/als-watched")
+async def als_watched(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "history", request, set(body.get("excludeIds", [])))
+
+
+def _als_filtered(userId: str, interaction_collection: str, request: Request, exclude_ids=None):
+    db = request.app.state.movie_db
+    als = db["alsRecommendations"]
+    movies = db["hybridRecommendation2"]
+    interactions = db[interaction_collection]
+
+    if exclude_ids is None:
+        exclude_ids = set()
+    else:
+        exclude_ids = set(str(mid) for mid in exclude_ids)
+
+    try:
+        interaction_doc = interactions.find_one({"userId": userId})
+        if not interaction_doc:
+            print("⚠️ No interaction doc found.")
+            return JSONResponse(content=[])
+
+        if interaction_collection == "liked":
+            interaction_ids = [str(mid.get("movieId") if isinstance(mid, dict) else mid)
+                               for mid in interaction_doc.get("likedMovies", [])]
+        elif interaction_collection == "saved":
+            interaction_ids = [str(mid.get("movieId") if isinstance(mid, dict) else mid)
+                               for mid in interaction_doc.get("SaveMovies", [])]
+        elif interaction_collection == "history":
+            interaction_ids = [str(mid.get("movieId") if isinstance(mid, dict) else mid)
+                               for mid in interaction_doc.get("historyMovies", [])]
+        else:
+            return JSONResponse(content=[])
+
+
+        # Step 1: Fetch genres
+        genre_set = set()
+        for mid in interaction_ids:
+            movie = movies.find_one({"movieId": str(mid)}, {"genres": 1})
+            if movie:
+                genres = movie.get("genres", [])
+                if isinstance(genres, str):
+                    genre_set.update(g.strip().lower() for g in genres.split("|"))
+                elif isinstance(genres, list):
+                    genre_set.update(g.strip().lower() for g in genres)
+
+        # Step 2: Get ALS recommendations
+        als_results = [
+                {**rec, "movieId": str(rec["movieId"])} 
+                for rec in als.find({"userId": userId}).sort("rating", -1)
+            ]
+
+        if not als_results:
+            return JSONResponse(content=[])
+
+        interaction_ids_set = set(interaction_ids)
+        candidate_ids = [
+            rec["movieId"]
+            for rec in als_results
+            if str(rec["movieId"]) not in interaction_ids_set
+            and str(rec["movieId"]) not in exclude_ids
+        ]
+
+
+        if not candidate_ids:
+            return JSONResponse(content=[])
+
+        # Step 4: Fetch metadata
+        movie_cursor = movies.find({
+            "movieId": {"$in": candidate_ids}
+        }, {
+            "_id": 1, "movieId": 1, "title": 1, "poster_url": 1, "trailer_url": 1,
+            "genres": 1, "overview": 1, "actors": 1, "producers": 1, "director": 1,
+            "predicted_rating": 1
+        })
+
+        # Step 5: Filter by genre match
+        final_movies = []
+        for movie in movie_cursor:
+            raw_genres = movie.get("genres", [])
+            if isinstance(raw_genres, str):
+                movie_genres = set(g.strip().lower() for g in raw_genres.split("|"))
+            elif isinstance(raw_genres, list):
+                movie_genres = set(g.strip().lower() for g in raw_genres)
+            else:
+                movie_genres = set()
+
+            # TEMP: Show all if genre_set is empty
+            if not genre_set or genre_set & movie_genres:
+                movie["_id"] = str(movie["_id"])
+                final_movies.append(movie)
+
+            if len(final_movies) >= 12:
+                break
+
+        return JSONResponse(content=final_movies)
+
+    except Exception as e:
+        print(f"❌ ALS-{interaction_collection} fetch failed:", e)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# GET /api/movies/counts/:userId
+@router.get("/counts/{userId}")
+def get_user_counts(userId: str, request: Request):
+    try:
+        print(f"🔍 Fetching counts for userId: {userId}")
+        db = request.app.state.movie_db
+
+        liked_doc = db["liked"].find_one({"userId": userId})
+        saved_doc = db["saved"].find_one({"userId": userId})
+        watched_doc = db["history"].find_one({"userId": userId})
+
+        liked_count = len(liked_doc.get("likedMovies", [])) if liked_doc else 0
+        saved_count = len(saved_doc.get("SaveMovies", [])) if saved_doc else 0
+        watched_count = len(watched_doc.get("historyMovies", [])) if watched_doc else 0
+
+        print(f"👍 liked count: {liked_count}")
+        print(f"💾 saved count: {saved_count}")
+        print(f"👀 watched count: {watched_count}")
+
+        return JSONResponse(content={
+            "liked": liked_count,
+            "saved": saved_count,
+            "watched": watched_count
+        })
+
+    except Exception as e:
+        print("❌ Error fetching interaction counts:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch counts")
+
+##look at the latest code in chatgpt this still have errors

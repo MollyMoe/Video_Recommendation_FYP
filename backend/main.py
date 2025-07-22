@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from server.routes.subscriptionRoute import router as subscription_router
 from server.routes.stripeRoute import router as stripe_router
 
+
 # Load .env
 env_path = Path(__file__).resolve().parent / 'server' / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -109,3 +110,5 @@ def get_feedback_items():
     # Access the 'feedback' collection within the 'support_db'
     feedback_items = list(app.state.support_db.feedback.find({}, {"_id": 0}))
     return feedback_items
+
+

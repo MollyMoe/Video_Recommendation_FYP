@@ -2,12 +2,18 @@ import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
 const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
-  const [history, setHistory] = useState(() => {
-    const stored = localStorage.getItem("searchHistory");
-    return stored ? JSON.parse(stored) : [];
-  });
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const userId = savedUser?.userId || "default";
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef(null);
+  const storageKey = `searchHistory_${userId}`;
+
+  const [history, setHistory] = useState(() => {
+    const stored = localStorage.getItem(storageKey);
+    return stored ? JSON.parse(stored) : [];
+  });
+
+
 
   const handleClickOutside = (event) => {
     if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -23,8 +29,8 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("searchHistory", JSON.stringify(history));
-  }, [history]);
+    localStorage.setItem(storageKey, JSON.stringify(history));
+  }, [history, storageKey]);
 
   const addToHistory = (term) => {
     const normalizedTerm = term.toLowerCase();
@@ -59,9 +65,9 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   return (
     <div className="flex-1 px-5 hidden md:flex justify-center" ref={wrapperRef}>
       <div className="w-full max-w-md z-60">
-        <div className="w-screen h-27 bg-white w-full" >
-        <h1 className="mt-[10px] text-2xl font-bold mb-4">What would you like to watch?</h1>
-         
+        <div className=" w-screen h-27 bg-white w-full" >
+        <h1 className="mt-[20px] text-xl font-bold text-gray-700 mb-4">What would you like to watch?</h1>
+
         <input
           type="text"
           value={searchQuery}
@@ -131,3 +137,4 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 };
 
 export default StFilterBar;
+

@@ -28,21 +28,26 @@ const StFilterContent = ({searchQuery}) => {
     if (!savedUser?.userId) return;
 
     setIsLoading(true);
+
     try {
       
       let allMovieList = [];
       const res = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
       allMovieList = res.data;
 
-      console.log("🎬 Frontend received:", allMovieList);
+      const finalMovieSet = allMovieList.slice(0, 1000); // ⬅️ slice the first 1000
+     
+      console.log("🎬 Frontend received:", finalMovieSet);
    
 
-      setAllMovies(allMovieList);
-      setMovies(allMovieList);
+      setAllMovies(finalMovieSet);
+      setMovies(finalMovieSet);
     } catch (err) {
       console.error("Failed to fetch recommended movies:", err);
     }
+
     setIsLoading(false);
+
   };
 
   const handleHistory = async (movieId) => {
@@ -99,6 +104,7 @@ const StFilterContent = ({searchQuery}) => {
       movie.title?.toLowerCase().includes(lowerQuery) ||
       movie.director?.toLowerCase().includes(lowerQuery) ||
       movie.actors?.toLowerCase().includes(lowerQuery) ||
+
       (Array.isArray(movie.genres) && movie.genres.some(g => g.toLowerCase().includes(lowerQuery)))
     );
     setMovies(filtered);
@@ -149,7 +155,7 @@ const StFilterContent = ({searchQuery}) => {
                             ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
                             </div>
                         </div>
-                        </div>
+                      </div>
                     )}
                 </div>
                 ))}
@@ -238,5 +244,5 @@ const StFilterContent = ({searchQuery}) => {
   );
 };
 
-export default StFilterContent
+export default StFilterContent;
 
