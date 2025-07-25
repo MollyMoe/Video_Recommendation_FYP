@@ -348,6 +348,89 @@ const handleWatchLater = async (movieId) => {
     }
   };
 
+  //top rated movies 
+  const [topLikedMovies, setTopLikedMovies] = useState([]);
+useEffect(() => {
+  const fetchCountsAndRecommendations = async (userId) => {
+    try {
+      const res = await axios.get(`${API}/api/movies/counts/${userId}`);
+      const { liked, saved, watched } = res.data;
+      setInteractionCounts({ liked, saved, watched });
+
+      const seenIds = new Set();
+      const promises = [];
+
+      // Fetch top-liked movies (not user-specific)
+      axios.get(`${API}/api/movies/top-liked`)
+        .then((res) => {
+          const topLiked = res.data
+            .map(m => normalizeMovie(m.details))
+            .filter(m => !!m); // Remove nulls
+          setTopLikedMovies(topLiked);
+        })
+        .catch(err => {
+          console.error("❌ Failed to fetch top liked:", err);
+        });
+
+      // Continue with liked/save/watch logic as before...
+      // 🟣 Liked
+      if (liked >= 5) {
+        promises.push(
+          axios.post(`${API}/api/movies/als-liked`, {
+            userId,
+            excludeIds: [],
+          }).then((res) => {
+            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
+            const normalized = filtered.map(normalizeMovie);
+            setLikedMovies(normalized);
+            normalized.forEach((m) => seenIds.add(String(m.movieId)));
+          })
+        );
+      }
+
+      // 🟢 Saved
+      if (saved >= 5) {
+        promises.push(
+          axios.post(`${API}/api/movies/als-saved`, {
+            userId,
+            excludeIds: Array.from(seenIds),
+          }).then((res) => {
+            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
+            const normalized = filtered.map(normalizeMovie);
+            setSavedMovies(normalized);
+            normalized.forEach((m) => seenIds.add(String(m.movieId)));
+          })
+        );
+      }
+
+      //  Watched
+      if (watched >= 5) {
+        promises.push(
+          axios.post(`${API}/api/movies/als-watched`, {
+            userId,
+            excludeIds: Array.from(seenIds),
+          }).then((res) => {
+            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
+            const normalized = filtered.map(normalizeMovie);
+            setWatchedMovies(normalized);
+            normalized.forEach((m) => seenIds.add(String(m.movieId)));
+          })
+        );
+      }
+
+      await Promise.all(promises);
+    } catch (err) {
+      console.error("❌ ALS fetch error:", err);
+    }
+  };
+
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (savedUser?.userId) {
+    fetchCountsAndRecommendations(savedUser.userId);
+  }
+}, []);
+
+
   //for because you like/save/watch
 // ALS-based "Because you like/save/watch" section
 const [likedMovies, setLikedMovies] = useState([]);
@@ -385,7 +468,7 @@ useEffect(() => {
       const seenIds = new Set();
       const promises = [];
 
-      // 🟣 Liked section
+      // Liked section
       if (liked >= 5) {
         promises.push(
           axios.post(`${API}/api/movies/als-liked`, {
@@ -400,7 +483,7 @@ useEffect(() => {
         );
       }
 
-      // 🟢 Saved section
+      // Saved section
       if (saved >= 5) {
         promises.push(
           axios.post(`${API}/api/movies/als-saved`, {
@@ -415,7 +498,7 @@ useEffect(() => {
         );
       }
 
-      // 🟠 Watched section
+      //  Watched section
       if (watched >= 5) {
         promises.push(
           axios.post(`${API}/api/movies/als-watched`, {
@@ -448,51 +531,67 @@ useEffect(() => {
           
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="max-w-6xl mx-auto">
+           {/*  top rated movies */}
+          {topLikedMovies.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-2 px-4">🔥 Most Liked Movies</h2>
+            <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
+              {topLikedMovies.map((movie) => (
+                <div key={movie._id} className="inline-block w-48 mr-4">
+                  <MovieCard
+                    movie={movie}
+                    onClick={() => setSelectedMovie(movie)}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
             {/* ALS-based sections only if user has ≥ 5 interactions */}
-{/* 🔵 Because you like */}
-{interactionCounts.liked >= 5 && likedMovies.length > 0 && (
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you like</h2>
-    <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
-      {likedMovies.map((movie) => (
-        <div key={movie._id} className="inline-block w-48 mr-4">
-          <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+            {/*  Because you like */}
+            {interactionCounts.liked >= 5 && likedMovies.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you like</h2>
+                <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
+                  {likedMovies.map((movie) => (
+                    <div key={movie._id} className="inline-block w-48 mr-4">
+                      <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-{/* 🟢 Because you save */}
-{interactionCounts.saved >= 5 && savedMovies.length > 0 && (
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you save</h2>
-    <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
-      {savedMovies.map((movie) => (
-        <div key={movie._id} className="inline-block w-48 mr-4">
-          <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+            {/*  Because you save */}
+            {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you save</h2>
+                <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
+                  {savedMovies.map((movie) => (
+                    <div key={movie._id} className="inline-block w-48 mr-4">
+                      <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-{/* 🟠 Because you watch */}
-{interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you watch</h2>
-    <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
-      {watchedMovies.map((movie) => (
-        <div key={movie._id} className="inline-block w-48 mr-4">
-          <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-      {/* 🟢 and 🟠 sections ... (same structure) */}
+            {/*  Because you watch */}
+            {interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you watch</h2>
+                <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
+                  {watchedMovies.map((movie) => (
+                    <div key={movie._id} className="inline-block w-48 mr-4">
+                      <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}  
 
-      {/* 🔽 Add this modal AFTER the movie sections, but BEFORE the closing tags */}
+      {/* Add this modal AFTER the movie sections, but BEFORE the closing tags */}
           <Dialog
           open={!!selectedMovie}
           onClose={() => setSelectedMovie(null)}

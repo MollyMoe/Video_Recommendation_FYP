@@ -618,4 +618,43 @@ def get_user_counts(userId: str, request: Request):
         print("❌ Error fetching interaction counts:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch counts")
 
-##look at the latest code in chatgpt this still have errors
+
+## for top likes
+@router.get("/top-liked")
+async def get_top_liked_movies(request: Request):
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
+
+    try:
+        pipeline = [
+            { "$unwind": "$likedMovies" },
+            { "$group": { "_id": "$likedMovies", "likeCount": { "$sum": 1 } } },
+            { "$sort": { "likeCount": -1 } },
+            { "$limit": 10 }
+        ]
+        liked_result = list(liked_collection.aggregate(pipeline))
+
+        movie_ids = [m["_id"] for m in liked_result]
+
+        movie_docs = list(db["hybridRecommendation2"].find({ "movieId": { "$in": movie_ids } }))
+
+        movie_dict = {str(movie["movieId"]): movie for movie in movie_docs}
+
+        response = []
+        for movie in liked_result:
+            movie_id_str = str(movie["_id"])
+            details = movie_dict.get(movie_id_str, None)
+            if details and "_id" in details:
+                del details["_id"]
+
+            response.append({
+                "movieId": movie_id_str,
+                "likeCount": movie["likeCount"],
+                "details": details
+            })
+
+        return response
+
+    except Exception as e:
+        print(" Backend Error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
