@@ -40,8 +40,8 @@ async def submit_streamer_feedback(
             "userId": userId,
             "feedback": feedback,
             "timestamp": datetime.utcnow(),
-            "is_not_solved": True,  # New feedback is initially 'Not Solved'
-            "is_solved": False,     # And definitely not 'Solved'
+            "is_not_solved": False,  
+            "is_solved": False,     
         }
 
         if file:

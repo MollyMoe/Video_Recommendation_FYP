@@ -25,12 +25,10 @@ const AdUserFeedback = () => {
 
         const data = await res.json();
         // Initialize is_not_solved and is_solved for existing feedback items
-        // Handle both old 'is_addressed' and new 'is_not_solved' for compatibility
         const initializedData = data.map(item => ({
           ...item,
-          // Prioritize 'is_not_solved', fallback to 'is_addressed', then default to false
-          is_not_solved: item.is_not_solved || item.is_addressed || false,
-          is_solved: item.is_solved || false,
+         is_not_solved: item.is_not_solved ?? false,
+         is_solved: item.is_solved ?? false,
         }));
         setFeedbackList(initializedData);
 
@@ -146,6 +144,19 @@ const AdUserFeedback = () => {
       feedback.feedback.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const sortedFeedbackList = [...filteredFeedbackList].sort((a, b) => {
+    // Sort by is_not_solved (true first)
+    if (a.is_not_solved !== b.is_not_solved) {
+      return b.is_not_solved - a.is_not_solved;
+    }
+    // Then by timestamp (oldest first)
+    const timeA = new Date(a.timestamp).getTime();
+    const timeB = new Date(b.timestamp).getTime();
+    return timeA - timeB;
+  });
+
+
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen pt-20">
@@ -213,12 +224,12 @@ const AdUserFeedback = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Feedback</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Timestamp</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Attachment</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Not Solved</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Solving</th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Solved</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredFeedbackList.map((feedback) => (
+                  {sortedFeedbackList.map((feedback) => (
                     <tr key={feedback._id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{feedback.userId}</td>
                       <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">{feedback.feedback}</td>

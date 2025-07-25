@@ -160,21 +160,12 @@ const AdUserLikedMovies = () => {
                   <h3 className="text-sm font-semibold text-black line-clamp-2 flex-grow m-0 ">
                     {movie.title || "Untitled"}
                   </h3>
-                  <div className="m-0 flex justify-center gap-3">
-                    {/* Admin can play for testing, but typically this might be removed or lead to a "preview" */}
-                    <button
-                      onClick={() => console.log("Admin Play clicked (implement preview logic if needed)")}
-                      className="flex items-center justify-center w-20 bg-gray-300 text-gray-800 text-xs px-2 py-1 rounded-lg shadow-sm cursor-not-allowed" // Admin might not "play" for history tracking
-                      disabled // Disable if admin doesn't track history for themselves
-                    >
-                      <Play className="w-3 h-3 mr-1 fill-gray-800" />
-                      Play
-                    </button>
+                  <div className="m-0 flex justify-center">
 
                     {/* Admin "Remove" button */}
                     <button
                       onClick={() => handleAdminRemove(movie.movieId)}
-                      className="flex items-center justify-center w-20 bg-red-600 text-white text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-red-700"
+                      className="flex items-center justify-center w-24 bg-red-600 text-white text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-red-700"
                     >
                       <Trash2 className="w-3 h-3 mr-1 fill-white" />
                       Remove
