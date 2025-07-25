@@ -85,38 +85,57 @@ const handleSignout = async () => {
   const API = import.meta.env.VITE_API_BASE_URL;
 
   if (savedUser?.userId) {
-    try {
-      await axios.post(`${API}/api/auth/update-signout-time`, { 
-        userId: savedUser.userId,
-        time: new Date().toISOString(), // optional if backend auto-generates
-        reason: "manual",
-      });
-      console.log("✅ Signout time recorded");
-    } catch (err) {
-      console.error("❌ Failed to record signout time:", err);
+    // 🟡 If online: update backend
+    if (navigator.onLine) {
+      try {
+        await axios.post(`${API}/api/auth/update-signout-time`, {
+          userId: savedUser.userId,
+          userType: savedUser.userType,
+          time: new Date().toISOString(),
+          reason: "manual",
+        });
+        console.log("✅ Signout time recorded to backend");
+      } catch (err) {
+        console.error("❌ Failed to record signout time:", err);
+      }
+    } 
+    // 🔴 If offline: save locally
+    else if (window.electron?.saveOfflineSignout) {
+      try {
+        window.electron.saveOfflineSignout({ userId: savedUser.userId });
+        console.log("📁 Offline signout saved locally");
+      } catch (err) {
+        console.warn("⚠️ Failed to save offline session:", err);
+      }
     }
   }
 
-  // Clear browser session
+  // 🔁 Clear all sessions
   localStorage.removeItem("user");
-  localStorage.removeItem("signinTime");
 
-  // Optional: also clear Electron offline session
   if (window.electron?.clearOfflineSignout) {
     try {
-      window.electron.clearOfflineSignout();
+      window.electron.clearOfflineSignout(); // this is usually for cleanup after boot sync
     } catch (err) {
       console.warn("⚠️ Failed to clear offline session:", err);
     }
   }
 
-  // Redirect to signin — supports HashRouter and BrowserRouter
-  if (window.location.hash.includes("#")) {
-    window.location.hash = "#/signin"; // For HashRouter
+    if (window.electron?.saveOfflineSignout) {
+    window.electron.saveOfflineSignout({ userId: savedUser.userId });
   } else {
-    window.location.href = "/signin"; // For BrowserRouter
+    console.warn("🧪 Not running in Electron — skipping offline save");
+  }
+
+
+  // ✅ Always redirect
+  if (window.location.hash.includes("#")) {
+    window.location.hash = "#/signin"; // HashRouter
+  } else {
+    window.location.href = "/signin"; // BrowserRouter
   }
 };
+
 
   return (
     // User Profile

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 const defaultImage =
@@ -67,11 +68,62 @@ function AdUserProfile() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSignOut = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("admin_profileImage");
-    navigate("/signin");
-  };
+  const handleSignout = async () => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const API = import.meta.env.VITE_API_BASE_URL;
+
+  if (savedUser?.userId) {
+    // 🟡 If online: update backend
+    if (navigator.onLine) {
+      try {
+        await axios.post(`${API}/api/auth/update-signout-time`, {
+          userId: savedUser.userId,
+          userType: savedUser.userType,
+          time: new Date().toISOString(),
+          reason: "manual",
+        });
+        console.log("✅ Signout time recorded to backend");
+      } catch (err) {
+        console.error("❌ Failed to record signout time:", err);
+      }
+    } 
+    // 🔴 If offline: save locally
+    else if (window.electron?.saveOfflineSignout) {
+      try {
+        window.electron.saveOfflineSignout({ userId: savedUser.userId });
+        console.log("📁 Offline signout saved locally");
+      } catch (err) {
+        console.warn("⚠️ Failed to save offline session:", err);
+      }
+    }
+  }
+
+  // 🔁 Clear all sessions
+  localStorage.removeItem("user");
+
+  if (window.electron?.clearOfflineSignout) {
+    try {
+      window.electron.clearOfflineSignout(); // this is usually for cleanup after boot sync
+    } catch (err) {
+      console.warn("⚠️ Failed to clear offline session:", err);
+    }
+  }
+
+    if (window.electron?.saveOfflineSignout) {
+    window.electron.saveOfflineSignout({ userId: savedUser.userId });
+  } else {
+    console.warn("🧪 Not running in Electron — skipping offline save");
+  }
+
+
+  // ✅ Always redirect
+  if (window.location.hash.includes("#")) {
+    window.location.hash = "#/signin"; // HashRouter
+  } else {
+    window.location.href = "/signin"; // BrowserRouter
+  }
+};
+
 
   return (
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -116,7 +168,7 @@ function AdUserProfile() {
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
             <li
-              onClick={handleSignOut}
+              onClick={handleSignout}
               className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
             >
               <FaSignOutAlt className="mr-2" /> Sign Out

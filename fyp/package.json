@@ -24,7 +24,8 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*",
+      "electron/main.js",
+      "electron/preload.cjs",
       "package.json"
     ],
     "extraMetadata": {
@@ -43,6 +44,7 @@
     "electron-is-dev": "^3.0.1",
     "electron-store": "^10.0.1",
     "express": "^5.1.0",
+    "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.511.0",

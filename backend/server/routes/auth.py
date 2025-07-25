@@ -1,3 +1,4 @@
+
 from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException
 from bson import ObjectId
@@ -72,7 +73,7 @@ def signup(request: Request, user: SignUpRequest):
         "genres": [],
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
-        "signinTime": datetime.utcnow(),       # Stored as Date for queries
+        "lastSignin": datetime.utcnow(),       # Stored as Date for queries
         "lastSignout": datetime.utcnow(),      # Stored as Date, not ISO string
         "__v": 0
     }
@@ -85,8 +86,7 @@ def signup(request: Request, user: SignUpRequest):
         "userId": user_id,
         "userType": user.userType
     }
-
-
+    
 class SigninRequest(BaseModel):
     username: str
     password: str
@@ -104,32 +104,103 @@ def signin(data: SigninRequest, request: Request):
 
     if not user or user["password"] != password:
         raise HTTPException(status_code=400, detail="Invalid username or password")
-    print("🚨 Checking status for:", user["username"], "| Status:", user.get("status"))
 
-     # ✅ For testing: Suspended account if lastSignout > 2 minutes ago
+    user_id = user["userId"]
+    now = datetime.utcnow()
+    status = user.get("status", "Active")
+
+    # ✅ Admins bypass inactivity logic
+    if user_type == "admin":
+        Model.update_one(
+            { "userId": user_id },
+            { "$set": { "lastSignin": now } }
+        )
+        return {
+            "message": "Admin login successful",
+            "user": user
+        }
+
+    # 🚫 Block login if already suspended
     if user_type == "streamer":
-        if user.get("lastSignout") and user.get("status") != "Active":
-            inactive_minutes = (datetime.utcnow() - user["lastSignout"]).total_seconds() / 60
-            if inactive_minutes >= 2:
-                Model.update_one(
-                    { "userId": user["userId"] },
-                    { "$set": { "status": "Suspended" } }
-                )
-                raise HTTPException(status_code=403, detail="Account Suspended after 2 minutes of inactivity (test mode).")
-
-        if user.get("status") == "Suspended":
+        if status != "Active":
             raise HTTPException(status_code=403, detail="Account is suspended.")
 
-    # ✅ Update signinTime on successful login
-    Model.update_one(
-        { "userId": user["userId"] },
-        { "$set": { "signinTime": datetime.utcnow() } }
-    )
-    
-    return {
-        "message": "Login successful",
-        "user": user
-    }
+    # ⚠️ 1. Auto signout after 3 days of inactivity
+    if user_type == "streamer":
+    # 1️⃣ Check for auto-suspension (after 2 minutes since lastSignout)
+        if user.get("lastSignout") and user.get("status") == "Active":
+            signout_days = (now - user["lastSignout"]).days # put / 30 for months
+            if signout_days >= 3:
+                print(f"⛔ Auto-suspending {user['username']} after {signout_days:.2f} days")
+                Model.update_one(
+                    { "userId": user_id },
+                    { "$set": { "status": "Suspended" } }
+                )
+                raise HTTPException(
+                    status_code=403,
+                    detail="Account suspended due to inactivity over 3 days."
+                )
+
+        # 2️⃣ Check for auto sign-out after inactivity (1 day)
+        if user.get("lastSignin"):
+            inactivity_days = (now - user["lastSignin"]).days
+            if inactivity_days >= 1:
+                print(f"⚠️ Auto signout triggered after {inactivity_days:.2f} days")
+                Model.update_one(
+                    { "userId": user_id },
+                    {
+                        "$set": {
+                            "lastSignout": now,
+                            "lastSignin": now
+                        }
+                    }
+                )
+
+                user = Model.find_one({ "userId": user_id }, {"_id": 0 })
+
+                return {
+                    "message": "Re-logged in after session timeout.",
+                    "user": {
+                        **user,
+                        "userType": user_type
+                    }
+                }
+
+        # 3️⃣ Normal login path
+        Model.update_one(
+            { "userId": user_id },
+            { "$set": { "lastSignin": now } }
+        )
+
+        user = Model.find_one({ "userId": user_id }, {"_id": 0 })
+
+        return {
+            "message": "Login successful",
+            "user": {
+                **user,
+                "userType": user_type
+            }
+        }
+
+
+# @router.post("/signin")
+# def signin(data: SigninRequest, request: Request):
+#     db = request.app.state.user_db
+#     username = data.username
+#     password = data.password
+#     user_type = data.userType.lower()
+
+#     Model = db["admin"] if user_type == "admin" else db["streamer"]
+#     user = Model.find_one({"username": username}, {"_id": 0})
+
+#     if not user or user["password"] != password:
+#         raise HTTPException(status_code=400, detail="Invalid username or password")
+
+#     if user.get("status") == "Suspended":
+#         raise HTTPException(status_code=403, detail="Account is suspended.")
+
+#     return {"message": "Login successful", "user": user}
+
 
 @router.delete("/delete/{userType}/{username}")
 def delete_user(request: Request, userType: str, username: str):
@@ -189,26 +260,63 @@ def reset_password(request: Request, body: dict):
 from fastapi.encoders import jsonable_encoder
 
 #Suspended
-@router.put("/users/{userId}/status")
-def update_status(request: Request, userId: str, body: dict):
-    db = request.app.state.user_db
-    status = body.get("status")
+# @router.put("/users/{userId}/status")
+# def update_status(request: Request, userId: str, body: dict):
+#     db = request.app.state.user_db
+#     status = body.get("status")
 
-    if status not in ["Active", "Suspended"]:
-        raise HTTPException(status_code=400, detail="Invalid status")
+#     if status not in ["Active", "Suspended"]:
+#         raise HTTPException(status_code=400, detail="Invalid status")
 
-    # Try updating in streamer collection first
-    result = db.streamer.find_one_and_update(
-        {"userId": userId},
-        {"$set": {"status": status}},
-        return_document=ReturnDocument.AFTER
-    )
+#     # Try updating in streamer collection first
+#     result = db.streamer.find_one_and_update(
+#         {"userId": userId},
+#         {"$set": {"status": status}},
+#         return_document=ReturnDocument.AFTER
+#     )
 
-    if result:
-        result["_id"] = str(result["_id"])
-        return JSONResponse(content=result)
+#     if result:
+#         result["_id"] = str(result["_id"])
+#         return JSONResponse(content=result)
 
-    raise HTTPException(status_code=404, detail="User not found")
+#     raise HTTPException(status_code=404, detail="User not found")
+
+@router.put("/users/{user_id}/status")
+async def update_user_status(user_id: str, request: Request):
+    try:
+        body = await request.json()
+        status = body.get("status")
+        user_type = body.get("userType")
+
+        print("🧪 Received:", {
+            "userId": user_id,
+            "userType": user_type,
+            "status": status
+        })
+
+        if not status or not user_type:
+            raise HTTPException(status_code=400, detail="Missing status or userType")
+
+        db = request.app.state.user_db
+        Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
+
+        # ✅ Try finding the user first to confirm they exist
+        user = Model.find_one({ "userId": user_id })
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        result = db.streamer.find_one_and_update(
+            { "userId": user_id },
+            { "$set": { "status": status } }
+        )
+
+        print(f"✅ Updated {user_id} to {status}")
+        return { "message": f"User {user_id} status updated to {status}" }
+
+    except Exception as e:
+        print("🚨 Error:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 
@@ -258,23 +366,60 @@ def get_user_by_id(request: Request, userType: str, userId: str):
 
     return user
 
+# @router.post("/update-signout-time")
+# async def update_signout_time(request: Request):
+#     body = await request.json()
+#     user_id = body.get("userId")
+#     user_type = body.get("userType")  # Needed to decide which collection
+#     time_str = body.get("time")
+
+#     if not user_id or not user_type:
+#         raise HTTPException(status_code=400, detail="Missing userId or userType")
+
+#     from dateutil.parser import parse
+#     last_signout = parse(time_str) if time_str else datetime.utcnow()
+
+#     db = request.app.state.user_db
+#     Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
+
+#     result = Model.update_one(
+#         { "userId": user_id },
+#         { "$set": { "lastSignout": last_signout } }
+#     )
+
+#     if result.modified_count == 0:
+#         raise HTTPException(status_code=404, detail="User not found")
+
+#     return {"message": "Sign-out time updated"}
+
+from fastapi import APIRouter, Request, HTTPException
+from datetime import datetime
+
 @router.post("/update-signout-time")
 async def update_signout_time(request: Request):
     body = await request.json()
     user_id = body.get("userId")
+    user_type = body.get("userType")
+    time_str = body.get("time")
 
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Missing userId")
+    if not user_id or not user_type:
+        raise HTTPException(status_code=400, detail="Missing userId or userType")
+
+    try:
+        last_signout = datetime.fromisoformat(time_str.replace("Z", "+00:00")) if time_str else datetime.utcnow()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid time format: {e}")
 
     db = request.app.state.user_db
-    users_collection = db["streamer"]
+    Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
 
-    result = users_collection.update_one(
-        {"userId": user_id},
-        {"$set": { "lastSignout": datetime.utcnow() }}
+    result = Model.update_one(
+        { "userId": user_id },
+        { "$set": { "lastSignout": last_signout } }
     )
 
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"message": "Sign-out time updated"}
+    return { "message": "Sign-out time updated successfully" }
+

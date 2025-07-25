@@ -53,15 +53,19 @@ function SignInPage() {
     };
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMessage(null);
 
-    if (!validateForm()) return;
+  if (!validateForm()) return;
 
-    setIsLoading(true);
+  const isOnline = navigator.onLine;
 
-    try {
+  setIsLoading(true);
+
+  try {
+    if (isOnline) {
+      // ✅ ONLINE LOGIN FLOW
       const res = await fetch(`${API}/api/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,28 +80,28 @@ function SignInPage() {
       console.log("Login API response data:", data);
 
       if (res.ok) {
-        setMessage({ type: "success", text: "Login successful!" });
+        // Save to localStorage
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
 
+        if (window.electron && window.electron.saveSession) {
+          window.electron.saveSession({
+            userId: data.user.userId,
+            username: data.user.username,
+            userType: data.user.userType,
+            password: formData.password,
+            lastSignin: new Date().toISOString(),
+          });
+        } else {
+          console.warn("⚠️ Electron API not available. Skipping offline session save.");
+        }
         // Clear old profile images
         localStorage.removeItem("streamer_profileImage");
         localStorage.removeItem("admin_profileImage");
 
-        localStorage.setItem("token", data.token);
-
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        if (formData.userType === "streamer") {
-          localStorage.removeItem("streamer_profileImage");
-        } else if (formData.userType === "admin") {
-          localStorage.removeItem("admin_profileImage");
-        }
-
-        // ✅ Fetch profile image only after successful login
+        // ✅ Fetch profile image
         if (data.user?.userId && formData.userType) {
-          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${
-            data.user.userId
-          }`;
+          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
           try {
             const imageRes = await fetch(endpoint);
             const userInfo = await imageRes.json();
@@ -111,48 +115,22 @@ function SignInPage() {
           }
         }
 
-        // Navigate based on user type
+        // ✅ Navigate
         if (formData.userType === "admin") {
           navigate("/admin");
         } else {
           navigate("/home");
         }
-      // } else if (
-      //   res.status === 403 &&
-      //   data.detail?.toLowerCase().includes("Suspended")
-      // ) {
 
-      //   // 👉 Add this block BELOW:
-      //   // Set profile image for context to pick up on next reload
-      //   const baseUrl = "http://localhost:3001";
-      //   const profileImageUrl = data.user.profileImage
-      //     ? data.user.profileImage.startsWith("http")
-      //       ? data.user.profileImage
-      //       : `${baseUrl}${data.user.profileImage}`
-      //     : baseUrl + "/uploads/profile.png";
-      //   if (formData.userType === "streamer") {
-      //     localStorage.setItem("streamer_profileImage", profileImageUrl);
-      //   } else if (formData.userType === "admin") {
-      //     localStorage.setItem("admin_profileImage", profileImageUrl);
-      //   }
-
-      //   // Navigation...
-      //   if (formData.userType === "admin") {
-      //     navigate("/admin");
-      //   } else if (formData.userType === "streamer") {
-      //     navigate("/home");
-      //   } else {
-      //     navigate("/home");
-      //   }
-
-      } 
-      else if (
+        setMessage({ type: "success", text: "Login successful!" });
+      } else if (
         res.status === 403 &&
         data.error?.toLowerCase().includes("Suspended")
       ) {
         setMessage({
           type: "error",
-          text: "Your account has been Suspendeded due to prolonged inactivity (3 months). Please contact support at cineit.helpdesk@gmail.com.",
+          text:
+            "Your account has been suspended due to prolonged inactivity. Contact cineit.helpdesk@gmail.com.",
         });
       } else if (
         res.status === 400 &&
@@ -168,12 +146,40 @@ function SignInPage() {
           text: data.detail || "Login failed. Please try again.",
         });
       }
-    } catch (error) {
-      setMessage({ type: "error", text: "Server error. Please try again." });
-    } finally {
-      setIsLoading(false);
+    } else {
+      // ⚡ OFFLINE LOGIN FLOW
+      const offlineData = window.electron.getSession();
+
+      if (
+        offlineData &&
+        offlineData.username === formData.username &&
+        offlineData.password === formData.password &&
+        offlineData.userType === formData.userType
+      ) {
+        localStorage.setItem("user", JSON.stringify(offlineData));
+
+        const key = `${formData.userType.toLowerCase()}_profileImage`;
+        if (offlineData.profileImage) {
+          localStorage.setItem(key, offlineData.profileImage);
+        }
+
+        navigate(formData.userType === "admin" ? "/admin" : "/home");
+
+        setMessage({ type: "success", text: "Logged in offline." });
+      } else {
+        setMessage({
+          type: "error",
+          text: "Offline login failed. No matching saved session.",
+        });
+      }
     }
-  };
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    setMessage({ type: "error", text: "Unexpected error. Try again." });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // FIXED: Return needs to be inside the component
   return (

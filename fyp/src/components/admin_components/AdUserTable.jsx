@@ -169,30 +169,103 @@ const AdUserTable = ({ searchQuery }) => {
     fetchStreamers();
   }, []);
 
+  // const handleToggleSuspend = async (userId) => {
+  //   const updatedUsers = users.map((user) =>
+  //     user.userId === userId
+  //       ? {
+  //           ...user,
+  //           status: user.status === "Suspended" ? "Active" : "Suspended",
+  //         }
+  //       : user
+  //   );
+
+  //   setUsers(updatedUsers);
+
+  //   const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
+
+  //   try {
+  //     await fetch(`${API}/api/auth/users/${userId}/status`, {
+  //       method: "PUT",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ status: newStatus }),
+  //     });
+
+  //     // ✅ If unsuspending, also reset lastSignout to now
+  //   } catch (err) {
+  //     console.error("Failed to update status:", err);
+  //   }
+  // };
+
   const handleToggleSuspend = async (userId) => {
-    const updatedUsers = users.map((user) =>
-      user.userId === userId
-        ? {
-            ...user,
-            status: user.status === "Suspended" ? "Active" : "Suspended",
-          }
-        : user
-    );
+  // ✅ Keep your original structure
+  const updatedUsers = users.map((user) =>
+    user.userId === userId
+      ? {
+          ...user,
+          status: user.status === "Suspended" ? "Active" : "Suspended",
+        }
+      : user
+  );
 
-    setUsers(updatedUsers);
+  setUsers(updatedUsers);
 
-    const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
+  const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
+  const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
 
-    try {
-      await fetch(`${API}/api/auth/users/${userId}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-    } catch (err) {
-      console.error("Failed to update status:", err);
+  if (!userType) {
+    console.error("❌ Missing userType for user:", userId);
+    return;
+  }
+  console.log("🧪 Sending:", {
+  userId,
+  userType,
+  status: newStatus,
+});
+
+  try {
+    // 🔄 Update status in DB
+    const res = await fetch(`${API}/api/auth/users/${userId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: newStatus,
+        userType,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      console.error("❌ Failed to update user status:", err.detail || err);
+      return;
     }
-  };
+    console.log(`✅ User ${userId} status updated to ${newStatus}`);
+
+    // ✅ Reset lastSignout if unsuspending
+    if (newStatus === "Active") {
+      const resetRes = await fetch(`${API}/api/auth/update-signout-time`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          userType,
+          time: new Date().toISOString(),
+        }),
+      });
+
+      if (!resetRes.ok) {
+        const err = await resetRes.json();
+        console.warn("⚠️ Failed to reset lastSignout:", err.detail || err);
+      } else {
+        console.log("✅ lastSignout reset after unsuspending");
+      }
+    }
+
+    console.log(`✅ User ${userId} status updated to ${newStatus}`);
+  } catch (err) {
+    console.error("❌ Error toggling suspension:", err);
+  }
+};
+
 
   const handleView = (user) => {
     navigate(`/admin/view/${user.userId}`, {
