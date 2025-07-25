@@ -438,6 +438,11 @@ const [savedMovies, setSavedMovies] = useState([]);
 const [watchedMovies, setWatchedMovies] = useState([]);
 const [interactionCounts, setInteractionCounts] = useState({ liked: 0, saved: 0, watched: 0 });
 
+const [likedTitles, setLikedTitles] = useState([]);
+const [savedTitles, setSavedTitles] = useState([]);
+const [watchedTitles, setWatchedTitles] = useState([]);
+
+
 const normalizeMovie = (movie) => {
   if (typeof movie.genres === "string") {
     movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
@@ -468,54 +473,48 @@ useEffect(() => {
       const seenIds = new Set();
       const promises = [];
 
-      // Liked section
       if (liked >= 5) {
         promises.push(
-          axios.post(`${API}/api/movies/als-liked`, {
-            userId,
-            excludeIds: [],
-          }).then((res) => {
-            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
-            const normalized = filtered.map(normalizeMovie);
-            setLikedMovies(normalized);
-            normalized.forEach((m) => seenIds.add(String(m.movieId)));
-          })
+          axios.post(`${API}/api/movies/als-liked`, { userId, excludeIds: [] })
+            .then(res => {
+              const movies = res.data.filter(m => !seenIds.has(String(m.movieId)));
+              const normalized = movies.map(normalizeMovie);
+              setLikedMovies(normalized);
+              normalized.forEach(m => seenIds.add(String(m.movieId)));
+            })
+            .catch(err => console.error("❌ ALS liked error:", err.message))
         );
       }
 
-      // Saved section
       if (saved >= 5) {
         promises.push(
-          axios.post(`${API}/api/movies/als-saved`, {
-            userId,
-            excludeIds: Array.from(seenIds),
-          }).then((res) => {
-            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
-            const normalized = filtered.map(normalizeMovie);
-            setSavedMovies(normalized);
-            normalized.forEach((m) => seenIds.add(String(m.movieId)));
-          })
+          axios.post(`${API}/api/movies/als-saved`, { userId, excludeIds: Array.from(seenIds) })
+            .then(res => {
+              const movies = res.data.filter(m => !seenIds.has(String(m.movieId)));
+              const normalized = movies.map(normalizeMovie);
+              setSavedMovies(normalized);
+              normalized.forEach(m => seenIds.add(String(m.movieId)));
+            })
+            .catch(err => console.error("❌ ALS saved error:", err.message))
         );
       }
 
-      //  Watched section
       if (watched >= 5) {
         promises.push(
-          axios.post(`${API}/api/movies/als-watched`, {
-            userId,
-            excludeIds: Array.from(seenIds),
-          }).then((res) => {
-            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
-            const normalized = filtered.map(normalizeMovie);
-            setWatchedMovies(normalized);
-            normalized.forEach((m) => seenIds.add(String(m.movieId)));
-          })
+          axios.post(`${API}/api/movies/als-watched`, { userId, excludeIds: Array.from(seenIds) })
+            .then(res => {
+              const movies = res.data.filter(m => !seenIds.has(String(m.movieId)));
+              const normalized = movies.map(normalizeMovie);
+              setWatchedMovies(normalized);
+              normalized.forEach(m => seenIds.add(String(m.movieId)));
+            })
+            .catch(err => console.error("❌ ALS watched error:", err.message))
         );
       }
 
       await Promise.all(promises);
     } catch (err) {
-      console.error("❌ ALS fetch error:", err);
+      console.error("❌ Failed to load interaction counts:", err.message);
     }
   };
 
@@ -526,72 +525,125 @@ useEffect(() => {
 }, []);
 
 
+useEffect(() => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!savedUser?.userId) return;
+
+  const fetchInteractionTitles = async () => {
+    try {
+      const [likedRes, savedRes, watchedRes] = await Promise.all([
+        axios.get(`${API}/api/movies/likedMovies/${savedUser.userId}`),
+        axios.get(`${API}/api/movies/watchLater/${savedUser.userId}`),
+        axios.get(`${API}/api/movies/historyMovies/${savedUser.userId}`),
+      ]);
+
+      setLikedTitles(likedRes.data.likedMovies?.slice(0, 2).map(m => m.title) || []);
+      setSavedTitles(savedRes.data.SaveMovies?.slice(0, 2).map(m => m.title) || []);
+      setWatchedTitles(watchedRes.data.historyMovies?.slice(0, 2).map(m => m.title) || []);
+    } catch (err) {
+      console.error("❌ Error fetching interaction titles:", err);
+    }
+  };
+
+  fetchInteractionTitles();
+}, []);
+
+
+
 
   return (
           
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
         <div className="max-w-6xl mx-auto">
-           {/*  top rated movies */}
+          {/*  top rated movies */}
           {topLikedMovies.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-2 px-4">🔥 Most Liked Movies</h2>
-            <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
-              {topLikedMovies.map((movie) => (
-                <div key={movie._id} className="inline-block w-48 mr-4">
-                  <MovieCard
-                    movie={movie}
-                    onClick={() => setSelectedMovie(movie)}
-                  />
+            <div className="mb-10">
+              <h2 className="text-xl font-semibold text-white mb-2 px-4">🔥 Most Liked Movies</h2>
+              <div className="overflow-x-auto py-2">
+                <div className="flex gap-50 px-23 pr-30">
+                  {topLikedMovies.map((movie) => (
+                    <div key={movie._id} className="w-48 flex-shrink-0">
+                      <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
             {/* ALS-based sections only if user has ≥ 5 interactions */}
             {/*  Because you like */}
             {interactionCounts.liked >= 5 && likedMovies.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you like</h2>
-                <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
-                  {likedMovies.map((movie) => (
-                    <div key={movie._id} className="inline-block w-48 mr-4">
-                      <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
-                    </div>
+              <div className="mb-10">
+                <h2 className="text-xl font-semibold text-white mb-2 px-4">
+                  Because you like{" "}
+                  {likedTitles.map((title, idx) => (
+                    <span key={idx} className="italic text-purple-300">
+                      {title}{idx === 0 && likedTitles.length > 1 ? ", " : ""}
+                    </span>
                   ))}
+                </h2>
+                <div className="overflow-x-auto py-2">
+                  <div className="flex gap-50 px-23 pr-30">
+                    {likedMovies.map((movie) => (
+                      <div key={movie._id} className="w-48 flex-shrink-0">
+                        <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
             {/*  Because you save */}
             {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you save</h2>
-                <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
-                  {savedMovies.map((movie) => (
-                    <div key={movie._id} className="inline-block w-48 mr-4">
-                      <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
-                    </div>
+              <div className="mb-10">
+                <h2 className="text-xl font-semibold text-white mb-2 px-4">
+                  Because you save{" "}
+                  {savedTitles.map((title, idx) => (
+                    <span key={idx} className="italic text-green-300">
+                      {title}{idx === 0 && savedTitles.length > 1 ? ", " : ""}
+                    </span>
                   ))}
+                </h2>
+                <div className="overflow-x-auto py-2">
+                  <div className="flex gap-50 px-23 pr-30">
+                    {savedMovies.map((movie) => (
+                      <div key={movie._id} className="w-48 flex-shrink-0">
+                        <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
+
             {/*  Because you watch */}
             {interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-white mb-2 px-4">Because you watch</h2>
-                <div className="overflow-x-auto whitespace-nowrap px-4 py-2">
-                  {watchedMovies.map((movie) => (
-                    <div key={movie._id} className="inline-block w-48 mr-4">
-                      <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
-                    </div>
+              <div className="mb-10">
+                <h2 className="text-xl font-semibold text-white mb-2 px-4">
+                  Because you watch{" "}
+                  {watchedTitles.map((title, idx) => (
+                    <span key={idx} className="italic text-orange-300">
+                      {title}{idx === 0 && watchedTitles.length > 1 ? ", " : ""}
+                    </span>
                   ))}
+                </h2>
+                <div className="overflow-x-auto py-2">
+                  <div className="flex gap-50 px-23 pr-30">
+                    {watchedMovies.map((movie) => (
+                      <div key={movie._id} className="w-48 flex-shrink-0">
+                        <MovieCard movie={movie} onClick={() => setSelectedMovie(movie)} />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            )}  
+            )}
 
-      {/* Add this modal AFTER the movie sections, but BEFORE the closing tags */}
+
+      {/* Dialog for the because section */}
           <Dialog
           open={!!selectedMovie}
           onClose={() => setSelectedMovie(null)}
@@ -869,7 +921,7 @@ useEffect(() => {
     );
   }
 
-  //added
+  //for the because section 
 function MovieCard({ movie, onClick }) {
   return (
     <div
@@ -909,10 +961,6 @@ function MovieCard({ movie, onClick }) {
     </div>
   );
 }
-
-
-
-
 
 
   
