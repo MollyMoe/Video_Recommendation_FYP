@@ -93,6 +93,71 @@ function StUserProfile({ userProfile }) {
     };
   }, []);
 
+
+  const handleSignOut = async () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user?.userId || user?._id;
+  
+    if (userId) {
+      try {
+        const now = new Date().toISOString();
+  
+        const res = await fetch(`${API}/api/auth/updateSignoutTime`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId,
+            time: now,
+            reason: "manual-signout",
+          }),
+        });
+  
+        if (res.ok) {
+          console.log("✅ Signout synced to backend");
+        } else {
+          console.warn("⚠️ Signout API failed:", await res.text());
+        }
+      } catch (err) {
+        console.error("❌ Signout error:", err);
+      }
+    }
+  
+    // Clear local + electron session
+    localStorage.removeItem("user");
+    localStorage.removeItem("streamer_profileImage");
+    window.electron?.saveSession({}); // clears offline session file
+  
+    // Redirect
+    window.location.href = "/signin";
+  };
+  
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const userId = user?.userId || user?._id;
+    const userType = user?.userType || "streamer";
+  
+    const handleBeforeUnload = () => {
+      if (userId) {
+        navigator.sendBeacon(
+          `${API}/api/auth/updateSignoutTime`,
+          new Blob(
+            [JSON.stringify({
+              userId,
+              time: new Date().toISOString(),
+              reason: "closed_browser"
+            })],
+            { type: "application/json" }
+          )
+        );
+      }
+    };
+  
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+  
+
   return (
     // User Profile
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -138,13 +203,20 @@ function StUserProfile({ userProfile }) {
               )}
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
-            <li>
+            {/* <li>
               <Link
                 to="/signin"
                 className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 <FaSignOutAlt className="mr-2" /> Sign Out
               </Link>
+            </li> */}
+
+            <li
+              onClick={handleSignOut}
+              className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <FaSignOutAlt className="mr-2" /> Sign Out
             </li>
           </ul>
         </div>

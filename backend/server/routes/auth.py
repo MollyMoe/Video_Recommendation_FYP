@@ -13,6 +13,7 @@ from pathlib import Path
 from fastapi.responses import JSONResponse
 from pymongo import ReturnDocument
 from urllib.parse import quote
+from datetime import datetime
 
 # Define the path to your .env file first
 root_dir = Path(__file__).resolve().parents[2] 
@@ -225,5 +226,34 @@ def get_user_by_id(request: Request, userType: str, userId: str):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+
+@router.post("/updateSignoutTime")
+def update_signout_time(request: Request, body: dict):
+    db = request.app.state.user_db
+    user_id = body.get("userId")
+    reason = body.get("reason", "unknown")
+    time_str = body.get("time")  # expecting ISO string
+
+    if not user_id or not time_str:
+        raise HTTPException(status_code=400, detail="Missing userId or time")
+
+    for collection_name in ["streamer", "admin"]:
+        collection = db[collection_name]
+        user = collection.find_one({"userId": user_id})
+        if user:
+            collection.update_one(
+                {"userId": user_id},
+                {
+                    "$set": {
+                        "lastSignoutTime": time_str,
+                        "lastSignoutReason": reason
+                    }
+                }
+            )
+            return {"message": "Sign-out time recorded", "userType": collection_name}
+
+    raise HTTPException(status_code=404, detail="User not found")
 
 
