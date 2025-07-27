@@ -6,6 +6,8 @@ import AdSideButtons from "../components/admin_components/AdSideButtons";
 const tabs = [
   { label: "All Movies", path: "/admin/video/videoHomePage" },
   { label: "Top Liked", path: "/admin/video/manage" },
+  { label: "Genres", path: "/admin/video/genre" },
+
   { label: "Recently Added", path: "/admin" },
 ];
 

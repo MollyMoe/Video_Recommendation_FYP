@@ -538,3 +538,43 @@ async def get_top_liked_movies(request: Request):
     except Exception as e:
         print("❌ Backend Error:", e)
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/all-genres")
+async def get_all_genres(request: Request):
+    db = request.app.state.movie_db
+    try:
+        all_movies = db["hybridRecommendation2"].find({}, {"genres": 1, "_id": 0})
+        genre_set = set()
+        for movie in all_movies:
+            if isinstance(movie.get("genres"), str):
+                genre_set.update(g.strip() for g in movie["genres"].split("|"))
+
+        return sorted(list(genre_set))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to load genres")
+
+
+
+@router.get("/byGenres")
+async def get_movies_by_genres(genres: str, request: Request):
+    db = request.app.state.movie_db
+    collection = db["hybridRecommendation2"]
+    
+    genre_list = [g.strip() for g in genres.split(",")]
+
+    try:
+
+        result = list(collection.find({
+            "$or": [
+                {"genres": {"$regex": genre, "$options": "i"}} for genre in genre_list
+            ]
+        }).limit(100))  # ✅ Add limit here
+
+        # Remove MongoDB _id field for frontend
+        for movie in result:
+            movie.pop("_id", None)
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching movies by genres: {str(e)}")

@@ -15,7 +15,9 @@ import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
 import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
 import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
-import AdVideoManagePage from "./pages/adminPages/AdVideoManagePage";
+import AdVideoManageTopLikePage from "./pages/adminPages/AdVideoManageTopLikePage";
+import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
+
 
 
 import AdUserDetails from "./components/admin_components/AdUserDetails";
@@ -70,7 +72,10 @@ function App() {
             <Route path="video" element={<AdVideoManageLayout />}>
               <Route index element={<Navigate to="videoHomePage" replace />} />
               <Route path="videoHomePage" element={<AdVideoHomePage />} />
-              <Route path="manage" element={<AdVideoManagePage />} />
+              <Route path="manage" element={<AdVideoManageTopLikePage />} />
+              <Route path="genre" element={<AdVideoManageGenrePage />} />
+
+
             </Route>
           </Route>
         </Routes>
