@@ -351,87 +351,21 @@ const handleWatchLater = async (movieId) => {
   //top rated movies 
   const [topLikedMovies, setTopLikedMovies] = useState([]);
 useEffect(() => {
-  const fetchCountsAndRecommendations = async (userId) => {
-    try {
-      const res = await axios.get(`${API}/api/movies/counts/${userId}`);
-      const { liked, saved, watched } = res.data;
-      setInteractionCounts({ liked, saved, watched });
-
-      const seenIds = new Set();
-      const promises = [];
-
-      // Fetch top-liked movies (not user-specific)
-      axios.get(`${API}/api/movies/top-liked`)
-        .then((res) => {
-          const topLiked = res.data
-            .map(m => normalizeMovie(m.details))
-            .filter(m => !!m); // Remove nulls
-          setTopLikedMovies(topLiked);
-        })
-        .catch(err => {
-          console.error("❌ Failed to fetch top liked:", err);
-        });
-
-      // Continue with liked/save/watch logic as before...
-      // 🟣 Liked
-      if (liked >= 5) {
-        promises.push(
-          axios.post(`${API}/api/movies/als-liked`, {
-            userId,
-            excludeIds: [],
-          }).then((res) => {
-            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
-            const normalized = filtered.map(normalizeMovie);
-            setLikedMovies(normalized);
-            normalized.forEach((m) => seenIds.add(String(m.movieId)));
-          })
-        );
-      }
-
-      // 🟢 Saved
-      if (saved >= 5) {
-        promises.push(
-          axios.post(`${API}/api/movies/als-saved`, {
-            userId,
-            excludeIds: Array.from(seenIds),
-          }).then((res) => {
-            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
-            const normalized = filtered.map(normalizeMovie);
-            setSavedMovies(normalized);
-            normalized.forEach((m) => seenIds.add(String(m.movieId)));
-          })
-        );
-      }
-
-      //  Watched
-      if (watched >= 5) {
-        promises.push(
-          axios.post(`${API}/api/movies/als-watched`, {
-            userId,
-            excludeIds: Array.from(seenIds),
-          }).then((res) => {
-            const filtered = res.data.filter(m => !seenIds.has(String(m.movieId)));
-            const normalized = filtered.map(normalizeMovie);
-            setWatchedMovies(normalized);
-            normalized.forEach((m) => seenIds.add(String(m.movieId)));
-          })
-        );
-      }
-
-      await Promise.all(promises);
-    } catch (err) {
-      console.error("❌ ALS fetch error:", err);
-    }
-  };
-
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-  if (savedUser?.userId) {
-    fetchCountsAndRecommendations(savedUser.userId);
-  }
+  axios
+    .get(`${API}/api/movies/top-liked`)
+    .then((res) => {
+      const topLiked = res.data
+        .map(m => normalizeMovie(m.details))
+        .filter(m => !!m); // Remove nulls
+      setTopLikedMovies(topLiked);
+    })
+    .catch((err) => {
+      console.error("❌ Failed to fetch top liked:", err);
+    });
 }, []);
 
 
-  //for because you like/save/watch
+//for because you like/save/watch
 // ALS-based "Because you like/save/watch" section
 const [likedMovies, setLikedMovies] = useState([]);
 const [savedMovies, setSavedMovies] = useState([]);
@@ -464,65 +398,102 @@ const normalizeMovie = (movie) => {
 
 
 useEffect(() => {
-  const fetchCountsAndRecommendations = async (userId) => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!savedUser?.userId) return;
+
+  const cacheKey = `alsResults_${savedUser.userId}`;
+  const cached = JSON.parse(localStorage.getItem(cacheKey));
+  const oneDay = 24 * 60 * 60 * 1000;
+
+
+  if (cached && Date.now() - cached.timestamp < oneDay) {
+    setLikedMovies(cached.liked || []);
+    setSavedMovies(cached.saved || []);
+    setWatchedMovies(cached.watched || []);
+    setInteractionCounts(cached.counts || {});
+    return;
+  }
+
+  const fetchCountsAndRecommendations = async () => {
     try {
-      const res = await axios.get(`${API}/api/movies/counts/${userId}`);
+      const res = await axios.get(`${API}/api/movies/counts/${savedUser.userId}`);
       const { liked, saved, watched } = res.data;
       setInteractionCounts({ liked, saved, watched });
 
       const seenIds = new Set();
       const promises = [];
 
+      const result = { liked: [], saved: [], watched: [] };
+
       if (liked >= 5) {
         promises.push(
-          axios.post(`${API}/api/movies/als-liked`, { userId, excludeIds: [] })
-            .then(res => {
-              const movies = res.data.filter(m => !seenIds.has(String(m.movieId)));
-              const normalized = movies.map(normalizeMovie);
-              setLikedMovies(normalized);
-              normalized.forEach(m => seenIds.add(String(m.movieId)));
-            })
-            .catch(err => console.error("❌ ALS liked error:", err.message))
+          axios.post(`${API}/api/movies/als-liked`, {
+            userId: savedUser.userId,
+            excludeIds: [],
+          }).then((res) => {
+            const normalized = res.data
+              .filter((m) => !seenIds.has(String(m.movieId)))
+              .map(normalizeMovie);
+            setLikedMovies(normalized);
+            result.liked = normalized;
+            normalized.forEach((m) => seenIds.add(String(m.movieId)));
+          })
         );
       }
 
       if (saved >= 5) {
         promises.push(
-          axios.post(`${API}/api/movies/als-saved`, { userId, excludeIds: Array.from(seenIds) })
-            .then(res => {
-              const movies = res.data.filter(m => !seenIds.has(String(m.movieId)));
-              const normalized = movies.map(normalizeMovie);
-              setSavedMovies(normalized);
-              normalized.forEach(m => seenIds.add(String(m.movieId)));
-            })
-            .catch(err => console.error("❌ ALS saved error:", err.message))
+          axios.post(`${API}/api/movies/als-saved`, {
+            userId: savedUser.userId,
+            excludeIds: Array.from(seenIds),
+          }).then((res) => {
+            const normalized = res.data
+              .filter((m) => !seenIds.has(String(m.movieId)))
+              .map(normalizeMovie);
+            setSavedMovies(normalized);
+            result.saved = normalized;
+            normalized.forEach((m) => seenIds.add(String(m.movieId)));
+          })
         );
       }
 
       if (watched >= 5) {
         promises.push(
-          axios.post(`${API}/api/movies/als-watched`, { userId, excludeIds: Array.from(seenIds) })
-            .then(res => {
-              const movies = res.data.filter(m => !seenIds.has(String(m.movieId)));
-              const normalized = movies.map(normalizeMovie);
-              setWatchedMovies(normalized);
-              normalized.forEach(m => seenIds.add(String(m.movieId)));
-            })
-            .catch(err => console.error("❌ ALS watched error:", err.message))
+          axios.post(`${API}/api/movies/als-watched`, {
+            userId: savedUser.userId,
+            excludeIds: Array.from(seenIds),
+          }).then((res) => {
+            const normalized = res.data
+              .filter((m) => !seenIds.has(String(m.movieId)))
+              .map(normalizeMovie);
+            setWatchedMovies(normalized);
+            result.watched = normalized;
+            normalized.forEach((m) => seenIds.add(String(m.movieId)));
+          })
         );
       }
 
       await Promise.all(promises);
+
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          liked: result.liked,
+          saved: result.saved,
+          watched: result.watched,
+          counts: { liked, saved, watched },
+          timestamp: Date.now(),
+        })
+      );
     } catch (err) {
       console.error("❌ Failed to load interaction counts:", err.message);
     }
   };
 
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-  if (savedUser?.userId) {
-    fetchCountsAndRecommendations(savedUser.userId);
-  }
+  fetchCountsAndRecommendations(); // ✅ only called if cache is missing/expired
 }, []);
+
+
 
 
 useEffect(() => {
