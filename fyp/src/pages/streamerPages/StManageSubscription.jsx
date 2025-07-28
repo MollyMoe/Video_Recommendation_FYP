@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import StPlans from "../../components/streamer_components/StPlans";
 import StBillingForm from "../../components/streamer_components/StBillingForm";
 import { FaChevronRight } from "react-icons/fa";
+import { API } from "@/config/api";
 
-const API = import.meta.env.VITE_API_BASE_URL;
 
 const StManageSubscriptionPage = () => {
   const [subscription, setSubscription] = useState(null);

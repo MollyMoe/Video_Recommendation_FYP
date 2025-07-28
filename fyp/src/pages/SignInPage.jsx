@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
+
 
 function SignInPage() {
   const navigate = useNavigate();

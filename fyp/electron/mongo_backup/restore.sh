@@ -1,0 +1,42 @@
+#!/bin/bash
+echo "🟢 Starting MongoDB restore to local..."
+
+# Set your backup directory (adjust if needed)
+BACKUP_DIR="$HOME/Desktop/mongo_backup"
+
+# Users DB restore
+echo "🔄 Restoring users.streamer..."
+mongorestore --drop --db=users --collection=streamer "$BACKUP_DIR/users/streamer.bson"
+
+echo "🔄 Restoring users.admin..."
+mongorestore --drop --db=users --collection=admin "$BACKUP_DIR/users/admin.bson"
+
+echo "🔄 Restoring users.billing..."
+mongorestore --drop --db=users --collection=billing "$BACKUP_DIR/users/billing.bson"
+
+echo "🔄 Restoring users.counters..."
+mongorestore --drop --db=users --collection=counters "$BACKUP_DIR/users/counters.bson"
+
+# NewMovieDatabase restore
+echo "🔄 Restoring NewMovieDatabase.liked..."
+mongorestore --drop --db=NewMovieDatabase --collection=liked "$BACKUP_DIR/NewMovieDatabase/liked.bson"
+
+echo "🔄 Restoring NewMovieDatabase.saved..."
+mongorestore --drop --db=NewMovieDatabase --collection=saved "$BACKUP_DIR/NewMovieDatabase/saved.bson"
+
+echo "🔄 Restoring NewMovieDatabase.history..."
+mongorestore --drop --db=NewMovieDatabase --collection=history "$BACKUP_DIR/NewMovieDatabase/history.bson"
+
+echo "🔄 Restoring NewMovieDatabase.hybridRecommendation2..."
+mongorestore --drop --db=NewMovieDatabase --collection=hybridRecommendation2 "$BACKUP_DIR/NewMovieDatabase/hybridRecommendation2.bson"
+
+echo "🔄 Restoring NewMovieDatabase.recommended..."
+mongorestore --drop --db=NewMovieDatabase --collection=recommended "$BACKUP_DIR/NewMovieDatabase/recommended.bson"
+
+echo "🔄 Restoring NewMovieDatabase.alsRecommendations..."
+mongorestore --drop --db=NewMovieDatabase --collection=alsRecommendations "$BACKUP_DIR/NewMovieDatabase/alsRecommendations.bson"
+
+echo "🔄 Restoring NewMovieDatabase.added..."
+mongorestore --drop --db=NewMovieDatabase --collection=added "$BACKUP_DIR/NewMovieDatabase/added.bson"
+
+echo "✅ Full restore completed!"

@@ -2,8 +2,7 @@ import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const StFilterContent = ({searchQuery}) => {
   const [query, setQuery] = useState("");

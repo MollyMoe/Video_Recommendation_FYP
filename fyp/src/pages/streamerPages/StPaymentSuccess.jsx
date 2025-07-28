@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const StPaymentSuccess = () => {
   const [isProcessing, setIsProcessing] = useState(true);

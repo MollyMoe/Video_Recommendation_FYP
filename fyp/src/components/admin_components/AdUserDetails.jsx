@@ -2,8 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import AdUserTable from "./AdUserTable";
+import { API } from "@/config/api";
 
-const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserDetails = () => {
   const SideButton = ({ to, label, current, children }) => {

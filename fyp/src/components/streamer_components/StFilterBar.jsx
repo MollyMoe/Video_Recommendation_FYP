@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
+
 const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userId = savedUser?.userId || "default";

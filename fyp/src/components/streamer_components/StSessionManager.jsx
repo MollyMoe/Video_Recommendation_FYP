@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API } from "@/config/api";
 
-const API = import.meta.env.VITE_API_BASE_URL;
 
 const StSessionManager = () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));

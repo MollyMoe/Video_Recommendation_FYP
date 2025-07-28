@@ -3,8 +3,8 @@ import axios from "axios";
 import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 import { debounce } from "lodash";
+import { API } from "@/config/api";
 
-const API = import.meta.env.VITE_API_BASE_URL;
 
 function StHomeContent({ userId, searchQuery }) {
   const [movies, setMovies] = useState([]);

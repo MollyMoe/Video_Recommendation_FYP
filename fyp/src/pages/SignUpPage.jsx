@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { API } from "@/config/api";
 
-const API = import.meta.env.VITE_API_BASE_URL;
 console.log("API =", API); 
 const defaultImage = `${API}/uploads/profile.jpg`;
 

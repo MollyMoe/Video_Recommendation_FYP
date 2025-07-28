@@ -5,8 +5,7 @@ import StNav from "../components/streamer_components/StNav";
 import StSideBar from "../components/streamer_components/StSideBar";
 import StSessionManager from "../components/streamer_components/StSessionManager";
 import axios from "axios";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const StreamerLayout = () => {
   useEffect(() => {
