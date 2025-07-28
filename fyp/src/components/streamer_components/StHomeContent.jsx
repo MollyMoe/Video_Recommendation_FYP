@@ -575,14 +575,15 @@ useEffect(() => {
             {/*  Because you like */}
             {interactionCounts.liked >= 5 && likedMovies.length > 0 && (
               <div className="mb-10">
-                <h2 className="text-xl font-semibold text-white mb-2 px-4">
-                  Because you like{" "}
-                  {likedTitles.map((title, idx) => (
-                    <span key={idx} className="italic text-purple-300">
-                      {title}{idx === 0 && likedTitles.length > 1 ? ", " : ""}
-                    </span>
-                  ))}
-                </h2>
+              <h2 className="text-xl font-semibold text-white mb-2 px-4">
+                Because you like{" "}
+                {likedTitles.slice(0, 2).map((title, idx) => (
+                  <span key={idx} className="italic text-purple-300">
+                    {title}
+                    {idx === 0 && likedTitles.length > 1 ? ", " : ""}
+                  </span>
+                ))}
+              </h2>
                 <div className="overflow-x-auto py-2">
                   <div className="flex gap-50 px-23 pr-30">
                     {likedMovies.map((movie) => (
@@ -598,14 +599,15 @@ useEffect(() => {
             {/*  Because you save */}
             {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
               <div className="mb-10">
-                <h2 className="text-xl font-semibold text-white mb-2 px-4">
-                  Because you save{" "}
-                  {savedTitles.map((title, idx) => (
-                    <span key={idx} className="italic text-green-300">
-                      {title}{idx === 0 && savedTitles.length > 1 ? ", " : ""}
-                    </span>
-                  ))}
-                </h2>
+              <h2 className="text-xl font-semibold text-white mb-2 px-4">
+                Because you save{" "}
+                {savedTitles.slice(0, 2).map((title, idx) => (
+                  <span key={idx} className="italic text-green-300">
+                    {title}
+                    {idx === 0 && savedTitles.length > 1 ? ", " : ""}
+                  </span>
+                ))}
+              </h2>
                 <div className="overflow-x-auto py-2">
                   <div className="flex gap-50 px-23 pr-30">
                     {savedMovies.map((movie) => (
@@ -622,14 +624,15 @@ useEffect(() => {
             {/*  Because you watch */}
             {interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
               <div className="mb-10">
-                <h2 className="text-xl font-semibold text-white mb-2 px-4">
-                  Because you watch{" "}
-                  {watchedTitles.map((title, idx) => (
-                    <span key={idx} className="italic text-orange-300">
-                      {title}{idx === 0 && watchedTitles.length > 1 ? ", " : ""}
-                    </span>
-                  ))}
-                </h2>
+              <h2 className="text-xl font-semibold text-white mb-2 px-4">
+                Because you watch{" "}
+                {watchedTitles.slice(0, 2).map((title, idx) => (
+                  <span key={idx} className="italic text-orange-300">
+                    {title}
+                    {idx === 0 && watchedTitles.length > 1 ? ", " : ""}
+                  </span>
+                ))}
+              </h2>
                 <div className="overflow-x-auto py-2">
                   <div className="flex gap-50 px-23 pr-30">
                     {watchedMovies.map((movie) => (
