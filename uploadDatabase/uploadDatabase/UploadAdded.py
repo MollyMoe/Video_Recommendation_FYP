@@ -14,7 +14,7 @@ if not MONGO_URI:
     raise ValueError("MONGO_URI not found. Please check your .env file.")
 
 # CSV file path for Added1.csv
-csv_path = r"C:\Users\ufair\OneDrive\Desktop\venv\Added3.csv"
+csv_path = r"C:\Users\ufair\OneDrive\Desktop\venv\Added1.csv"
 
 # Load CSV into DataFrame
 df = pd.read_csv(csv_path)

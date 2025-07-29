@@ -128,18 +128,18 @@ function StHomeContent({ userId, searchQuery }) {
   //   fetchUserAndMovies();
   // }, [username]);
 
-  useEffect(() => {
+useEffect(() => {
   const fetchUserAndMovies = async () => {
     if (!savedUser?.userId || !username) return;
     setIsLoading(true);
 
     try {
-      // ✅ Get genres
+      // ✅ Fetch user preferred genres
       const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
       const userGenres = userRes.data.genres || [];
       setPreferredGenres(userGenres);
 
-      // ✅ Get stored recommendations
+      // ✅ Fetch stored recommendations
       const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
       const recommended = recRes.data
         .filter(movie =>
@@ -165,7 +165,7 @@ function StHomeContent({ userId, searchQuery }) {
       setMovies(top99);
       setLastRecommendedMovies(top99);
 
-      // ✅ Manage shownTitles
+      // ✅ Set shown titles
       const stored = localStorage.getItem(`shownTitles_${savedUser.userId}`);
       const initialTitles = new Set(top99.map(m => m.title));
       if (stored) {
@@ -186,8 +186,15 @@ function StHomeContent({ userId, searchQuery }) {
     }
   };
 
+  // ✅ Reset flag after genre change
+  if (localStorage.getItem("refreshAfterSettings") === "true") {
+    localStorage.removeItem("refreshAfterSettings");
+  }
+
   fetchUserAndMovies();
 }, [username, savedUser?.userId]);
+
+
 
 
 
