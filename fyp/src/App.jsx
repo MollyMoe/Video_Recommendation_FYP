@@ -9,7 +9,6 @@ import Signup from "./pages/SignUpPage";
 import StSettingPage from "./pages/streamerPages/StSettingPage";
 import StreamerLayout from "./layouts/StreamerLayout";
 import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
-import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
 import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
 import AdUserDetails from "./components/admin_components/AdUserDetails";
@@ -26,6 +25,11 @@ import AdUserFeedback from "./components/admin_components/AdUserFeedback";
 import AdUserLikedMovies from "./components/admin_components/AdUserLikedMovies";
 import AdUserHistory from "./components/admin_components/AdUserHistory";
 import AdUserWatchLater from "./components/admin_components/AdUserWatchLater";
+import AdVideoManageLayout from "./layouts/AdVideoManageLayout";
+import AdVideoManagePage from "./pages/adminPages/AdVideoManagePage";
+import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAddedMovies";
+import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
+import { Navigate } from "react-router-dom";
 
 function App() {
 
@@ -58,7 +62,6 @@ function App() {
           {/* Admin Layout */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdDashboardPage />} />
-            <Route path="videoHomePage" element={<AdVideoHomePage />} />
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
             <Route path="view/:id" element={<AdUserDetails />} />
@@ -66,6 +69,16 @@ function App() {
             <Route path="view/:id/like" element={<AdUserLikedMovies />} />
             <Route path="view/:id/history" element={<AdUserHistory />} />
             <Route path="view/:id/watchLater" element={<AdUserWatchLater />} />
+
+              {/* Video Manage Layout */}
+              <Route path="video" element={<AdVideoManageLayout />}>
+                <Route index element={<Navigate to="videohomepage" replace />} />
+                <Route path="videohomepage" element={<AdVideoHomePage />} />
+                <Route path="manage" element={<AdVideoManagePage />} />
+                <Route path="recently-added" element={<AdRecentlyAddedMovies />} />
+              </Route>
+              {/* User Details Layout */}
+
           </Route>
         </Routes>
       </HashRouter>

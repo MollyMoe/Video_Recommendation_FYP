@@ -24,7 +24,7 @@ const AdUserFeedback = () => {
         }
 
         const data = await res.json();
-        // Initialize is_not_solved and is_solved for existing feedback items
+
         const initializedData = data.map(item => ({
           ...item,
          is_not_solved: item.is_not_solved ?? false,
@@ -43,7 +43,6 @@ const AdUserFeedback = () => {
     fetchFeedback();
   }, []);
 
-  // Function to format timestamp for display
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "N/A";
     try {
@@ -54,11 +53,10 @@ const AdUserFeedback = () => {
     }
   };
 
-  // Function to handle file download using the dedicated backend endpoint
   const handleDownload = (feedbackId, fileName) => {
     if (!feedbackId || !fileName) {
       console.warn("Cannot download: Missing feedback ID or file name.");
-      alert("Cannot download: Missing feedback ID or file name."); // Consider a custom modal/toast
+      alert("Cannot download: Missing feedback ID or file name."); 
       return;
     }
     const attachmentUrl = `${API}/api/feedback/${feedbackId}/attachment`;
@@ -70,16 +68,13 @@ const AdUserFeedback = () => {
     document.body.removeChild(link);
   };
 
-  // New function to handle checkbox changes and update feedback status
   const handleStatusChange = async (feedbackId, changedField, newValue) => {
-    // Optimistic UI update: Update the state immediately for a smoother user experience
     setFeedbackList(prevList =>
       prevList.map(item => {
         if (item._id === feedbackId) {
           const updatedItem = { ...item };
-          updatedItem[changedField] = newValue; // Set the changed field's new value
+          updatedItem[changedField] = newValue; 
 
-          // Implement mutual exclusivity
           if (changedField === 'is_not_solved' && newValue === true) {
             updatedItem.is_solved = false; // If Not Solved is checked, uncheck Solved
           } else if (changedField === 'is_solved' && newValue === true) {
@@ -94,7 +89,6 @@ const AdUserFeedback = () => {
     );
 
     try {
-      // Prepare the payload for the PATCH request
       const payload = {};
       if (changedField === 'is_not_solved') {
         payload.is_not_solved = newValue;
@@ -109,7 +103,7 @@ const AdUserFeedback = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload), // Send both fields if one affects the other
+        body: JSON.stringify(payload), 
       });
 
       if (!res.ok) {
@@ -117,24 +111,15 @@ const AdUserFeedback = () => {
         throw new Error(errorData.detail || `Failed to update feedback status: ${res.status}`);
       }
 
-      // Backend should return the updated item, so we can sync
-      // If the backend returns the full updated item, you can replace the optimistic update
-      // const updatedItemFromServer = await res.json();
-      // setFeedbackList(prevList =>
-      //   prevList.map(item =>
-      //     item._id === feedbackId ? { ...item, ...updatedItemFromServer } : item
-      //   )
-      // );
 
     } catch (err) {
       console.error("Error updating feedback status:", err);
-      // Revert the UI if the update failed
       setFeedbackList(prevList =>
         prevList.map(item =>
-          item._id === feedbackId ? { ...item, [changedField]: !newValue } : item // Revert only the changed field
+          item._id === feedbackId ? { ...item, [changedField]: !newValue } : item 
         )
       );
-      alert(`Failed to update status: ${err.message}`); // Inform user about the failure
+      alert(`Failed to update status: ${err.message}`); 
     }
   };
 
@@ -145,14 +130,25 @@ const AdUserFeedback = () => {
   );
 
   const sortedFeedbackList = [...filteredFeedbackList].sort((a, b) => {
-    // Sort by is_not_solved (true first)
-    if (a.is_not_solved !== b.is_not_solved) {
-      return b.is_not_solved - a.is_not_solved;
+    const aIsNew = !a.is_not_solved && !a.is_solved;
+    const bIsNew = !b.is_not_solved && !b.is_solved;
+
+    if (aIsNew && !bIsNew) {
+      return -1; 
     }
-    // Then by timestamp (oldest first)
+    if (!aIsNew && bIsNew) {
+      return 1; 
+    }
+
+    if (a.is_not_solved !== b.is_not_solved) {
+      return b.is_not_solved - a.is_not_solved; 
+    }
+    if (a.is_solved !== b.is_solved) {
+        return a.is_solved - b.is_solved;
+    }
     const timeA = new Date(a.timestamp).getTime();
     const timeB = new Date(b.timestamp).getTime();
-    return timeA - timeB;
+    return timeB - timeA;
   });
 
 
@@ -175,18 +171,14 @@ const AdUserFeedback = () => {
 
   return (
     <>
-      <AdNav /> {/* This should be at the very top of your page content */}
-
-      {/* AdSearch Component positioned at the top like AdUserManagePage */}
+      <AdNav /> 
       <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
         <AdSearch
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          onSearch={setSearchQuery} // Passes the function to update searchQuery
+          onSearch={setSearchQuery} 
         />
       </div>
-
-      {/* Sidebar */}
       <aside
         id="logo-sidebar"
         className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
@@ -204,9 +196,6 @@ const AdUserFeedback = () => {
           </ul>
         </div>
       </aside>
-
-      {/* Main Content */}
-      {/* Added `pt-[80px]` or similar to account for the fixed AdNav and AdSearch bar */}
       <div className="min-h-screen pt-20 pl-60 dark:bg-gray-800">
         <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 shadow-lg rounded-lg p-6 mt-10">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">User Feedback</h1>
