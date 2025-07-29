@@ -134,65 +134,49 @@ useEffect(() => {
     setIsLoading(true);
 
     try {
-      // ✅ Fetch user preferred genres
+      // Fetch user preferred genres from backend
       const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
       const userGenres = userRes.data.genres || [];
       setPreferredGenres(userGenres);
 
-      // ✅ Fetch stored recommendations
-      const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
-      const recommended = recRes.data
-        .filter(movie =>
-          movie.poster_url &&
-          movie.trailer_url &&
-          typeof movie.poster_url === "string" &&
-          typeof movie.trailer_url === "string" &&
-          movie.poster_url.toLowerCase() !== "nan" &&
-          movie.trailer_url.toLowerCase() !== "nan" &&
-          movie.poster_url.trim() !== "" &&
-          movie.trailer_url.trim() !== ""
-        )
-        .map(movie => {
-          if (typeof movie.genres === "string") {
-            movie.genres = movie.genres.split(/[,|]/).map(g => g.trim());
-          }
-          const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-          movie.trailer_key = match ? match[1] : null;
-          return movie;
+      // If we need to refresh due to genre change, regenerate recommendations
+      const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
+      if (refreshNeeded) {
+        // Regenerate movie recommendations
+        const regenRes = await axios.post(`${API}/api/movies/regenerate`, {
+          genres: userGenres,
+          excludeTitles: [], // Optionally exclude previously shown titles
         });
+        const regeneratedMovies = regenRes.data;
+        
+        // Reset refresh flag
+        localStorage.removeItem("refreshAfterSettings");
 
-      const top99 = recommended.slice(0, 99);
-      setMovies(top99);
-      setLastRecommendedMovies(top99);
+        // Update local storage and UI with the new movies
+        setMovies(regeneratedMovies.slice(0, 99));
+        setLastRecommendedMovies(regeneratedMovies.slice(0, 99));
 
-      // ✅ Set shown titles
-      const stored = localStorage.getItem(`shownTitles_${savedUser.userId}`);
-      const initialTitles = new Set(top99.map(m => m.title));
-      if (stored) {
-        const existing = new Set(JSON.parse(stored));
-        const combined = new Set([...existing, ...initialTitles]);
-        setShownTitles(combined);
-        localStorage.setItem(`shownTitles_${savedUser.userId}`, JSON.stringify([...combined]));
+        // Store the updated recommendations
+        await axios.post(`${API}/api/movies/store-recommendations`, {
+          userId: savedUser.userId,
+          movies: regeneratedMovies,
+        });
       } else {
-        setShownTitles(initialTitles);
-        localStorage.setItem(`shownTitles_${savedUser.userId}`, JSON.stringify([...initialTitles]));
+        // Fetch stored recommendations if no genre change
+        const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+        const recommendedMovies = recRes.data;
+        setMovies(recommendedMovies.slice(0, 99));
+        setLastRecommendedMovies(recommendedMovies.slice(0, 99));
       }
-
     } catch (err) {
-      console.error("❌ Error loading movies:", err);
-      setMovies([]);
+      console.error("Error loading or regenerating movies:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ Reset flag after genre change
-  if (localStorage.getItem("refreshAfterSettings") === "true") {
-    localStorage.removeItem("refreshAfterSettings");
-  }
-
   fetchUserAndMovies();
-}, [username, savedUser?.userId]);
+}, [username, savedUser?.userId]); 
 
 
 
