@@ -23,8 +23,9 @@
       "buildResources": "assets"
     },
     "files": [
-      "dist/**/*",
-      "electron/**/*",
+      "dist/*/",
+      "electron/main.js",
+      "electron/preload.cjs",
       "package.json"
     ],
     "extraMetadata": {
@@ -48,6 +49,7 @@
     "lucide-react": "^0.511.0",
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
+    "node-fetch": "^3.3.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-icons": "^5.5.0",

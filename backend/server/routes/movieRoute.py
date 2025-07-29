@@ -327,41 +327,79 @@ async def remove_from_history(request: Request):
     
     
     
+# @router.post("/regenerate")
+# def regenerate_movies(
+#     request: Request,
+#     body: dict = Body(...)
+# ):
+#     db = request.app.state.movie_db
+#     genres: List[str] = body.get("genres", [])
+#     exclude_titles: List[str] = body.get("excludeTitles", [])
+
+#     try:
+#         pipeline = [
+#             {"$match": {
+#                 "genres": {"$in": genres},
+#                 "title": {"$nin": exclude_titles},
+#                 "poster_url": {"$ne": None},
+#                 "trailer_url": {"$ne": None}
+#             }},
+#             {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
+#             {"$replaceRoot": {"newRoot": "$doc"}}
+#         ]
+
+#         movies = list(db.hybridRecommendation2.aggregate(pipeline))
+        
+#         for movie in movies:
+#             movie["_id"] = str(movie["_id"])
+#             for key, value in movie.items():
+#                 if isinstance(value, float) and math.isnan(value):
+#                     movie[key] = None
+
+#         return JSONResponse(content=movies)
+
+#     except Exception as e:
+#         print("❌ Failed to regenerate movies:", e)
+        
+#     raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+
 @router.post("/regenerate")
-def regenerate_movies(
-    request: Request,
-    body: dict = Body(...)
-):
+def regenerate_movies(request: Request, body: dict = Body(...)):
     db = request.app.state.movie_db
-    genres: List[str] = body.get("genres", [])
+    genres: List[str] = [g.lower().strip() for g in body.get("genres", [])]
     exclude_titles: List[str] = body.get("excludeTitles", [])
 
     try:
-        pipeline = [
-            {"$match": {
-                "genres": {"$in": genres},
-                "title": {"$nin": exclude_titles},
-                "poster_url": {"$ne": None},
-                "trailer_url": {"$ne": None}
-            }},
-            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
-            {"$replaceRoot": {"newRoot": "$doc"}}
-        ]
+        movies_cursor = db.hybridRecommendation2.find({
+            "title": {"$nin": exclude_titles},
+            "poster_url": {"$ne": None},
+            "trailer_url": {"$ne": None}
+        })
 
-        movies = list(db.hybridRecommendation2.aggregate(pipeline))
-        
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
-            for key, value in movie.items():
-                if isinstance(value, float) and math.isnan(value):
-                    movie[key] = None
+        matched_movies = []
 
-        return JSONResponse(content=movies)
+        for movie in movies_cursor:
+            raw_genres = movie.get("genres", [])
+            if isinstance(raw_genres, str):
+                movie_genres = [g.strip().lower() for g in raw_genres.split("|") + raw_genres.split(",")]
+            elif isinstance(raw_genres, list):
+                movie_genres = [g.strip().lower() for g in raw_genres]
+            else:
+                continue
+
+            if any(g in movie_genres for g in genres):
+                movie["_id"] = str(movie["_id"])
+                for key, value in movie.items():
+                    if isinstance(value, float) and math.isnan(value):
+                        movie[key] = None
+                matched_movies.append(movie)
+
+        return JSONResponse(content=matched_movies)
 
     except Exception as e:
         print("❌ Failed to regenerate movies:", e)
-        
-    raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+        raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+
 
 # store recommendations in a collection
 @router.post("/store-recommendations")
