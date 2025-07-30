@@ -24,6 +24,8 @@ print("Looking for .env at:", env_path)
 # Optional: print to confirm
 print("EMAIL_USER =", os.getenv("EMAIL_USER"))
 
+
+
 class SignUpRequest(BaseModel):
     fullName: str
     username: str
@@ -220,12 +222,19 @@ def get_by_username(request: Request, username: str):
 @router.get("/users/{userType}/{userId}")
 def get_user_by_id(request: Request, userType: str, userId: str):
     db = request.app.state.user_db
-    collection = db.get_collection(userType)  # either "streamer" or "admin"
+    if db is None:
 
+        raise HTTPException(status_code=503, detail="Database not connected")
+
+    if userType not in ["admin", "streamer"]:
+        raise HTTPException(status_code=400, detail="Invalid user type")
+
+    collection = db.get_collection(userType)
     user = collection.find_one({"userId": userId}, {"_id": 0})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
 
 
 
