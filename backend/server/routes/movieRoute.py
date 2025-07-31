@@ -401,29 +401,60 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
         raise HTTPException(status_code=500, detail="Failed to regenerate movies")
 
 
-# store recommendations in a collection
+# # store recommendations in a collection
+# @router.post("/store-recommendations")
+# async def store_recommendations(
+#     request: Request,
+#     payload: dict = Body(...)
+# ):
+#     db = request.app.state.movie_db
+#     user_id = payload.get("userId")
+#     movies = payload.get("movies", [])
+
+#     if not user_id or not isinstance(movies, list):
+#         return JSONResponse(status_code=400, content={"error": "Invalid request"})
+
+#     try:
+#         db.recommended.update_one(
+#             { "userId": user_id },
+#             { "$set": { "recommended": movies } },
+#             upsert=True
+#         )
+#         return { "message": "Recommendations saved to 'recommended' collection." }
+#     except Exception as e:
+#         print("❌ Error saving recommendations:", e)
+#         return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
+
 @router.post("/store-recommendations")
-async def store_recommendations(
-    request: Request,
-    payload: dict = Body(...)
-):
-    db = request.app.state.movie_db
-    user_id = payload.get("userId")
-    movies = payload.get("movies", [])
-
-    if not user_id or not isinstance(movies, list):
-        return JSONResponse(status_code=400, content={"error": "Invalid request"})
-
+async def store_recommendations(request: Request, payload: dict = Body(...)):
     try:
-        db.recommended.update_one(
-            { "userId": user_id },
-            { "$set": { "recommended": movies } },
-            upsert=True
-        )
-        return { "message": "Recommendations saved to 'recommended' collection." }
+        db = request.app.state.movie_db
+        user_id = payload.get("userId")
+        movies = payload.get("movies", [])
+
+        if not isinstance(movies, list) or not movies:
+            return {"message": "No movies to store — skipping insert."}
+
+        #  Clean up each movie
+        for movie in movies:
+            movie.pop("_id", None)
+            movie["userId"] = user_id
+
+        # Remove existing recommendations for that user
+        db.recommended.delete_many({"userId": user_id})
+
+        # ✅ Insert each movie as its own document
+        db.recommended.insert_many(movies)
+
+        return {"message": "Recommendations saved as individual documents."}
+
     except Exception as e:
-        print("❌ Error saving recommendations:", e)
-        return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
+        import traceback
+        traceback.print_exc()
+        print("❌ Failed to store recommendations:", str(e))
+        return JSONResponse(status_code=500, content={"error": "Internal Server Error"})
+
+
 
 # when new data is regenrated it will stay that way 
 @router.get("/recommendations/{user_id}")
