@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     question: "How do I change my account settings?",
-    answer: "Go to 'Settings' to update your password, profile picture, or preferred genres. ALternatively, you can access your user profile by clicking on the profile icon and selecting 'Edit Profile'",
+    answer: "Go to 'Settings' to update your password, profile picture, or preferred genres. Alternatively, you can access your user profile by clicking on the profile icon and selecting 'Edit Profile'",
   },
   {
     question: "Why don't I see any recommendations?",
