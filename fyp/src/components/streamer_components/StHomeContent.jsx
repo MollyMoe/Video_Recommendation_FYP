@@ -1,589 +1,480 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo  } from "react";
 import axios from "axios";
-import { Dialog } from "@headlessui/react";
-import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
 import { debounce } from "lodash";
+
+// Import movie components
+import MovieCarousel from "../movie_components/MovieCarousel";
+import MovieCard from "../movie_components/MovieCard";
+import MovieModal from "../movie_components/MovieModal";
+import FilterButtons from "../movie_components/FilterButtons";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
 function StHomeContent({ userId, searchQuery }) {
+
   const [movies, setMovies] = useState([]);
-  const [allFetchedMovies, setAllFetchedMovies] = useState([]);
+  const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
-
-  //loading
-  const [isLoading, setIsLoading] = useState(true); // for regenerate btn
-  const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
-  const [actionLoading, setActionLoading] = useState(false); // aft clicking delete btn, loads UI
-
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-
-
-  //pop up message, loading
+  const [allShownTitles, setAllShownTitles] = useState(new Set());
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [popupMessage, setPopupMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
 
-  //online offline cache
-  const [isOnline, setIsOnline] = useState(true);
+  // Carousel States
+  const [topLikedMovies, setTopLikedMovies] = useState([]);
+  const [likedMovies, setLikedMovies] = useState([]);
+  const [savedMovies, setSavedMovies] = useState([]);
+  const [watchedMovies, setWatchedMovies] = useState([]);
+  const [interactionCounts, setInteractionCounts] = useState({ liked: 0, saved: 0, watched: 0 });
+  const [likedTitles, setLikedTitles] = useState([]);
+  const [savedTitles, setSavedTitles] = useState([]);
+  const [watchedTitles, setWatchedTitles] = useState([]);
 
-    // ✅ Check server status
-    const checkOnline = async () => {
-      try {
-        const res = await fetch(`${API}/status`);
-        const data = await res.json();
-        return data.online;
-      } catch {
-        return false;
-      }
-    };
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const username = savedUser?.username;
+
+  const [activeSort, setActiveSort] = useState('default');
+  const [activeGenres, setActiveGenres] = useState([]);
+
+  const [searchSort, setSearchSort] = useState('default');
+  const [searchGenres, setSearchGenres] = useState([]);
+
   
+  const allAvailableGenres = useMemo(() => {
+    const genres = new Set();
+    lastRecommendedMovies.forEach(movie => {
+      movie.genres?.forEach(genre => genres.add(genre));
+    });
+    return Array.from(genres).sort();
+  }, [lastRecommendedMovies]);
 
+  const displayedMovies = useMemo(() => {
+    let processedMovies = [...lastRecommendedMovies];
 
-    useEffect(() => {
-      const fetchData = async () => {
-        console.log("🚀 Starting fetchData()...");
-    
-        const savedUser = JSON.parse(localStorage.getItem("user"));
-        const userId = savedUser?.userId;
-        const username = savedUser?.username;
-    
-        if (!username || !userId) {
-          console.warn("⚠️ Missing username or userId");
-          return;
-        }
-    
-        const online = await checkOnline();
-        console.log(`🌐 Network status: ${online ? "ONLINE" : "OFFLINE"}`);
-        setIsOnline(online);
-    
-        setIsLoading(true);
-    
-        try {
-          console.log("🟢 ONLINE MODE: Fetching user genres and all valid movies...");
-    
-          // 1️⃣ Fetch user genres
-          const userRes = await axios.get(`${API}/api/auth/users/streamer/${userId}`);
-          const userGenres = userRes.data.genres || [];
-          setPreferredGenres(userGenres);
-          console.log("✅ User genres:", userGenres);
-    
-          // 2️⃣ Fetch all valid movies
-          const allRes = await axios.get(`${API}/api/movies/all`);
-          const validMovies = allRes.data
-            .filter(
-              (movie) =>
-                movie.poster_url &&
-                movie.trailer_url &&
-                typeof movie.poster_url === "string" &&
-                typeof movie.trailer_url === "string" &&
-                movie.poster_url.toLowerCase() !== "nan" &&
-                movie.trailer_url.toLowerCase() !== "nan" &&
-                movie.poster_url.trim() !== "" &&
-                movie.trailer_url.trim() !== ""
-            )
-            .map((movie) => {
-              if (typeof movie.genres === "string") {
-                movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-              }
-              const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-              movie.trailer_key = match ? match[1] : null;
-              return movie;
-            });
-    
-          const seen = new Set();
-          const unique = validMovies.filter((movie) => {
-            if (seen.has(movie.title)) return false;
-            seen.add(movie.title);
-            return true;
-          });
-    
-          console.log(`🎬 Valid unique movies fetched: ${unique.length}`);
-          setAllFetchedMovies(unique);
-    
-          // 3️⃣ Load or regenerate recommendations
-          let fetchedRecommendations = [];
-          const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
-    
-          if (!refreshNeeded) {
-            const recRes = await axios.get(`${API}/api/movies/recommendations/${userId}`);
-            fetchedRecommendations = recRes.data;
-            console.log("📦 Fetched recommendations from DB:", fetchedRecommendations.length);
-          }
-    
-          if (refreshNeeded || fetchedRecommendations.length === 0) {
-            console.log("🔁 Refreshing recommendations manually...");
-    
-            localStorage.removeItem("refreshAfterSettings");
-    
-            const normalizedGenres = userGenres.map((g) => g.toLowerCase().trim());
-    
-            fetchedRecommendations = unique.filter(
-              (movie) =>
-                Array.isArray(movie.genres) &&
-                movie.genres.some((genre) =>
-                  normalizedGenres.some((pref) => genre.toLowerCase().includes(pref))
-                )
-            );
-    
-            await axios.post(`${API}/api/movies/store-recommendations`, {
-              userId,
-              movies: fetchedRecommendations,
-            });
-    
-            console.log("✅ Regenerated and stored recommendations:", fetchedRecommendations.length);
-          }
-    
-          const top99 = fetchedRecommendations.slice(0, 99);
-          setMovies(top99);
-          setLastRecommendedMovies(top99);
-          localStorage.setItem("cachedRecommendations", JSON.stringify(top99));
-    
-          console.log("🎉 Showing top 99 recommended movies");
-        } catch (err) {
-          // 🔴 OFFLINE MODE
-          console.warn("📴 OFFLINE MODE: Fetching from cachedRecommendations only");
-    
-          const cached = JSON.parse(localStorage.getItem("cachedRecommendations")) || [];
-          console.log("📦 Cached recommendations found:", cached.length);
-    
-          setMovies(cached.slice(0, 99));         // what you show
-          setAllFetchedMovies(cached.slice(0, 99)); // what you can search
-    
-          console.log("✅ Offline: Showing top 99 cached recommendations");
-        } finally {
-          setIsLoading(false);
-          console.log("✅ fetchData() finished");
-        }
-      };
-    
-      fetchData();
-    }, []);
-    
-  const handleRegenerate = async () => {
-    setIsLoading(true); // added
-    try {
-      const response = await axios.post(`${API}/api/movies/regenerate`, {
-        genres: preferredGenres,
-        excludeTitles: movies.map((m) => m.title),
+    // 1. Apply Multiple Genre Filters
+    // We check if the array has items, not just if it exists.
+    if (activeGenres.length > 0) {
+      processedMovies = processedMovies.filter(movie => {
+        if (!movie.genres || movie.genres.length === 0) return false;
+        // We use `.every()` to ensure the movie has ALL of the selected genres.
+        return activeGenres.every(filterGenre => movie.genres.includes(filterGenre));
       });
-
-      const regenerated = response.data
-        .filter(
-          (movie) =>
-            movie.poster_url &&
-            movie.trailer_url &&
-            typeof movie.poster_url === "string" &&
-            typeof movie.trailer_url === "string" &&
-            movie.poster_url.toLowerCase() !== "nan" &&
-            movie.trailer_url.toLowerCase() !== "nan" &&
-            movie.poster_url.trim() !== "" &&
-            movie.trailer_url.trim() !== ""
-        )
-        .map((movie) => {
-          if (typeof movie.genres === "string") {
-            movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-          }
-          const match = movie.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-          movie.trailer_key = match ? match[1] : null;
-          return movie;
-        });
-
-      const combined = [...regenerated, ...movies];
-      const seen = new Set();
-      const deduped = combined.filter((m) => {
-        if (seen.has(m.title)) return false;
-        seen.add(m.title);
-        return true;
-      });
-
-      // ✅ Only display the first 99 *after* adding the next batch
-      setMovies(regenerated.slice(0, 99));
-      setLastRecommendedMovies(deduped.slice(0, 99));
-
-      // Save full set back to backend
-      await axios.post(`${API}/api/movies/store-recommendations`, {
-        userId: savedUser.userId,
-        movies: regenerated.slice(0, 99),
-      });
-    } catch (err) {
-      console.error("❌ Failed to regenerate movies:", err);
     }
-    setIsLoading(false); // added
+
+    // 2. Apply Sorting
+    if (activeSort === 'rating') {
+      processedMovies.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
+    } else if (activeSort === 'year_desc' || activeSort === 'year_asc') {
+      const extractYear = (title) => {
+        const match = title.match(/\((\d{4})\)/);
+        return match ? parseInt(match[1], 10) : 0;
+      };
+      processedMovies.sort((a, b) => {
+        const yearA = extractYear(a.title);
+        const yearB = extractYear(b.title);
+        return activeSort === 'year_desc' ? yearB - yearA : yearA - yearB;
+      });
+    }
+    
+    return processedMovies;
+  }, [lastRecommendedMovies, activeSort, activeGenres]);
+
+  const displayedSearchMovies = useMemo(() => {
+  let filtered = [...movies];
+
+  if (searchGenres.length > 0) {
+    filtered = filtered.filter(movie =>
+      movie.genres && searchGenres.every(g => movie.genres.includes(g))
+    );
+  }
+
+  if (searchSort === 'rating') {
+    filtered.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
+  } else if (searchSort === 'year_desc' || searchSort === 'year_asc') {
+    const extractYear = (title) => {
+      const match = title.match(/\((\d{4})\)/);
+      return match ? parseInt(match[1], 10) : 0;
+    };
+    filtered.sort((a, b) => {
+      const yearA = extractYear(a.title);
+      const yearB = extractYear(b.title);
+      return searchSort === 'year_desc' ? yearB - yearA : yearA - yearB;
+    });
+  }
+
+  return filtered;
+}, [movies, searchGenres, searchSort]);
+
+  // --- EVENT HANDLERS FOR FILTERS ---
+  const handleFilterAndSort = (payload) => {
+    // This function can handle updates for sorting, genres, or both.
+    if (payload.sort !== undefined) {
+      setActiveSort(payload.sort);
+    }
+    if (payload.genres !== undefined) {
+      setActiveGenres(payload.genres);
+    }
   };
 
-  // add search
-  // useEffect(() => {
-  //   const trimmed = searchQuery?.trim();
-  //   if (!trimmed) {
-  //     setMovies(lastRecommendedMovies.slice(0, 99));
-  //     return;
-  //   }
+  const clearAllFilters = () => {
+    setActiveSort('default');
+    setActiveGenres([]); // Reset to an empty array
+  };
 
-  //   const debouncedFetch = debounce(async () => {
-  //     try {
-  //       const res = await axios.get(`${API}/api/movies/search`, {
-  //         params: { q: trimmed },
-  //       });
+  const handleSearchFilterAndSort = (payload) => {
+  if (payload.sort !== undefined) setSearchSort(payload.sort);
+  if (payload.genres !== undefined) setSearchGenres(payload.genres);
+};
 
-  //       const seen = new Set();
-  //       const deduped = res.data
-  //         .filter((movie) => {
-  //           if (!movie.title || seen.has(movie.title)) return false;
-  //           seen.add(movie.title);
-  //           return true;
-  //         })
-  //         .map((movie) => {
-  //           if (typeof movie.genres === "string") {
-  //             movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-  //           }
+const clearSearchFilters = () => {
+  setSearchSort('default');
+  setSearchGenres([]);
+};
 
-  //           const match = movie.trailerurl?.match(
-  //             /(?:v=|\/)([0-9A-Za-z_-]{11})/
-  //           );
-  //           movie.trailer_key = match ? match[1] : null;
+  // EVENT HANDLER FUNCTIONS
+  const normalizeMovie = (movie) => {
+    if (!movie) return null;
+    if (typeof movie.genres === "string") {
+      movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
+    }
+    const match = movie.trailer_url?.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+    movie.trailer_key = match ? match[1] : null;
+    return movie;
+  };
+  
 
-  //           return movie;
-  //         });
+const fetchUserAndMovies = async () => {
+  if (!savedUser?.userId || !username) return;
+  setIsLoading(true);
 
-  //       setMovies(deduped.slice(0, 99));
-  //     } catch (err) {
-  //       console.error("Search failed:", err);
-  //       setMovies([]);
-  //     }
-  //   }, 500);
+  try {
+    // Get user's preferred genres for the regenerate button
+    const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+    setPreferredGenres(userRes.data.genres || []);
 
-  //   debouncedFetch();
-  //   return () => debouncedFetch.cancel();
-  // }, [searchQuery]);
+    const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
+    let moviesToDisplay = [];
 
+    if (refreshNeeded) {
+      // --- Case 1: Settings were just changed ---
+      console.log("🔄 Refresh needed after settings change. Regenerating...");
+      localStorage.removeItem("refreshAfterSettings"); // Clear the flag
+      
+      const response = await axios.post(`${API}/api/movies/regenerate`, {
+        userId: savedUser.userId,
+        excludeTitles: Array.from(allShownTitles) // Exclude movies from the current session
+      });
+      moviesToDisplay = response.data || [];
+
+    } else {
+      // --- Case 2: Normal page load ---
+      console.log("Fetching last saved recommendations...");
+      const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+      
+      if (recRes.data && recRes.data.length > 0) {
+        // User has existing recommendations, so we show them.
+        console.log(`Found ${recRes.data.length} saved recommendations.`);
+        moviesToDisplay = recRes.data;
+      } else {
+        // --- Case 3: New user with no saved recommendations ---
+        console.log("No saved recommendations found. Generating initial set...");
+        const response = await axios.post(`${API}/api/movies/regenerate`, {
+          userId: savedUser.userId,
+          excludeTitles: []
+        });
+        moviesToDisplay = response.data || [];
+      }
+    }
+    
+      // --- Final State Update ---
+      const normalizedMovies = moviesToDisplay.map(normalizeMovie).filter(Boolean);
+      
+      setLastRecommendedMovies(normalizedMovies.slice(0, 60));
+      setAllShownTitles(new Set(normalizedMovies.map(m => m.title)));
+
+  } catch (err) {
+    console.error("Error in fetchUserAndMovies:", err);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  const handleRegenerate = async () => {
+  if (!isSubscribed) return;
+  setIsLoading(true);
+  try {
+    const response = await axios.post(`${API}/api/movies/regenerate`, {
+      userId: savedUser.userId,
+      excludeTitles: Array.from(allShownTitles), // Exclude all titles seen in this session
+    });
+
+    const newMovies = (response.data || []).map(normalizeMovie).filter(Boolean);
+    if (newMovies.length === 0) {
+      setPopupMessage("No new movies found. Try adjusting your preferences!");
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 3000);
+    }
+
+    const newTitles = newMovies.map(m => m.title);
+    setMovies(newMovies);
+    setLastRecommendedMovies(newMovies);
+    // Add the newly generated titles to our session's "seen" list
+    setAllShownTitles(prev => new Set([...prev, ...newTitles]));
+
+  } catch (err) {
+    console.error("Failed to regenerate movies:", err);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  const handleAction = async (actionType, movieId) => {
+    if (!movieId || !savedUser?.userId || !isSubscribed) return;
+    const actions = {
+      like: { url: "like", message: "Movie Liked!" },
+      save: { url: "watchLater", message: "Saved to Watch Later!" },
+      history: { url: "history", message: null },
+      delete: { url: "recommended/delete", message: "Removed from recommendations" }
+    };
+    const action = actions[actionType];
+    if (!action) return;
+
+    if (actionType === 'delete') {
+      setMovies(prev => prev.filter(m => m.movieId !== movieId));
+      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+    }
+    
+    try {
+      await axios.post(`${API}/api/movies/${action.url}`, { userId: savedUser.userId, movieId });
+      if (action.message) {
+        setPopupMessage(action.message);
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 2000);
+      }
+    } catch (err) {
+      console.error(`Error with action ${actionType}:`, err);
+    }
+  };
+
+  const handleHistory = (movie) => {
+    if (!isSubscribed || !movie) return;
+    handleAction('history', movie.movieId);
+    if (movie.trailer_url) {
+      window.open(movie.trailer_url, "_blank");
+    }
+  };
+
+  // === USEEFFECT HOOKS ===
+  useEffect(() => {
+    if (savedUser?.userId && username) {
+      fetchUserAndMovies();
+    }
+  }, [savedUser?.userId, username]);
 
   useEffect(() => {
-    const trimmed = searchQuery?.trim();
-    if (!trimmed) {
-      setMovies(lastRecommendedMovies.slice(0, 99));
+    if (savedUser?.userId) {
+      axios.get(`${API}/api/subscription/${savedUser.userId}`)
+        .then(res => setIsSubscribed(res.data.isActive))
+        .catch(() => setIsSubscribed(false));
+    }
+  }, [savedUser?.userId]);
+
+    useEffect(() => {
+    // Exit early if we don't have the user ID yet.
+    if (!savedUser?.userId) return;
+
+    // Define a single, unified async function to fetch all carousel data.
+    const fetchAllCarouselData = async () => {
+      try {
+        console.log("--- Starting Carousel Data Fetch ---");
+
+        // --- Parallel Fetches ---
+        const [topLikedRes, likedTitlesRes, savedTitlesRes, watchedTitlesRes] = await Promise.all([
+          axios.get(`${API}/api/movies/top-liked`),
+          axios.get(`${API}/api/movies/likedMovies/${savedUser.userId}`),
+          axios.get(`${API}/api/movies/watchLater/${savedUser.userId}`),
+          axios.get(`${API}/api/movies/historyMovies/${savedUser.userId}`),
+        ]).catch(err => [ { data: [] }, { data: {} }, { data: {} }, { data: {} } ]);
+
+        setTopLikedMovies(topLikedRes.data.map(m => normalizeMovie(m.details)).filter(Boolean));
+        setLikedTitles(likedTitlesRes.data?.likedMovies?.slice(0, 2).map(m => m.title) || []);
+        setSavedTitles(savedTitlesRes.data?.SaveMovies?.slice(0, 2).map(m => m.title) || []);
+        setWatchedTitles(watchedTitlesRes.data?.historyMovies?.slice(0, 2).map(m => m.title) || []);
+
+        // --- Sequential Fetches ---
+        const countsRes = await axios.get(`${API}/api/movies/counts/${savedUser.userId}`);
+        const { liked, saved, watched } = countsRes.data;
+        setInteractionCounts({ liked, saved, watched });
+        
+        const seenIds = new Set();
+
+        // ✅ CONSOLIDATED AND CORRECTED LOGIC ✅
+        const fetchAndSetMovies = async (type, condition, endpoint, setter, seen) => {
+          if (condition) {
+            console.log(`✅ Condition met for ${type}. Fetching recommendations...`);
+            const res = await axios.post(endpoint, { userId: savedUser.userId, excludeIds: Array.from(seen) });
+            const movies = res.data.map(normalizeMovie).filter(Boolean);
+            console.log(`Received ${movies.length} ${type} recommendations.`);
+            setter(movies);
+            movies.forEach(m => seen.add(String(m.movieId)));
+          } else {
+            console.log(`❌ Condition NOT met for ${type}. Clearing movies.`);
+            setter([]);
+          }
+        };
+
+        await fetchAndSetMovies("LIKED", liked >= 5, `${API}/api/movies/als-liked`, setLikedMovies, seenIds);
+        await fetchAndSetMovies("SAVED", saved >= 5, `${API}/api/movies/als-saved`, setSavedMovies, seenIds);
+        await fetchAndSetMovies("WATCHED", watched >= 5, `${API}/api/movies/als-watched`, setWatchedMovies, seenIds);
+
+        console.log("--- Carousel Data Fetch Complete ---");
+      } catch (err) {
+        console.error("💥 A critical error occurred in fetchAllCarouselData:", err);
+      }
+    };
+    
+    fetchAllCarouselData();
+  }, [savedUser?.userId]); // This hook only needs to re-run if the user ID changes.
+
+  useEffect(() => {
+    const trimmedQuery = searchQuery?.trim();
+    if (!isSubscribed || !trimmedQuery) {
+      setMovies(lastRecommendedMovies);
       return;
     }
-  
     const debouncedFetch = debounce(async () => {
-      if (isOnline) {
-        try {
-          const res = await axios.get(`${API}/api/movies/search`, {
-            params: { q: trimmed },
-          });
-  
-          const seen = new Set();
-          const deduped = res.data
-            .filter((movie) => {
-              if (!movie.title || seen.has(movie.title)) return false;
-              seen.add(movie.title);
-              return true;
-            })
-            .map((movie) => {
-              if (typeof movie.genres === "string") {
-                movie.genres = movie.genres.split(/[,|]/).map((g) => g.trim());
-              }
-  
-              const match = movie.trailerurl?.match(
-                /(?:v=|\/)([0-9A-Za-z_-]{11})/
-              );
-              movie.trailer_key = match ? match[1] : null;
-  
-              return movie;
-            });
-  
-          setMovies(deduped.slice(0, 99));
-        } catch (err) {
-          console.error("Search failed:", err);
-          setMovies([]);
-        }
-      } else {
-        // 🔴 OFFLINE: search only within last 99 recommendations
-        const results = lastRecommendedMovies.filter((m) =>
-          m.title?.toLowerCase().includes(trimmed.toLowerCase())
-        );
-        setMovies(results.slice(0, 99));
+      try {
+        const res = await axios.get(`${API}/api/movies/search`, { params: { q: trimmedQuery } });
+        setMovies((res.data || []).map(normalizeMovie).filter(Boolean).slice(0, 60));
+      } catch (err) {
+        console.error("Search failed:", err);
+        setMovies([]);
       }
     }, 500);
-  
     debouncedFetch();
     return () => debouncedFetch.cancel();
-  }, [searchQuery, isOnline, lastRecommendedMovies]);
-  
+  }, [searchQuery, isSubscribed, lastRecommendedMovies]);
 
-  const handleHistory = async (movieId) => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!movieId || !savedUser?.userId) {
-      console.warn("❌ Missing movieId or userId:", movieId, savedUser?.userId);
-      return;
-    }
+  // A simple boolean to determine if we are in "search mode"
+  const isSearching = searchQuery?.trim().length > 0 && isSubscribed;
 
-    try {
-      console.log("📤 Sending history (play) request for:", movieId);
-      const res = await fetch(`${API}/api/movies/history`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: savedUser.userId,
-          movieId: movieId,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("❌ History POST failed:", res.status, data);
-        return;
-      }
-
-      console.log("✅ History saved:", data);
-    } catch (err) {
-      console.error("❌ Error saving history:", err);
-    }
-  };
-
-  const handleWatchLater = async (movieId) => {
-    if (!movieId || !savedUser?.userId) {
-      console.warn("Missing movieId or userId");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API}/api/movies/watchLater`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: savedUser.userId,
-          movieId: movieId,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Save failed:", res.status, errorText);
-        return;
-      }
-
-      // ✅ Show popup
-      setPopupMessage("Saved to Watch Later!");
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 2000);
-
-      const data = await res.json();
-      console.log("Save response:", data);
-    } catch (err) {
-      console.error("Save  movie:", err);
-    }
-  };
-
-  const handleLike = async (movieId) => {
-    if (!movieId || !savedUser?.userId) return;
-    try {
-      await fetch(`${API}/api/movies/like`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: savedUser.userId, movieId }),
-      });
-
-      setPopupMessage("Movie liked!");
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 2000);
-    } catch (err) {
-      console.error("Error liking movie:", err);
-    }
-  };
-
-  // remove the movie
-  const handleRemoveRecommended = async (movieId) => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!savedUser || !savedUser.userId) return;
-
-    try {
-      const res = await fetch(`${API}/api/movies/recommended/delete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: savedUser.userId,
-          movieId: movieId,
-        }),
-      });
-
-      const data = await res.json();
-
-      setPopupMessage("Removed from recommended");
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 2000); // if using a success popup
-      fetchRecommended(); // or re-fetch data to update UI
-
-      // Re-fetch updated data
-      const updated = await fetchRecommended();
-
-      // ✅ Log total movie count after reload
-      console.log(
-        "🎬 Recommended movies count (after delete):",
-        updated.length
-      );
-
-
-    } catch (error) {
-      console.error("❌ Failed to remove from recommended:", error);
-    }
-  };
-
+  // === RENDER ===
   return (
-    <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
-      <div className="max-w-6xl mx-auto">
-        <div className="fixed top-[23px] left-4/10 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-          <button
-            onClick={handleRegenerate}
-            className="bg-white font-medium text-black border border-gray-400 hover:bg-gray-200 px-7.5 py-2.5 rounded-lg text-sm shadow-md"
-          >
-            Regenerate Movies
-          </button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-6">
-          {movies.map((movie) => (
-            <div
-              key={movie._id}
-              className="relative cursor-pointer group w-[180px] mx-auto"
-              onClick={() => setSelectedMovie(movie)}
-            >
-              <div className="aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 group-hover:opacity-0">
-                <img
-                  src={movie.poster_url || "https://via.placeholder.com/150"}
-                  alt={movie.title || "No title"}
-                  className="w-full h-full object-cover"
+    <div className="sm:ml-64 pt-10 px-4 sm:px-8 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* **CONDITIONAL LAYOUT SWITCH** */}
+        {isSearching ? (
+          // --- SEARCH RESULTS VIEW ---
+          <div className="mt-15">
+            <h2 className="text-2xl font-semibold text-black mb-4 px-4">Search Results</h2>
+              {isSubscribed && (
+                <FilterButtons
+                  allGenres={allAvailableGenres}
+                  onFilterAndSort={handleSearchFilterAndSort}
+                  onClear={clearSearchFilters}
+                  currentSort={searchSort}
+                  currentGenres={searchGenres}
                 />
-              </div>
-
-              {movie.trailer_key && (
-                <div className="absolute left-1/2 top-9 transform -translate-x-1/2 w-[350px] z-10 hidden group-hover:block">
-                  <div className="aspect-[5/3] overflow-hidden rounded-t-xl shadow-lg">
-                    <iframe
-                      src={`https://www.youtube.com/embed/${movie.trailer_key}?autoplay=1&mute=1&loop=1&playlist=${movie.trailer_key}`}
-                      frameBorder="0"
-                      allow="autoplay; encrypted-media"
-                      allowFullScreen
-                      className="w-full h-full object-cover"
-                      title={movie.title}
-                    ></iframe>
-                  </div>
-                  <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
-                    <div>{movie.genres?.join(", ")}</div>
-                    <div className="font-semibold text-sm">
-                      ⭐ {movie.predicted_rating?.toFixed(1) || "N/A"}
-                    </div>
-                  </div>
-                </div>
+              )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 ml-15">
+              {displayedSearchMovies.length > 0 ? (
+                displayedSearchMovies.map((movie) => (
+                  <MovieCard key={movie._id || movie.movieId} movie={movie} onClick={setSelectedMovie} />
+                ))
+              ) : (
+                !isLoading && <p className="col-span-full text-center text-gray-500 mt-8">No movies found for your search.</p>
               )}
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-7">
+            {/* Carousels Section */}
+            <div className="mt-15">
+              <MovieCarousel
+                title="🔥 Most Liked Movies"
+                movies={topLikedMovies}
+                onMovieClick={setSelectedMovie}
+                autoScroll={true} 
+              />
+              
+              {/* These carousels will NOT auto-scroll because the prop is not passed (it defaults to false) */}
+              {interactionCounts.liked >= 5 && likedMovies.length > 0 && (
+                <MovieCarousel
+                  title={<>Because you like <span className="italic text-purple-500">{likedTitles.join(", ")}</span></>}
+                  movies={likedMovies}
+                  onMovieClick={setSelectedMovie}
+                />
+              )}
+              
+              {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
+                <MovieCarousel
+                  title={<>Because you save <span className="italic text-green-500">{savedTitles.join(", ")}</span></>}
+                  movies={savedMovies}
+                  onMovieClick={setSelectedMovie}
+                />
+              )}
+              
+              {interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
+                <MovieCarousel
+                  title={<>Because you watch <span className="italic text-orange-500">{watchedTitles.join(", ")}</span></>}
+                  movies={watchedMovies}
+                  onMovieClick={setSelectedMovie}
+                />
+              )}
+            </div>
+
+            {/* Main Recommendations Grid */}
+            <div>
+              <div className="flex justify-between items-center mb-4 px-4">
+                <h2 className="text-2xl font-semibold text-black">Recommended for You</h2>
+                <button
+                  onClick={handleRegenerate}
+                  disabled={!isSubscribed || isLoading}
+                  className="font-medium border border-gray-400 px-6 py-2 rounded-lg text-sm shadow-md disabled:opacity-50 bg-white text-black hover:bg-gray-200 transition-transform active:scale-95"
+                >
+                  Regenerate
+                </button>
+              </div>
+
+                {isSubscribed && (
+                  <FilterButtons
+                    allGenres={allAvailableGenres}
+                    onFilterAndSort={handleFilterAndSort}
+                    onClear={clearAllFilters}
+                    currentSort={activeSort}
+                    currentGenres={activeGenres}
+                  />
+                )}
+
+                
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 ml-20">
+
+                {displayedMovies.filter((movie) => movie && movie.poster_url).map((movie) => (
+                  <MovieCard key={movie._id || movie.movieId} movie={movie} onClick={setSelectedMovie} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
-      <Dialog
-        open={!!selectedMovie}
+      {/* --- MODAL & OVERLAYS (Unaffected by the layout switch) --- */}
+      <MovieModal
+        isOpen={!!selectedMovie}
+        movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
-        className="relative z-50"
-      >
-        <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="relative bg-white p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
-            <div className="flex space-x-6">
-              <img
-                src={selectedMovie?.poster_url}
-                alt={selectedMovie?.title}
-                className="rounded-lg w-40 h-auto object-cover"
-              />
-              <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-2xl font-semibold">
-                  {selectedMovie?.title}
-                </h2>
-                <p className="text-sm text-gray-700">
-                  {selectedMovie?.genres?.join(", ")}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Director:</strong> {selectedMovie?.director || "N/A"}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Actors:</strong>{" "}
-                  {Array.isArray(selectedMovie?.actors)
-                    ? selectedMovie.actors.join(", ")
-                    : selectedMovie?.actors || "N/A"}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Overview:</strong> {selectedMovie?.overview || "N/A"}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Rating: ⭐</strong>{" "}
-                  {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  console.log("▶️ Play clicked for:", selectedMovie?.movieId);
-                  handleHistory(selectedMovie?.movieId);
-
-                  // Optional: open trailer
-                  if (selectedMovie?.trailer_url) {
-                    window.open(selectedMovie.trailer_url, "_blank");
-                  }
-                }}
-                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-              >
-                <Play className="w-3 h-3 mr-1 fill-black" />
-                Play
-              </button>
-              <button
-                onClick={() => handleLike(selectedMovie.movieId)}
-                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-              >
-                <Heart className="w-4 h-4 mr-1 fill-black" />
-                Like
-              </button>
-              <button
-                onClick={() => handleWatchLater(selectedMovie.movieId)}
-                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-              >
-                <Bookmark className="w-4 h-4 mr-1 fill-black" />
-                Save
-              </button>
-              <button
-                onClick={() => handleRemoveRecommended(selectedMovie.movieId)}
-                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-              >
-                <Trash2 className="w-4 h-4 mr-1 stroke-black" />
-                Delete
-              </button>
-            </div>
-
-            {showPopup && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2  text-purple-800 px-4 py-2 rounded shadow text-sm z-50">
-                {popupMessage}
-              </div>
-            )}
-
-            <div className="flex justify-end pt-4">
-              <button
-                onClick={() => setSelectedMovie(null)}
-                className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm"
-              >
-                Close
-              </button>
-            </div>
-          </Dialog.Panel>
-        </div>
-      </Dialog>
+        isSubscribed={isSubscribed}
+        onPlay={handleHistory}
+        onLike={(movieId) => handleAction('like', movieId)}
+        onSave={(movieId) => handleAction('save', movieId)}
+        onDelete={(movieId) => handleAction('delete', movieId)}
+        isSearching={isSearching}
+        >
+        {showPopup && popupMessage}
+      </MovieModal>
 
       {isLoading && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
@@ -593,10 +484,8 @@ function StHomeContent({ userId, searchQuery }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }
 
 export default StHomeContent;
-

@@ -8,7 +8,7 @@ const tabs = [
   { label: "Top Liked", path: "/admin/video/manage" },
   { label: "Genres", path: "/admin/video/genre" },
 
-  { label: "Recently Added", path: "/admin" },
+  { label: "Recently Added", path: "/admin/video/recently-added" },
 ];
 
 const AdVideoManageLayout = () => {

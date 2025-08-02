@@ -15,12 +15,14 @@ import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
 import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
 import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
-import AdVideoManageTopLikePage from "./pages/adminPages/AdVideoManageTopLikePage";
+import AdTopLikedPage from "./pages/adminPages/AdTopLikedPage";
 import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
 
 
 
+
 import AdUserDetails from "./components/admin_components/AdUserDetails";
+import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAddedMovies";
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
@@ -64,7 +66,6 @@ function App() {
           {/* Admin Layout */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdDashboardPage />} />
-            <Route path ="videoHomePage" element={<AdVideoHomePage />} />
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
             <Route path="view/:id" element={<AdUserDetails />} />
@@ -72,12 +73,16 @@ function App() {
             <Route path="video" element={<AdVideoManageLayout />}>
               <Route index element={<Navigate to="videoHomePage" replace />} />
               <Route path="videoHomePage" element={<AdVideoHomePage />} />
-              <Route path="manage" element={<AdVideoManageTopLikePage />} />
+              <Route path="manage" element={<AdTopLikedPage />} />
               <Route path="genre" element={<AdVideoManageGenrePage />} />
-
+              <Route path="recently-added" element={<AdRecentlyAddedMovies />} />
+              
 
             </Route>
+
           </Route>
+
+
         </Routes>
       </HashRouter>
     </UserProvider>

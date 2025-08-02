@@ -112,10 +112,7 @@ const AdVideoManageGenrePage = () => {
                 key={movie.movieId || index}
                 className="flex items-center gap-4 p-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
-                {/* Rank Number */}
-                <div className="text-2xl font-bold w-10 text-center text-purple-600 dark:text-yellow-400">
-                  {index + 1}
-                </div>
+
 
                 {/* Poster */}
                 <img
