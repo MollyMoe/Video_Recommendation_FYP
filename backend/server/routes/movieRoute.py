@@ -932,3 +932,42 @@ def get_recently_added_persistent_movies(request: Request, batch_id: Optional[st
     except Exception as e:
         print("❌ Error fetching recently added persistent movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recently added movies")
+
+
+@router.get("/all-genres")
+async def get_all_genres(request: Request):
+    db = request.app.state.movie_db
+    try:
+        all_movies = db["hybridRecommendation2"].find({}, {"genres": 1, "_id": 0})
+        genre_set = set()
+        for movie in all_movies:
+            if isinstance(movie.get("genres"), str):
+                genre_set.update(g.strip() for g in movie["genres"].split("|"))
+
+        return sorted(list(genre_set))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to load genres")
+
+@router.get("/byGenres")
+async def get_movies_by_genres(genres: str, request: Request):
+    db = request.app.state.movie_db
+    collection = db["hybridRecommendation2"]
+    
+    genre_list = [g.strip() for g in genres.split(",")]
+
+    try:
+
+        result = list(collection.find({
+            "$or": [
+                {"genres": {"$regex": genre, "$options": "i"}} for genre in genre_list
+            ]
+        }).limit(100))  # ✅ Add limit here
+
+        # Remove MongoDB _id field for frontend
+        for movie in result:
+            movie.pop("_id", None)
+
+        return result
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching movies by genres: {str(e)}")

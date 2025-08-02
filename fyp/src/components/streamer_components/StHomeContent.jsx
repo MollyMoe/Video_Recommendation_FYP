@@ -21,6 +21,8 @@ function StHomeContent({ userId, searchQuery }) {
   const [isLoading, setIsLoading] = useState(true);
   const [popupMessage, setPopupMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
+  const [regenerateIndex, setRegenerateIndex] = useState(0);
+
 
   // Carousel States
   const [topLikedMovies, setTopLikedMovies] = useState([]);
@@ -164,115 +166,167 @@ const fetchUserAndMovies = async () => {
   setIsLoading(true);
 
   try {
-    // Get user's preferred genres for the regenerate button
-    const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-    setPreferredGenres(userRes.data.genres || []);
+    let userGenres = [];
+
+    if (isOnline) {
+      try {
+        const userRes = await axios.get(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+        userGenres = userRes.data.genres || [];
+        setPreferredGenres(userGenres);
+
+        if (window.electron?.saveUserGenres) {
+          window.electron.saveUserGenres(userGenres);
+        }
+      } catch (err) {
+        console.warn("⚠️ Online genre fetch failed. Trying offline...");
+      }
+    }
+
+    // Fallback to offline genres if still empty
+    if (!userGenres.length && window.electron?.getUserGenres) {
+      try {
+        const offlineGenres = await window.electron.getUserGenres();
+        userGenres = offlineGenres || [];
+        setPreferredGenres(userGenres);
+      } catch (offlineErr) {
+        console.error("❌ Failed to load offline genres:", offlineErr);
+      }
+    }
 
     const refreshNeeded = localStorage.getItem("refreshAfterSettings") === "true";
     let moviesToDisplay = [];
 
-    if (refreshNeeded) {
-      // --- Case 1: Settings were just changed ---
+    if (refreshNeeded && isOnline) {
       console.log("🔄 Refresh needed after settings change. Regenerating...");
-      localStorage.removeItem("refreshAfterSettings"); // Clear the flag
-      
+      localStorage.removeItem("refreshAfterSettings");
+
       const response = await axios.post(`${API}/api/movies/regenerate`, {
         userId: savedUser.userId,
-        excludeTitles: Array.from(allShownTitles) // Exclude movies from the current session
+        excludeTitles: Array.from(allShownTitles),
       });
-      moviesToDisplay = response.data || [];
 
-    } else {
-      // --- Case 2: Normal page load ---
-      console.log("Fetching last saved recommendations...");
-      const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
-      
-      if (recRes.data && recRes.data.length > 0) {
-        // User has existing recommendations, so we show them.
-        console.log(`Found ${recRes.data.length} saved recommendations.`);
-        moviesToDisplay = recRes.data;
-      } else {
-        // --- Case 3: New user with no saved recommendations ---
-        console.log("No saved recommendations found. Generating initial set...");
-        const response = await axios.post(`${API}/api/movies/regenerate`, {
-          userId: savedUser.userId,
-          excludeTitles: []
-        });
-        moviesToDisplay = response.data || [];
+      moviesToDisplay = response.data || [];
+      if (window.electron?.saveRecommendedMovies) {
+        window.electron.saveRecommendedMovies(moviesToDisplay);
+      }
+
+    } else if (isOnline) {
+      try {
+        console.log("🌐 Fetching last saved recommendations...");
+        const recRes = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+
+        if (recRes.data?.length > 0) {
+          moviesToDisplay = recRes.data;
+          if (window.electron?.saveRecommendedMovies) {
+            window.electron.saveRecommendedMovies(moviesToDisplay);
+          }
+        } else {
+          console.log("🆕 No recs found. Generating...");
+          const response = await axios.post(`${API}/api/movies/regenerate`, {
+            userId: savedUser.userId,
+            excludeTitles: []
+          });
+          moviesToDisplay = response.data || [];
+
+          if (window.electron?.saveRecommendedMovies) {
+            window.electron.saveRecommendedMovies(moviesToDisplay);
+          }
+        }
+
+      } catch (err) {
+        console.warn("⚠️ Online fetch failed. Trying offline...");
       }
     }
-    
-      // --- Final State Update ---
-      const normalizedMovies = moviesToDisplay.map(normalizeMovie).filter(Boolean);
-      
-      setLastRecommendedMovies(normalizedMovies.slice(0, 60));
-      setAllShownTitles(new Set(normalizedMovies.map(m => m.title)));
+
+    // Fallback to offline recommendations
+    if (!moviesToDisplay.length && window.electron?.getRecommendedMovies) {
+      try {
+        const offlineMovies = await window.electron.getRecommendedMovies();
+        console.log(`📦 Loaded ${offlineMovies.length} offline recommendations.`);
+        moviesToDisplay = offlineMovies;
+      } catch (offlineErr) {
+        console.error("❌ Failed to load offline recommendations:", offlineErr);
+      }
+    }
+
+    const normalizedMovies = moviesToDisplay.map(normalizeMovie).filter(Boolean);
+    setLastRecommendedMovies(normalizedMovies.slice(0, 60));
+    setAllShownTitles(new Set(normalizedMovies.map((m) => m.title)));
 
   } catch (err) {
-    console.error("Error in fetchUserAndMovies:", err);
+    console.error("❌ Error in fetchUserAndMovies:", err);
   } finally {
     setIsLoading(false);
   }
 };
+
 
   const handleRegenerate = async () => {
   if (!isSubscribed) return;
   setIsLoading(true);
-  try {
-    const response = await axios.post(`${API}/api/movies/regenerate`, {
-      userId: savedUser.userId,
-      excludeTitles: Array.from(allShownTitles), // Exclude all titles seen in this session
-    });
 
-    const newMovies = (response.data || []).map(normalizeMovie).filter(Boolean);
-    if (newMovies.length === 0) {
-      setPopupMessage("No new movies found. Try adjusting your preferences!");
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 3000);
+  try {
+    if (isOnline) {
+      const response = await axios.post(`${API}/api/movies/regenerate`, {
+        userId: savedUser.userId,
+        excludeTitles: Array.from(allShownTitles),
+      });
+
+      const newMovies = (response.data || []).map(normalizeMovie).filter(Boolean);
+
+      if (!newMovies.length) {
+        setPopupMessage("No new movies found. Try adjusting your preferences!");
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 3000);
+      } else {
+        const newTitles = newMovies.map(m => m.title);
+        setMovies(newMovies);
+        setLastRecommendedMovies(newMovies);
+        setAllShownTitles(prev => new Set([...prev, ...newTitles]));
+
+        if (window.electron?.saveRecommendedMovies) {
+          window.electron.saveRecommendedMovies(response.data);
+        }
+
+        setRegenerateIndex(1);
+      }
+
+    } else {
+      // OFFLINE
+      if (!window.electron?.getRecommendedMovies) {
+        throw new Error("Offline API not available");
+      }
+
+      const offlinePool = await window.electron.getRecommendedMovies();
+      const normalized = offlinePool.map(normalizeMovie).filter(Boolean);
+
+      const start = regenerateIndex * 60;
+      const nextBatch = normalized.slice(start, start + 60);
+
+      if (!nextBatch.length) {
+        setPopupMessage("No more offline recommendations available.");
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 3000);
+        return;
+      }
+
+      const newTitles = nextBatch.map(m => m.title);
+      setMovies(nextBatch);
+      setLastRecommendedMovies(nextBatch);
+      setAllShownTitles(prev => new Set([...prev, ...newTitles]));
+
+      setRegenerateIndex(prev => prev + 1);
     }
 
-    const newTitles = newMovies.map(m => m.title);
-    setMovies(newMovies);
-    setLastRecommendedMovies(newMovies);
-    // Add the newly generated titles to our session's "seen" list
-    setAllShownTitles(prev => new Set([...prev, ...newTitles]));
-
   } catch (err) {
-    console.error("Failed to regenerate movies:", err);
+    console.error("❌ Failed to regenerate movies:", err);
   } finally {
     setIsLoading(false);
   }
 };
 
-  const handleAction = async (actionType, movieId) => {
-    if (!movieId || !savedUser?.userId || !isSubscribed) return;
-    const actions = {
-      like: { url: "like", message: "Movie Liked!" },
-      save: { url: "watchLater", message: "Saved to Watch Later!" },
-      history: { url: "history", message: null },
-      delete: { url: "recommended/delete", message: "Removed from recommendations" }
-    };
-    const action = actions[actionType];
-    if (!action) return;
 
-    if (actionType === 'delete') {
-      setMovies(prev => prev.filter(m => m.movieId !== movieId));
-      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
-    }
-    
-    try {
-      await axios.post(`${API}/api/movies/${action.url}`, { userId: savedUser.userId, movieId });
-      if (action.message) {
-        setPopupMessage(action.message);
-        setShowPopup(true);
-        setTimeout(() => setShowPopup(false), 2000);
-      }
-    } catch (err) {
-      console.error(`Error with action ${actionType}:`, err);
-    }
-  };
-
-  const handleHistory = (movie) => {
+const handleHistory = (movie) => {
     if (!isSubscribed || !movie) return;
     handleAction('history', movie.movieId);
     if (movie.trailer_url) {

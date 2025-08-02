@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useOutletContext } from "react-router-dom";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdRecentlyAddedMovies = () => {
     const [recentlyAddedPersistent, setRecentlyAddedPersistent] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const { updateFlag } = useOutletContext(); 
+
+    const outletContext = useOutletContext() || {};
+    const { updateFlag } = outletContext;
 
     useEffect(() => {
         const fetchRecentlyAddedPersistent = async () => {

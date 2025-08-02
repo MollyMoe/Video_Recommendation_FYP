@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import { useOutletContext } from "react-router-dom"; // Import useOutletContext
+import React from "react";
+import { useOutletContext } from "react-router-dom";
 import AdSearch from "../../components/admin_components/AdSearch";
-import AdMovieContent from "../../components/admin_components/AdMovieContent";
 import AdSideButtons from "../../components/admin_components/AdSideButtons";
 import AdNav from "../../components/admin_components/AdNav";
+import AdMovieContent from "../../components/admin_components/AdMovieContent";
+import { useState } from "react";
 
 const AdVideoHomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-    const context = useOutletContext();
-
-  // Get all context values from AdVideoManageLayout
-    // Safely destructure context with default values
+  const context = useOutletContext();
+  
+  // Safely destructure context with default values
   const {
     recentMoviesGlobal = [],
     setRecentMoviesGlobal = () => {},
@@ -28,13 +28,13 @@ const AdVideoHomePage = () => {
           onSearch={(value) => setSearchQuery(value)}
         />
       </div>
-      <AdMovieContent
+      <AdMovieContent 
         searchQuery={searchQuery}
         externalUpdateTrigger={updateFlag} 
         setRecentMoviesGlobal={setRecentMoviesGlobal} 
-        currentRecentMoviesGlobal={recentMoviesGlobal} 
-      />
+        currentRecentMoviesGlobal={recentMoviesGlobal} />
     </>
   );
 };
+
 export default AdVideoHomePage;

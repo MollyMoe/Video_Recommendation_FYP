@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
-import { API } from "@/config/api";
+
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdVideoManageGenrePage = () => {
   const [genres, setGenres] = useState([]);
