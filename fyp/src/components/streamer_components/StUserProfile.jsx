@@ -82,7 +82,6 @@ function StUserProfile({ userProfile }) {
  
 const handleSignout = async () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
-  const API = import.meta.env.VITE_API_BASE_URL;
 
   if (!savedUser?.userId || !savedUser?.userType) {
     console.warn("⚠️ No valid user session found.");

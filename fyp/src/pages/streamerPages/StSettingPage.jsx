@@ -28,9 +28,20 @@ const StSettingPage = () => {
   const fileInputRef = useRef(null);
   const modalRef = useRef(null);
   const navigate = useNavigate();
-  const { profileImage, updateProfileImage, setCurrentRole } = useUser();
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { profileImage, updateProfileImage, setCurrentRole } = useUser();;
   const savedUser = JSON.parse(localStorage.getItem("user"));
+
+   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+    useEffect(() => {
+      const handleNetworkChange = () => setIsOnline(navigator.onLine);
+      window.addEventListener("online", handleNetworkChange);
+      window.addEventListener("offline", handleNetworkChange);
+      return () => {
+        window.removeEventListener("online", handleNetworkChange);
+        window.removeEventListener("offline", handleNetworkChange);
+      };
+    }, []);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -40,75 +51,63 @@ const StSettingPage = () => {
   const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!savedUser?.userId) return;
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!savedUser?.userId) return;
 
-    setCurrentRole("streamer");
+  setCurrentRole("streamer");
 
-    // Step 1: Use cached image or fallback first
-    const cachedImage = localStorage.getItem("streamer_profileImage");
-    const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
-    updateProfileImage(fallbackImage, "streamer");
+  const cachedImage = localStorage.getItem("streamer_profileImage");
+  const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
+  updateProfileImage(fallbackImage, "streamer");
 
-    // Step 2: Try fetching latest from backend
-    
-    const fetchUser = async () => {
-  if (!isOnline) {
-    console.warn("⚠️ Offline — loading cached profile from file.");
-    const cached = window.electron?.getProfileUpdate?.();
-    if (cached) {
-      setFormData((prev) => ({
-        ...prev,
-        username: cached.username || "",
-        contact: cached.email || "", // you can add this if you include it in the file
-        genre: cached.genre || "",
-      }));
+  const fetchUser = async () => {
+    if (!isOnline) {
+      console.warn("⚠️ Offline — using cached profile");
+      const cached = window.electron?.getProfileUpdate?.();
+      if (cached) {
+        setFormData({
+          username: cached.username || "",
+          contact: cached.email || "",
+          genre: cached.genre || "",
+        });
 
-      const image = cached.profileImage || localStorage.getItem("streamer_profileImage") || defaultImage;
-      updateProfileImage(image, "streamer");
-    }
-    return;
-  }
-
-  // Online mode
-  try {
-    const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Server error ${res.status}: ${errText}`);
+        const image = cached.profileImage || cachedImage || defaultImage;
+        updateProfileImage(image, "streamer");
+      }
+      return;
     }
 
-    const data = await res.json();
+    try {
+      const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+      if (!res.ok) throw new Error(`Server error ${res.status}: ${await res.text()}`);
+      const data = await res.json();
 
-    setFormData((prev) => ({
-      ...prev,
-      username: data.username || "",
-      contact: data.email || "",
-      genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
-    }));
+      setFormData({
+        username: data.username || "",
+        contact: data.email || "",
+        genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
+      });
 
-    if (data.profileImage) {
-      updateProfileImage(data.profileImage, "streamer");
-      localStorage.setItem("streamer_profileImage", data.profileImage);
+      if (data.profileImage) {
+        updateProfileImage(data.profileImage, "streamer");
+        localStorage.setItem("streamer_profileImage", data.profileImage);
+      }
+
+      window.electron?.saveProfileUpdate({
+        userId: data.userId,
+        username: data.username,
+        email: data.email,
+        genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
+        profileImage: data.profileImage,
+      });
+    } catch (err) {
+      console.warn("⚠️ Failed to fetch profile:", err.message);
     }
+  };
 
-    // 💾 Save full profile to profileFilePath
-    window.electron.saveProfileUpdate({
-      userId: data.userId,
-      username: data.username,
-      email: data.email,
-      genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
-      profileImage: data.profileImage,
-    });
+  fetchUser();
+}, [isOnline]); // 🔁 refetch when network status changes
 
-  } catch (err) {
-    console.warn("⚠️ Failed to fetch online profile:", err.message);
-  }
-};
-
-    fetchUser();
-  }, []);
 
 const handleChange = async (e) => {
     const { name, value, files } = e.target;
@@ -156,44 +155,53 @@ const handleChange = async (e) => {
     fileInputRef.current.click();
   };
 
-useEffect(() => {
-  const handleOnline = () => setIsOnline(true);
-  const handleOffline = () => setIsOnline(false);
-  window.addEventListener("online", handleOnline);
-  window.addEventListener("offline", handleOffline);
-  return () => {
-    window.removeEventListener("online", handleOnline);
-    window.removeEventListener("offline", handleOffline);
-  };
-}, []);
+// useEffect(() => {
+//   const handleOnline = () => setIsOnline(true);
+//   const handleOffline = () => setIsOnline(false);
+//   window.addEventListener("online", handleOnline);
+//   window.addEventListener("offline", handleOffline);
+//   return () => {
+//     window.removeEventListener("online", handleOnline);
+//     window.removeEventListener("offline", handleOffline);
+//   };
+// }, []);
 
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+
   const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!savedUser?.userId) {
+    console.warn("❗ No saved user found.");
+    alert("User session expired. Please sign in again.");
+    return;
+  }
 
   const updatePayload = {
     username: formData.username,
     genre: formData.genre,
+    userId: savedUser.userId,
   };
 
+  // ✅ OFFLINE MODE
   if (!isOnline) {
-  if (window.electron?.saveProfileUpdate) {
-    try {
-      window.electron.saveProfileUpdate({ ...updatePayload, userId: savedUser.userId });
-      setSuccessMessage("You're offline. Changes saved locally and will sync once online.");
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("Failed to save offline update:", err);
-      alert("Offline save failed. Please reconnect and try again.");
+    if (window.electron?.saveProfileUpdate) {
+      try {
+        window.electron.saveProfileUpdate(updatePayload);
+        setSuccessMessage("You're offline. Changes saved locally and will sync once you're online.");
+        setShowSuccessModal(true);
+      } catch (err) {
+        console.error("❌ Failed to save offline update:", err);
+        alert("Offline save failed. Please reconnect and try again.");
+      }
+    } else {
+      console.warn("⚠️ Electron bridge not available — offline save skipped");
+      alert("Offline update not supported in this environment.");
     }
-  } else {
-    console.warn("⚠️ Electron bridge not available — offline save skipped");
+    return;
   }
-  return;
-}
 
-
+  // ✅ ONLINE MODE
   try {
     const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
       method: "PUT",
@@ -203,50 +211,86 @@ const handleSubmit = async (e) => {
       body: JSON.stringify(updatePayload),
     });
 
-    if (!res.ok) throw new Error("Failed to update");
+    if (!res.ok) throw new Error(`Failed to update profile: ${res.status}`);
 
     const updated = await res.json();
-    setSuccessMessage("Profile updated!");
+    setSuccessMessage("Profile updated successfully!");
     setShowSuccessModal(true);
 
+    // 🔄 Update localStorage for freshness
     localStorage.setItem("refreshAfterSettings", "true");
     localStorage.setItem("user", JSON.stringify(updated));
   } catch (err) {
-    console.error("Update error:", err);
-    alert("Could not update profile.");
+    console.error("❌ Update error:", err);
+    alert("Could not update profile. Please try again later.");
   }
 };
 
-useEffect(() => {
-  const syncOfflineChanges = async () => {
-    const offlineData = window.electron.getProfileUpdate();
-    if (offlineData) {
-      try {
-        const res = await fetch(`${API}/api/editProfile/streamer/${offlineData.userId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: offlineData.username,
-            genre: offlineData.genre,
-          }),
-        });
+ useEffect(() => {
+  const refreshUser = async () => {
+    if (!isOnline || !savedUser?.userId) return;
 
-        if (res.ok) {
-          const updated = await res.json();
-          localStorage.setItem("user", JSON.stringify(updated));
-          localStorage.setItem("refreshAfterSettings", "true");
-          window.electron.clearProfileUpdate();
-          console.log("✅ Synced offline profile update");
-        }
-      } catch (err) {
-        console.warn("⚠️ Failed to sync offline profile update:", err);
-      }
+    try {
+      const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+      const data = await res.json();
+      localStorage.setItem("user", JSON.stringify(data)); // 🔄 Refresh localStorage
+    } catch (err) {
+      console.warn("Failed to refresh user:", err);
     }
   };
 
-  if (isOnline) syncOfflineChanges();
+  refreshUser();
 }, [isOnline]);
 
+
+useEffect(() => {
+  const syncOfflineChanges = async () => {
+    if (!window.electron?.getProfileUpdate) {
+      console.warn("⚠️ Electron bridge missing. Cannot sync offline profile.");
+      return;
+    }
+
+    const offlineData = window.electron.getProfileUpdate();
+    if (!offlineData || !offlineData.userId) {
+      console.log("🟢 No offline profile update to sync.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/editProfile/streamer/${offlineData.userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: offlineData.username,
+          genre: offlineData.genre,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server error ${res.status}: ${errText}`);
+      }
+
+      const updated = await res.json();
+      localStorage.setItem("user", JSON.stringify(updated));
+      localStorage.setItem("refreshAfterSettings", "true");
+
+      if (window.electron?.clearProfileUpdate) {
+        window.electron.clearProfileUpdate();
+      }
+
+      console.log("✅ Successfully synced offline profile update.");
+    } catch (err) {
+      console.warn("❌ Failed to sync offline profile update:", err.message || err);
+    }
+  };
+
+  if (isOnline) {
+    syncOfflineChanges();
+  }
+}, [isOnline]);
 
 // const handleSubmit = async (e) => {
 //   e.preventDefault();

@@ -1,58 +1,88 @@
-import React, { useEffect, useState } from "react";
+
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { API } from "@/config/api";
 
 
 const StHistoryPage = () => {
   const [historyMovies, setHistoryMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleNetworkChange = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleNetworkChange);
+    window.addEventListener("offline", handleNetworkChange);
+    return () => {
+      window.removeEventListener("online", handleNetworkChange);
+      window.removeEventListener("offline", handleNetworkChange);
+    };
+  }, []);
 
 
   const fetchHistoryMovies = async (userId) => {
-    if (!userId) return;
-    setIsLoading(true);
+  if (!userId) return;
+  setIsLoading(true);
+  const start = Date.now();
+  const minDelay = 500;
 
-    const start = Date.now(); // Track start time
+  try {
+    let data = { historyMovies: [] };
 
-
-    try {
+    if (isOnline) {
+      // ✅ Online: Fetch from FastAPI
       const res = await fetch(`${API}/api/movies/historyMovies/${userId}`);
-      const data = await res.json();
+      data = await res.json();
 
-      console.log("📽 History movies response:", data);
-
-      const uniqueMovies = [];
-      const seen = new Set();
-
-      for (const movie of data.historyMovies || []) {
-        const id = movie._id || movie.movieId;
-        if (!seen.has(id)) {
-          seen.add(id);
-          uniqueMovies.push(movie);
-        }
-      }
-
-      setHistoryMovies(uniqueMovies);
-    } catch (err) {
-      console.error("❌ Failed to fetch history movies:", err);
-    }  finally {
-      const elapsed = Date.now() - start;
-      const minDelay = 500; // milliseconds
-  
-      setTimeout(() => {
-        setIsLoading(false);
-      }, Math.max(0, minDelay - elapsed)); // ensure at least 500ms visible
+      // ✅ Optional: Save to local history queue for offline use
+      if (isOnline && window.electron?.saveHistoryQueue) {
+      window.electron.saveHistoryQueue(data.historyMovies);
     }
-  };
 
+    } else if (window.electron?.getHistoryQueue) {
+      // ✅ Offline: Read from local queue
+      const offlineQueue = await window.electron.getHistoryQueue();
+      data.historyMovies = offlineQueue || [];
+    } else {
+      console.warn("⚠️ Offline and no preload method found.");
+    }
+
+    console.log("📽 History movies response:", data);
+
+    // ✅ Deduplicate
+    const uniqueMovies = [];
+    const seen = new Set();
+
+    for (const movie of data.historyMovies || []) {
+      const id = movie._id || movie.movieId;
+      if (!seen.has(id)) {
+        seen.add(id);
+        uniqueMovies.push(movie);
+      }
+    }
+
+    setHistoryMovies(uniqueMovies);
+  } catch (err) {
+    console.error("❌ Failed to fetch history movies:", err);
+  } finally {
+    const elapsed = Date.now() - start;
+    setTimeout(() => {
+      setIsLoading(false);
+    }, Math.max(0, minDelay - elapsed));
+  }
+};
+
+// ✅ Call it on mount
   useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
       fetchHistoryMovies(savedUser.userId);
     }
@@ -92,107 +122,121 @@ const StHistoryPage = () => {
     }
   };
 
-  const handleRemove = async (movieId) => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!movieId || !savedUser?.userId) {
-      console.warn("Missing movieId or userId");
-      return;
+ const handleRemove = async (movieId) => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!movieId || !savedUser?.userId) {
+    console.warn("⚠️ Missing movieId or userId");
+    return;
+  }
+
+  // ✅ Remove from UI
+  setHistoryMovies((prev) =>
+    prev.filter((m) => m.movieId?.toString() !== movieId.toString())
+  );
+  setShowSuccess(true);
+  setTimeout(() => setShowSuccess(false), 2000);
+
+  if (!isOnline) {
+    console.log("📦 Offline — removing from history queue");
+    window.electron?.removeFromHistoryQueue?.(movieId);
+    return;
+  }
+
+  // ✅ Online API removal
+  try {
+    const res = await fetch(`${API}/api/movies/history/delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: savedUser.userId,
+        movieId,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Server error ${res.status}: ${errText}`);
     }
-  
+
+    const data = await res.json();
+    console.log("🗑️ Removed from history (online):", data);
+  } catch (err) {
+    console.error("❌ Failed to remove from history:", err.message || err);
+    alert("Could not remove movie from history.");
+  }
+};
+
+
+const handleRemoveAllHistory = async () => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!savedUser?.userId) return;
+
+  setHistoryMovies([]); // Clear UI immediately
+
+  if (isOnline) {
     try {
-      const res = await fetch(`${API}/api/movies/historyMovies/delete`, {
+      await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: savedUser.userId,
-          movieId: movieId,
-        }),
-      });
-  
-
-      const data = await res.json();
-      console.log("🗑️ Remove response:", data);
-
-      console.log("Before removal:", historyMovies.map(m => typeof m.movieId), typeof movieId);
-
-  
-      // ✅ Remove movie from frontend UI state
-      setHistoryMovies((prev) =>
-        prev.filter((m) => m.movieId.toString() !== movieId.toString())
-      );
-
-      
-      setShowSuccess(true); // ✅ show popup
-      setTimeout(() => setShowSuccess(false), 2000); // auto-hide
-    } catch (err) {
-      console.error("❌ Error removing liked movie:", err);
-    }
-  };
-
-  // const handleRemoveAllHistory = async () => {
-  //   const savedUser = JSON.parse(localStorage.getItem("user"));
-  //   if (!savedUser?.userId) return;
-  
-  //   try {
-
-  //     const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ userId: savedUser.userId }),
-  //     });
-  
-  //     const result = await res.json();
-  //     console.log("🧹 Clear history response:", result);
-  
-  //     // Clear the local state
-  //     setHistoryMovies([]);
-  //   } catch (err) {
-  //     console.error("❌ Error clearing history:", err);
-  //   }
-  // };
-  
-
-  const handleRemoveAllHistory = async () => {
-    console.log("🧹 handleRemoveAllHistory called");
-  
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    console.log("🔍 savedUser:", savedUser);
-  
-    if (!savedUser?.userId) {
-      console.warn("⚠️ No userId found");
-      return;
-    }
-  
-    try {
-      const res = await fetch(`${API}/api/movies/historyMovies/removeAllHistory`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: savedUser.userId }),
       });
-  
-      console.log("✅ HTTP status:", res.status);
-  
-      const result = await res.json();
-      console.log("📦 Backend response:", result);
-  
-      setHistoryMovies([]);  // Clear state
+      console.log("🧹 Server history cleared.");
     } catch (err) {
-      console.error("❌ Error clearing history:", err);
+      console.error("❌ Server clear error:", err);
     }
+  } else {
+    window.electron?.clearHistoryQueueByUser?.(savedUser.userId);
+  }
+};
+
+
+useEffect(() => {
+  const syncHistoryQueue = async () => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!savedUser?.userId) return;
+
+    const history = window.electron.getRawHistoryQueue?.() || [];
+
+    for (const action of history) {
+      try {
+        if (action.type === "delete") {
+          await fetch(`${API}/api/movies/history/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: savedUser.userId,
+              movieId: action.movieId,
+            }),
+          });
+        } else if (action.movie) {
+          await fetch(`${API}/api/movies/history`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: savedUser.userId,
+              movie: action.movie,
+            }),
+          });
+        }
+      } catch (err) {
+        console.warn("❌ Failed to sync history movie:", err);
+      }
+    }
+
+    window.electron.clearHistoryQueue?.();
+    console.log("✅ Synced history queue");
   };
-  
+
+  if (isOnline) syncHistoryQueue();
+}, [isOnline]);
 
 
   return (
     <div className="p-4">
       <StNav />
-
+      <StSideBar />
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="-mt-4 flex justify-end mb-5">
@@ -232,6 +276,7 @@ const StHistoryPage = () => {
                   <div className="flex justify-center gap-2 mt-2">
                     {/* play btn */}
                     <button
+                      disabled={!isOnline}
                       onClick={() => {
                         console.log("▶️ Play clicked for:", movie.movieId);
                         handlePlay(movie.movieId, movie.trailer_url); // ✅ Pass trailerUrl here

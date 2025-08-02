@@ -10,48 +10,72 @@ const StWatchLaterPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  useEffect(() => {
+    const handleNetworkChange = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleNetworkChange);
+    window.addEventListener("offline", handleNetworkChange);
+    return () => {
+      window.removeEventListener("online", handleNetworkChange);
+      window.removeEventListener("offline", handleNetworkChange);
+    };
+  }, []);
 
   const fetchWatchLaterMovies = async (userId) => {
+  if (!userId) {
+    console.warn("❗ No userId provided");
+    return;
+  }
 
-    
-    if (!userId) return;
-    setIsLoading(true);
+  setIsLoading(true);
+  const start = Date.now();
+  const minDelay = 500;
 
-    const start = Date.now(); //Track start time
-    try {
+  try {
+    let data = { SaveMovies: [] };
 
-
-
+    if (isOnline) {
+      // ✅ Online: fetch from backend
       const res = await fetch(`${API}/api/movies/watchLater/${userId}`);
-      const data = await res.json();
+      data = await res.json();
+      console.log("🎬 Watch Later (online):", data);
 
-      console.log("🎬 Watch Later response:", data);
-
-      // Remove duplicates by _id or movieId
-      const uniqueMovies = [];
-      const seen = new Set();
-
-      for (const movie of data.SaveMovies || []) {
-        const id = movie._id || movie.movieId;
-        if (!seen.has(id)) {
-          seen.add(id);
-          uniqueMovies.push(movie);
-        }
+      // ✅ Save for offline viewing
+      if (window.electron?.saveSavedQueue) {
+        window.electron.saveSavedQueue(data.SaveMovies);
       }
-
-      setWatchLaterMovies(uniqueMovies);
-    } catch (err) {
-      console.error("❌ Failed to fetch watch later movies:", err);
-    } finally {
-      const elapsed = Date.now() - start;
-      const minDelay = 500; // milliseconds
-  
-      setTimeout(() => {
-        setIsLoading(false);
-      }, Math.max(0, minDelay - elapsed)); // ensure at least 500ms visible
+    } else if (window.electron?.getSavedQueue) {
+      // ✅ Offline: load from local file
+      const offlineQueue = await window.electron.getSavedQueue();
+      data.SaveMovies = offlineQueue || [];
+      console.log("📦 Watch Later (offline):", data.SaveMovies);
+    } else {
+      console.warn("⚠️ Offline and no preload getSavedQueue available");
     }
-  };
+
+    // ✅ Deduplicate
+    const seen = new Set();
+    const uniqueMovies = [];
+
+    for (const movie of data.SaveMovies || []) {
+      const id = movie._id || movie.movieId;
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        uniqueMovies.push(movie);
+      }
+    }
+
+    setWatchLaterMovies(uniqueMovies);
+  } catch (err) {
+    console.error("❌ Failed to fetch watch later movies:", err);
+  } finally {
+    const elapsed = Date.now() - start;
+    setTimeout(() => {
+      setIsLoading(false);
+    }, Math.max(0, minDelay - elapsed));
+  }
+};
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -94,49 +118,95 @@ const StWatchLaterPage = () => {
     }
   };
 
-  const handleRemove = async (movieId) => {
-
+  useEffect(() => {
+  const syncSavedQueue = async () => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!movieId || !savedUser?.userId) {
-      console.warn("Missing movieId or userId");
-      return;
+    if (!savedUser?.userId) return;
+
+    const saved = window.electron.getRawSavedQueue?.() || [];
+
+    for (const action of saved) {
+      try {
+        if (action.type === "delete") {
+          await fetch(`${API}/api/movies/save/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: savedUser.userId,
+              movieId: action.movieId,
+            }),
+          });
+        } else if (action.movie) {
+          await fetch(`${API}/api/movies/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: savedUser.userId,
+              movie: action.movie,
+            }),
+          });
+        }
+      } catch (err) {
+        console.warn("❌ Failed to sync saved movie:", err);
+      }
     }
-  
-    try {
-      const res = await fetch(`${API}/api/movies/watchLater/delete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: savedUser.userId,
-          movieId: movieId,
-        }),
-      });
-  
 
-      const data = await res.json();
-      console.log("🗑️ Remove response:", data);
-
-      console.log("Before removal:", watchLaterMovies.map(m => typeof m.movieId), typeof movieId);
-
-  
-      // ✅ Remove movie from frontend UI state
-      setWatchLaterMovies((prev) =>
-        prev.filter((m) => m.movieId.toString() !== movieId.toString())
-      );
-
-      setShowSuccess(true); // ✅ show popup
-      setTimeout(() => setShowSuccess(false), 2000); // auto-hide
-    } catch (err) {
-      console.error("❌ Error removing liked movie:", err);
-    }
+    window.electron.clearSavedQueue?.();
+    console.log("✅ Synced saved queue");
   };
-  
-  
+
+  if (isOnline) syncSavedQueue();
+}, [isOnline]);
+
+
+
+  const handleRemove = async (movieId) => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!movieId || !savedUser?.userId) {
+    console.warn("⚠️ Missing movieId or userId");
+    return;
+  }
+
+  // ✅ Remove from UI
+  setWatchLaterMovies((prev) =>
+    prev.filter((m) => m.movieId?.toString() !== movieId.toString())
+  );
+  setShowSuccess(true);
+  setTimeout(() => setShowSuccess(false), 2000);
+
+  if (!isOnline) {
+    console.log("📦 Offline — removing from saved queue");
+    window.electron?.removeFromSavedQueue?.(movieId);
+    return;
+  }
+
+  // ✅ Online API removal
+  try {
+    const res = await fetch(`${API}/api/movies/watchLater/delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: savedUser.userId,
+        movieId,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Server error ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    console.log("🗑️ Removed from Watch Later (online):", data);
+  } catch (err) {
+    console.error("❌ Failed to remove from watch later:", err.message || err);
+    alert("Could not remove movie. Try again later.");
+  }
+};
 
   
-
   return (
     <div className="p-4">
       <StNav />

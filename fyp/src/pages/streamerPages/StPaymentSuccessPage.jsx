@@ -1,29 +1,44 @@
 import { useEffect, useState } from "react";
+
 import { API } from "@/config/api";
 
-const StPaymentSuccess = () => {
+const StPaymentSuccessPage = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const finalizeSubscription = async () => {
-      const pending = JSON.parse(localStorage.getItem("pendingSubscription"));
+      const params = new URLSearchParams(window.location.hash.split("?")[1]);
 
-      if (!pending) {
-        setError("No subscription data found.");
+      const userId = params.get("userId");
+      const plan = params.get("plan");
+      const cycle = params.get("cycle");
+      const price = params.get("price");
+      const email = params.get("email");
+
+      if (!userId || !plan || !cycle || !price || !email) {
+        setError("Missing subscription data in URL.");
         setIsProcessing(false);
         return;
       }
+
+      const payload = {
+        userId,
+        plan,
+        cycle,
+        price: parseFloat(price),
+        email,
+      };
 
       try {
         const res = await fetch(`${API}/api/subscription/select`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(pending),
+          body: JSON.stringify(payload),
         });
 
         const data = await res.json();
-        localStorage.removeItem("pendingSubscription");
+        console.log("✅ Finalized subscription:", data);
       } catch (err) {
         console.error("❌ Failed to finalize subscription:", err);
         setError("There was a problem confirming your subscription.");
@@ -62,4 +77,4 @@ const StPaymentSuccess = () => {
   );
 };
 
-export default StPaymentSuccess;
+export default StPaymentSuccessPage;

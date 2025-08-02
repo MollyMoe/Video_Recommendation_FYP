@@ -1,56 +1,67 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
+
 import { API } from "@/config/api";
 
-
-const AdMovieContent = () => {
+const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlobal, currentRecentMoviesGlobal }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState(null);
-  const [movies, setMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // 🔄 Loading state
+  const [movies, setMovies] = useState([]); 
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hoveredMovieId, setHoveredMovieId] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({});
 
-  // Fetch movies from MongoDB collection hybridRecommendation2
-  useEffect(() => {
-    setIsLoading(true); // Start loading
-    axios
-      .get(`${API}/api/movies/all`) // Adjust if deployed
-      .then((res) => {
-        const unique = [];
-        const seenTitles = new Set();
-
-        const validMovies = res.data.filter(
-          (movie) =>
-            movie.poster_url &&
-            typeof movie.poster_url === 'string' &&
-            movie.poster_url.toLowerCase() !== 'nan' &&
-            movie.poster_url.trim() !== ''
-        );
-
-        for (const movie of validMovies) {
-          if (!seenTitles.has(movie.title)) {
-            seenTitles.add(movie.title);
-            unique.push(movie);
-          }
-        }
-
-        setMovies(unique);
-      })
-      .catch((err) => {
-        console.error('❌ Failed to fetch movies', err);
-      })
-      .finally(() => {
-        setIsLoading(false); // Done loading
+  const fetchMovies = async () => {
+    setIsLoading(true);
+    try {
+      const res = await axios.get(`${API}/api/movies/limit`, {
+        params: { page, limit: 20, search: searchQuery || "" },
       });
-  }, []);
 
-  const handleDelete = (id) => {
-    setMovies(movies.filter((movie) => movie._id !== id));
+      if (!res.data || !res.data.data) {
+        console.warn("API response data is invalid. Skipping movie data processing.");
+        setMovies([]);
+        setTotalPages(1);
+        return;
+      }
 
-    // OPTIONAL: delete from backend
-    // axios.delete(`http://localhost:3001/api/movies/${id}`)
-    //   .then(() => console.log('Deleted from DB'))
-    //   .catch(err => console.error('❌ Failed to delete from DB', err));
+      const newMoviesData = res.data.data;
+      const total = res.data.total;
+
+      setMovies(newMoviesData); 
+      setTotalPages(Math.ceil(total / 20));
+
+    } catch (err) {
+      console.error('❌ Failed to fetch movies', err);
+      setMovies([]); 
+      setTotalPages(1);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setPage(1); 
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchMovies();
+  }, [page, searchQuery, externalUpdateTrigger]);
+
+
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`${API}/api/movies/${id}`);
+      setMovies((prev) => prev.filter((movie) => movie._id !== id));
+      setRecentMoviesGlobal((prev) => prev.filter((movie) => movie._id !== id));
+      alert("Movie deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting movie:", error);
+      alert("Failed to delete movie: " + (error.response?.data?.detail || error.message || "An error occurred."));
+    }
   };
 
   const openConfirm = (id) => {
@@ -71,43 +82,122 @@ const AdMovieContent = () => {
     setSelectedMovieId(null);
   };
 
-  // ⏳ Show loading screen
-  if (isLoading) {
+  const handleMouseEnter = (movieId, e) => {
+    setHoveredMovieId(movieId);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const tooltipWidth = 224; 
+    const spaceRight = window.innerWidth - rect.right;
+
+    if (spaceRight < tooltipWidth) {
+      setTooltipPosition({ [movieId]: 'left' });
+    } else {
+      setTooltipPosition({ [movieId]: 'right' });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredMovieId(null);
+    setTooltipPosition({});
+  };
+
+  if (isLoading && movies.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-800 text-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-lg font-semibold">Loading movies...</p>
+      <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+          <p className="text-lg font-semibold">Loading Movies...</p>
+          <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="sm:ml-40 px-4 pt-30 sm:px-8 dark:bg-gray-800 dark:border-gray-700">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {movies.map((movie) => (
-          <div
-            key={movie._id}
-            className="w-[140px] mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden flex flex-col items-center"
-          >
-            <img
-              src={movie.poster_url}
-              alt={movie.title}
-              className="w-full aspect-[9/16] object-cover"
-            />
-            <div className="w-full p-2 flex justify-center">
-              <button
-                onClick={() => openConfirm(movie._id)}
-                className="flex justify-center items-center space-x-2 text-gray-800 py-2 rounded-xl hover:bg-gray-100 dark:text-white dark:hover:bg-gray-500"
-              >
-                <FaTrash />
-                <span className="text-sm">Delete</span>
-              </button>
+    <div className="sm:ml-0 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700 mr-50">
+      {/* 🎬 All Movies Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-10">
+        {movies.map((movie) => {
+          const isNewlyAdded = currentRecentMoviesGlobal && currentRecentMoviesGlobal.some(recent => recent._id === movie._id);
+
+          return (
+            <div
+              key={movie._id}
+              className={`relative w-[140px] mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-visible flex flex-col items-center`}
+              onMouseEnter={(e) => handleMouseEnter(movie._id, e)}
+              onMouseLeave={handleMouseLeave}
+            >
+              {isNewlyAdded && (
+                <div className="absolute top-1 right-1 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10 shadow-md">
+                  Newly Added!
+                </div>
+              )}
+
+              <img
+                src={movie.poster_url}
+                alt={movie.title}
+                className="w-full aspect-[9/16] object-cover"
+              />
+              <div className="w-full p-2 flex justify-center">
+                <button
+                  onClick={() => openConfirm(movie._id)}
+                  className="flex justify-center items-center space-x-2 text-gray-800 py-2 rounded-xl hover:bg-gray-100 dark:text-white dark:hover:bg-gray-500"
+                >
+                  <FaTrash />
+                  <span className="text-sm">Delete</span>
+                </button>
+              </div>
+              
+              {/* Tooltip-like details box, conditionally displayed on hover */}
+              {hoveredMovieId === movie._id && (
+                <div
+                  className={`absolute top-0 ${
+                    tooltipPosition[movie._id] === 'left'
+                      ? 'right-full mr-4'
+                      : 'left-full ml-4'
+                  } w-56 p-3 bg-white dark:bg-gray-700 shadow-lg z-50 text-black dark:text-white`}
+                >
+                  <h3 className="font-semibold text-sm mb-1">{movie.title}</h3>
+                  <p className="text-sm mb-1">Director: {movie.director || 'Unknown'}</p>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-center mt-15 mb-5 space-x-2">
+        <button
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={page === 1}
+          className={`px-2 py-1 rounded-md font-medium transition-all duration-200 ${
+            page === 1
+              ? "text-gray-500 bg-gray-300 cursor-not-allowed"
+              : "bg-black text-white hover:bg-gray-800"
+          }`}
+        >
+          ←
+        </button>
+
+        <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-md shadow text-black dark:text-white font-semibold text-sm tracking-wide">
+          <span>Page</span>
+          <span className="text-purple-600 dark:text-purple-400">{page}</span>
+          <span>/</span>
+          <span>{totalPages}</span>
+        </div>
+
+        <button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={page === totalPages}
+          className={`px-2 py-1 rounded-md font-medium transition-all duration-200 ${
+            page === totalPages
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+              : "bg-black text-white hover:bg-gray-800"
+          }`}
+        >
+          →
+        </button>
+      </div>
+
 
       {/* Delete Confirmation Modal */}
       {isConfirmOpen && (

@@ -73,6 +73,7 @@ def signup(request: Request, user: SignUpRequest):
         "genres": [],
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
+        "createdAt": datetime.utcnow(),
         "lastSignin": datetime.utcnow(),       # Stored as Date for queries
         "lastSignout": datetime.utcnow(),      # Stored as Date, not ISO string
         "__v": 0

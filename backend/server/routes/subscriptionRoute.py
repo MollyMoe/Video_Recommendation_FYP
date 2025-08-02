@@ -28,6 +28,8 @@ class SubscriptionOut(BaseModel):
     nextPayment: Optional[str] = None
     isActive: bool = False
     expiresOn: Optional[str] = None
+    wasCancelled: Optional[bool] = False
+    isTrial: Optional[bool] = False
 
 def send_subscription_email(to_email: str, plan: str, cycle: str, price: float, nextPayment: str):
     EMAIL_USER = os.getenv("EMAIL_USER")
@@ -65,28 +67,97 @@ def send_subscription_email(to_email: str, plan: str, cycle: str, price: float, 
 def get_subscription(userId: str, request: Request):
     db = request.app.state.support_db
     sub_col = db["subscription"]
+    user_db = request.app.state.user_db
+    users = user_db["streamer"]
 
-    doc = sub_col.find_one({"userId": userId})
-    if not doc:
+    sub_doc = sub_col.find_one({"userId": userId})
+    user_doc = users.find_one({"userId": userId})
+
+    created_at = None
+    trial_expired = True
+
+    if user_doc and "createdAt" in user_doc:
+        created_at = user_doc["createdAt"]
+        if isinstance(created_at, str):
+            created_at = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%S.%f")
+        trial_end = created_at + timedelta(days=7)
+        trial_expired = datetime.utcnow() > trial_end
+        expires_on_str = trial_end.strftime("%d %B %Y")
+    else:
+        expires_on_str = None
+
+    # 1️⃣ New user — no subscription in DB
+    if not sub_doc:
+        sub_col.insert_one({
+            "userId": userId,
+            "plan": "Free Trial",
+            "price": 0.0,
+            "cycle": "Trial",
+            "isActive": not trial_expired,
+            "nextPayment": None,
+            "expiresOn": expires_on_str,
+            "wasCancelled": False,
+            "isTrial": True
+        })
+
         return SubscriptionOut(
             userId=userId,
-            cycle="",
+            cycle="Trial",
             price=0.0,
-            plan=None,
+            plan="Free Trial",
             nextPayment=None,
-            isActive=False,
-            expiresOn=None
+            isActive=not trial_expired,
+            expiresOn=expires_on_str,
+            wasCancelled=False,
+            isTrial=True
         )
+
+    # 2️⃣ Existing user on Free Trial → refresh trial state from createdAt
+    if sub_doc.get("plan") == "Free Trial" and created_at:
+        sub_col.update_one(
+            {"userId": userId},
+            {"$set": {
+                "isActive": not trial_expired,
+                "isTrial": not trial_expired,
+                "expiresOn": expires_on_str
+            }}
+        )
+
+        return SubscriptionOut(
+            userId=userId,
+            cycle="Trial",
+            price=0.0,
+            plan="Free Trial",
+            nextPayment=None,
+            isActive=not trial_expired,
+            expiresOn=expires_on_str,
+            wasCancelled=False,
+            isTrial=not trial_expired
+        )
+
+    # 3️⃣ Paid or other plan
+    expires_on_str = sub_doc.get("expiresOn")
+    is_active = False
+    if expires_on_str:
+        try:
+            expires_on = datetime.strptime(expires_on_str, "%d %B %Y")
+            is_active = expires_on > datetime.utcnow()
+        except Exception as e:
+            print("⚠️ Failed to parse expiresOn:", e)
 
     return SubscriptionOut(
         userId=userId,
-        cycle=doc.get("cycle", ""),
-        price=doc.get("price", 0.0),
-        plan=doc.get("plan"),
-        nextPayment=doc.get("nextPayment"),
-        isActive=doc.get("isActive", False),
-        expiresOn=doc.get("expiresOn")
+        cycle=sub_doc.get("cycle", ""),
+        price=sub_doc.get("price", 0.0),
+        plan=sub_doc.get("plan"),
+        nextPayment=sub_doc.get("nextPayment"),
+        isActive=is_active,
+        expiresOn=expires_on_str,
+        wasCancelled=sub_doc.get("wasCancelled", False),
+        isTrial=False
     )
+
+
 
 
 @router.post("/subscription/select")
@@ -108,7 +179,8 @@ def select_plan(payload: SubscriptionIn, request: Request):
             "price": payload.price,
             "cycle": payload.cycle,
             "isActive": True,
-            "nextPayment": next_date.strftime("%d %B %Y")
+            "nextPayment": next_date.strftime("%d %B %Y"),
+            "expiresOn": next_date.strftime("%d %B %Y")
         }},
         upsert=True
     )
@@ -146,6 +218,7 @@ def cancel_plan(userId: str, request: Request):
         {"userId": userId},
         {"$set": {
             "isActive": False,
+            "wasCancelled": True,
             "expiresOn": expires_on
         }}
     )

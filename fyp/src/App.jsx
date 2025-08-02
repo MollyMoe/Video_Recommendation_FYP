@@ -1,28 +1,43 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
-import StHomePage from "./pages/streamerPages/StHomePage";
+import { Navigate } from "react-router-dom";
+
 import InputGenrePage from "./pages/InputGenrePage";
 import AdminLayout from "./layouts/AdminLayout";
-import StHistoryPage from "./pages/streamerPages/StHistoryPage";
+import StreamerLayout from "./layouts/StreamerLayout";
 import Signin from "./pages/SignInPage";
 import Signup from "./pages/SignUpPage";
-import StSettingPage from "./pages/streamerPages/StSettingPage";
-import StreamerLayout from "./layouts/StreamerLayout";
+import SetNewPasswordPage from "./pages/SetNewPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+
+
+
 import AdDashboardPage from "./pages/adminPages/AdDashboardPage";
 import AdVideoHomePage from "./pages/adminPages/AdVideoHomePage";
 import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
 import AdUserDetails from "./components/admin_components/AdUserDetails";
-import SetNewPasswordPage from "./pages/SetNewPasswordPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
+import AdUserOverviewPage from "./pages/adminPages/AdUserOverviewPage";
+import AdTopLikedPage from "./pages/adminPages/AdTopLikedPage";
+import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAddedMovies";
+import AdUserFeedback from "./components/admin_components/AdUserFeedback";
+import AdUserLikedMoviesPage from "./pages/adminPages/AdUserLikedMoviesPage";
+import AdUserHistoryPage from "./pages/adminPages/AdUserHistoryPage";
+import AdUserWatchLaterPage from "./pages/adminPages/AdUserWatchLaterPage";
+import AdVideoManageLayout from "./layouts/AdVideoManageLayout";
+import AdUserDetailsLayout from "./layouts/AdUserDetailsLayout";
+import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
 
+import StHomePage from "./pages/streamerPages/StHomePage";
+import StHistoryPage from "./pages/streamerPages/StHistoryPage";
+import StSettingPage from "./pages/streamerPages/StSettingPage";
+import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
 import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
 import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
-import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
-import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
+import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscriptionPage";
+import StPaymentSuccessPage from "./pages/streamerPages/StPaymentSuccessPage";
 
 
 
@@ -38,7 +53,7 @@ function App() {
           <Route path="/inputgenre" element={<InputGenrePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/reset-password-form" element={<SetNewPasswordPage />} />
-          <Route path="/success" element={<StPaymentSuccess />} />
+          <Route path="/success" element={<StPaymentSuccessPage />} />
 
           {/* Streamer Layout */}
           <Route path="/home" element={<StreamerLayout />}>
@@ -61,7 +76,27 @@ function App() {
             <Route path="videoHomePage" element={<AdVideoHomePage />} />
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
-            <Route path="view/:id" element={<AdUserDetails />} />
+            <Route path="feedback" element={<AdUserFeedback />} />
+
+              {/* Video Manage Layout */}
+              <Route path="video" element={<AdVideoManageLayout />}>
+                <Route index element={<Navigate to="videoHomePage" replace />} />
+                <Route path="videoHomePage" element={<AdVideoHomePage />} />
+                <Route path="topLiked" element={<AdTopLikedPage />} />
+                <Route path="recently-added" element={<AdRecentlyAddedMovies />} />
+                <Route path="genre" element={<AdVideoManageGenrePage />} />
+              </Route>
+
+              <Route path="/admin/view/:id" element={<AdUserDetailsLayout />}>
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<AdUserOverviewPage />} />
+                <Route path="subscription" element={<AdUserDetails />} />
+                <Route path="history" element={<AdUserHistoryPage />} />
+                <Route path="liked" element={<AdUserLikedMoviesPage />} />
+                <Route path="watchLater" element={<AdUserWatchLaterPage/>} />
+                
+              </Route>
+
           </Route>
         </Routes>
       </HashRouter>

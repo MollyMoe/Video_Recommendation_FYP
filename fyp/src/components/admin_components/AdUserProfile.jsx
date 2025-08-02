@@ -70,7 +70,6 @@ function AdUserProfile() {
 
   const handleSignout = async () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
-  const API = import.meta.env.VITE_API_BASE_URL;
 
   if (savedUser?.userId) {
     // 🟡 If online: update backend
