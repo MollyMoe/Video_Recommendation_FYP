@@ -249,10 +249,22 @@ const clearSearchFilters = () => {
     const action = actions[actionType];
     if (!action) return;
 
+    // if (actionType === 'delete') {
+    //   setMovies(prev => prev.filter(m => m.movieId !== movieId));
+    //   setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+    // }
+
     if (actionType === 'delete') {
-      setMovies(prev => prev.filter(m => m.movieId !== movieId));
-      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+        // Remove from main recommendations
+        setMovies(prev => prev.filter(m => m.movieId !== movieId));
+        setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+
+        // Remove from section-specific arrays
+        setLikedMovies(prev => prev.filter(m => m.movieId !== movieId));
+        setSavedMovies(prev => prev.filter(m => m.movieId !== movieId));
+        setWatchedMovies(prev => prev.filter(m => m.movieId !== movieId));
     }
+
     
     try {
       await axios.post(`${API}/api/movies/${action.url}`, { userId: savedUser.userId, movieId });
@@ -284,7 +296,7 @@ const clearSearchFilters = () => {
      }
    }, [savedUser?.userId, username]);
 
-   //remove this part because with this the 3 buttona and regenerate would not work
+  //remove this part because with this the 3 buttona and regenerate would not work
   // useEffect(() => {
   //   if (savedUser?.userId) {
   //     axios.get(`${API}/api/subscription/${savedUser.userId}`)
