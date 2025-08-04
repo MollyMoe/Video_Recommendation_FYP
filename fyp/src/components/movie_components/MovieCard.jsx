@@ -56,7 +56,7 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
           onError={(e) => {
             e.currentTarget.style.display = "none";
           }}
-          className="rounded-lg"
+          className="w-full h-full object-cover rounded-lg"
         />
       </div>
 
@@ -81,7 +81,7 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
                 onError={(e) => {
                   e.currentTarget.src = "/fallback-poster.jpg"; // put in `public` folder
                 }}
-                className="rounded-lg"
+                className="w-full h-full object-cover rounded-lg"
                   />
             )}
           </div>
