@@ -3,7 +3,6 @@ import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 
-
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const StFilterContent = ({ searchQuery }) => {
@@ -11,52 +10,72 @@ const StFilterContent = ({ searchQuery }) => {
   const [allMovies, setAllMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
-  const savedUser = JSON.parse(localStorage.getItem("user"));
   
   // Add state for the popup message
   const [popupMessage, setPopupMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
 
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+
   useEffect(() => {
     console.log("📦 Fetching personalized recommendations and sorting them by rating.");
-    
-    const fetchTopRatedRecommendations = async () => {
-      if (!savedUser?.userId) {
-        console.log("No user ID found. Skipping movie fetch.");
-        setIsLoading(false);
-        return;
+  const fetchExpandedRecommendationsWithPriority = async () => {
+    if (!savedUser?.userId) {
+      console.log("No user ID found. Skipping movie fetch.");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const [likedRes, recommendedRes] = await Promise.all([
+        axios.get(`${API}/api/movies/top-liked`),
+        axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`)
+      ]);
+
+      const likedMovieIds = likedRes.data.map(item => String(item.movieId));
+      let recommendedMovies = recommendedRes.data;
+
+      if (!Array.isArray(recommendedMovies)) {
+        console.error("Recommendations API did not return an array. Using empty array.");
+        recommendedMovies = [];
       }
 
-      setIsLoading(true);
+      // Prioritise recommended movies that are in liked database
+      const inLiked = [];
+      const notInLiked = [];
 
-      try {
-        const res = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
-        let recommendedMovies = res.data;
-        
-        if (!Array.isArray(recommendedMovies)) {
-          console.error("API did not return an array. Using empty array.");
-          recommendedMovies = [];
+      for (const movie of recommendedMovies) {
+        if (likedMovieIds.includes(String(movie.movieId))) {
+          inLiked.push(movie);
+        } else {
+          notInLiked.push(movie);
         }
-
-        const sortedMovies = recommendedMovies.sort((a, b) => 
-          (b.predicted_rating || 0) - (a.predicted_rating || 0)
-        );
-
-        console.log("🎬 Fetched and sorted movies:", sortedMovies);
-        
-        setAllMovies(sortedMovies);
-        setMovies(sortedMovies);
-      } catch (err) {
-        console.error("Failed to fetch and sort movies:", err);
-        setMovies([]); 
-        setAllMovies([]);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    fetchTopRatedRecommendations();
-  }, [savedUser?.userId]);
+      // Sort both lists by predicted rating
+      const sortedInLiked = inLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
+      const sortedNotInLiked = notInLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
+
+      // Combine, prioritise liked database over user recommendations
+      const finalList = [...sortedInLiked, ...sortedNotInLiked];
+
+      console.log("🎬 Final prioritized list of recommended movies:", finalList);
+
+      setAllMovies(finalList);
+      setMovies(finalList);
+    } catch (err) {
+      console.error("Failed to fetch liked & recommended movies:", err);
+      setMovies([]);
+      setAllMovies([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchExpandedRecommendationsWithPriority();
+}, [savedUser?.userId]);
 
   useEffect(() => {
     const trimmedQuery = searchQuery?.trim().toLowerCase();
@@ -66,23 +85,39 @@ const StFilterContent = ({ searchQuery }) => {
       return;
     }
 
-    const filtered = allMovies.filter(movie =>
-      movie.title?.toLowerCase().includes(trimmedQuery) ||
-      movie.director?.toLowerCase().includes(trimmedQuery) ||
-      (Array.isArray(movie.actors) && movie.actors.some(actor => actor?.toLowerCase().includes(trimmedQuery))) ||
-      (Array.isArray(movie.genres) && movie.genres.some(genre => genre?.toLowerCase().includes(trimmedQuery)))
-    );
+    // New filtering logic that handles arrays and filters the allMovies list
+    const filtered = allMovies.filter(movie => {
+        const title = movie.title?.toLowerCase() || "";
+        const director = movie.director?.toLowerCase() || "";
+        const overview = movie.overview?.toLowerCase() || "";
+        const actors = (Array.isArray(movie.actors) ? movie.actors.join(" ").toLowerCase() : movie.actors?.toLowerCase()) || "";
+        const genres = (Array.isArray(movie.genres) ? movie.genres.join(" ").toLowerCase() : movie.genres?.toLowerCase()) || "";
+        const producers = (Array.isArray(movie.producers) ? movie.producers.join(" ").toLowerCase() : movie.producers?.toLowerCase()) || "";
+
+        return (
+            title.includes(trimmedQuery) ||
+            director.includes(trimmedQuery) ||
+            overview.includes(trimmedQuery) ||
+            actors.includes(trimmedQuery) ||
+            genres.includes(trimmedQuery) ||
+            producers.includes(trimmedQuery)
+        );
+    });
+
     setMovies(filtered);
   }, [searchQuery, allMovies]);
 
-  const handleHistory = async (movieId) => {
-    if (!movieId || !savedUser?.userId) return;
+  const handleHistory = async (movie) => {
+    if (!movie?.movieId || !savedUser?.userId) return;
     try {
       await fetch(`${API}/api/movies/history`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: savedUser.userId, movieId }),
+        body: JSON.stringify({ userId: savedUser.userId, movieId: movie.movieId }),
       });
+      if (movie.trailer_url) {
+        window.open(movie.trailer_url, "_blank");
+      }
     } catch (err) {
       console.error("❌ Error saving history:", err);
     }
@@ -96,7 +131,6 @@ const StFilterContent = ({ searchQuery }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: savedUser.userId, movieId }),
       });
-      // Added: Show a popup message on success
       setPopupMessage("Saved to Watch Later!");
       setShowPopup(true);
       setTimeout(() => setShowPopup(false), 2000);
@@ -113,7 +147,6 @@ const StFilterContent = ({ searchQuery }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: savedUser.userId, movieId }),
       });
-      // Added: Show a popup message on success
       setPopupMessage("Movie liked!");
       setShowPopup(true);
       setTimeout(() => setShowPopup(false), 2000);
@@ -134,16 +167,16 @@ const StFilterContent = ({ searchQuery }) => {
           </div>
         )}
         
-        <h2 className="text-xl font-bold text-gray-200 mb-4">Top Rated movies based on your Recommendations</h2>
+        <h2 className="text-xl font-bold text-gray-200 mb-4">Top 10 Rated movies based on your Recommendations</h2>
 
         {movies.length === 0 && !isLoading ? (
           <div className="text-center text-gray-500 mt-20">
             No movies found.
           </div>
         ) : (
-          movies.map((movie, index) => (
+          movies.slice(0, 10).map((movie, index) => (
             <div
-              key={movie._id}
+              key={movie._id || movie.movieId}
               className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
               onClick={() => setSelectedMovie(movie)}
             >
@@ -159,7 +192,6 @@ const StFilterContent = ({ searchQuery }) => {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                   {movie.title || "Unknown Title"}
                 </h2>
-
               </div>
               <div className="text-right flex items-center gap-1">
                 <Star className="w-5 h-5 text-yellow-500" />
@@ -187,7 +219,7 @@ const StFilterContent = ({ searchQuery }) => {
               />
               <div className="flex flex-col justify-center space-y-3 flex-grow">
                 <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
-                <p className="text-sm text-gray-700">{selectedMovie?.genres?.join(", ")}</p>
+                <p className="text-sm text-gray-700">{Array.isArray(selectedMovie?.genres) ? selectedMovie.genres.join(", ") : selectedMovie?.genres}</p>
                 <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
                 <p className="text-sm text-gray-700">
                   <strong>Actors:</strong> {Array.isArray(selectedMovie?.actors) ? selectedMovie.actors.join(", ") : selectedMovie?.actors || "N/A"}
@@ -200,12 +232,7 @@ const StFilterContent = ({ searchQuery }) => {
             <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
               <button
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                onClick={() => {
-                  handleHistory(selectedMovie.movieId);
-                  if (selectedMovie?.trailer_url) {
-                    window.open(selectedMovie.trailer_url, "_blank");
-                  }
-                }}
+                onClick={() => handleHistory(selectedMovie)}
               >
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
@@ -235,7 +262,6 @@ const StFilterContent = ({ searchQuery }) => {
               </button>
             </div>
             
-            {/* Added: Conditional rendering for the popup message */}
             {showPopup && (
               <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white text-purple-800 px-4 py-2 rounded shadow text-sm z-50">
                 {popupMessage}

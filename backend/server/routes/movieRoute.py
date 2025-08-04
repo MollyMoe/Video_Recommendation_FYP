@@ -7,6 +7,10 @@ from pydantic import BaseModel
 from typing import Optional, List, Union
 from datetime import datetime
 import uuid 
+import re
+import random
+from typing import List, Dict
+from collections import Counter
 
 class Movie(BaseModel):
     _id: Optional[str]
@@ -51,6 +55,32 @@ def get_all_movies(request: Request):
         print("❌ Failed to fetch movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
+@router.get("/limit")
+def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = ""):
+    db = request.app.state.movie_db
+    skip = (page - 1) * limit
+
+    query = {}
+    if search:
+        query = {
+            "$or": [
+                {"title": {"$regex": search, "$options": "i"}},
+                {"director": {"$regex": search, "$options": "i"}}
+            ]
+        }
+
+    try:
+        cursor = db.hybridRecommendation2.find(query, {"_id": 1, "title": 1, "poster_url": 1, "director": 1})
+        total = db.hybridRecommendation2.count_documents(query)
+        movies = list(cursor.skip(skip).limit(limit))
+
+        for movie in movies:
+            movie["_id"] = str(movie["_id"])
+
+        return {"data": movies, "total": total, "page": page}
+    except Exception as e:
+        print("❌ Error:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
@@ -333,43 +363,115 @@ async def remove_history(request: Request):
         print("❌ Failed to clear history:", e)
         raise HTTPException(status_code=500, detail="Server error")
 
+def _process_and_filter_movies(movie_list: List[Dict]) -> List[Dict]:
+
+    if not movie_list:
+        return []
+
+    print(f"🚀 Processing a list of {len(movie_list)} movies...")
+
+    # Filter for valid URLs first
+    url_filtered_movies = [
+        movie for movie in movie_list
+        if movie.get("poster_url") and movie.get("trailer_url")
+    ]
+    print(f"🔗 URL filtering complete. {len(url_filtered_movies)} movies remain.")
+
+    # Deduplicate by title, keeping the one with the highest rating
+    deduplicated_movies: Dict[str, Dict] = {}
+    for movie in url_filtered_movies:
+        title = movie.get("title")
+        if not title:
+            continue
+        try:
+            current_rating = float(movie.get("predicted_rating", 0.0))
+        except (ValueError, TypeError):
+            current_rating = 0.0
+        
+        if title not in deduplicated_movies or current_rating > float(deduplicated_movies[title].get("predicted_rating", 0.0)):
+            movie["predicted_rating"] = current_rating
+            deduplicated_movies[title] = movie
+            
+    unique_movies = list(deduplicated_movies.values())
+    print(f"👍 Deduplication complete. {len(unique_movies)} unique movies remain.")
+
+    for movie in unique_movies:
+        if isinstance(movie.get("_id"), ObjectId):
+            movie["_id"] = str(movie["_id"])
+    
+    return unique_movies
     
 @router.post("/regenerate")
-def regenerate_movies(
-    request: Request,
-    body: dict = Body(...)
-):
+def regenerate_movies(request: Request, body: dict = Body(...)):
     db = request.app.state.movie_db
-    genres: List[str] = body.get("genres", [])
+    user_db = request.app.state.user_db
+    
+    user_id = body.get("userId")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="userId is required")
+
+    user_profile = user_db.streamer.find_one({"userId": user_id})
+    if not user_profile or not user_profile.get("genres"):
+        raise HTTPException(status_code=404, detail="User or user genres not found")
+    
+    genres: List[str] = [g.lower().strip() for g in user_profile.get("genres", [])]
     exclude_titles: List[str] = body.get("excludeTitles", [])
 
     try:
-        pipeline = [
-            {"$match": {
-                "genres": {"$in": genres},
-                "title": {"$nin": exclude_titles},
-                "poster_url": {"$ne": None},
-                "trailer_url": {"$ne": None}
-            }},
-            {"$group": {"_id": "$title", "doc": {"$first": "$$ROOT"}}},
-            {"$replaceRoot": {"newRoot": "$doc"}},
-            #{"$limit": 30}
-        ]
-
-        movies = list(db.hybridRecommendation2.aggregate(pipeline))
+        genre_pattern = "|".join(re.escape(g) for g in genres)
+        pipeline = [{"$match": {
+            "title": {"$nin": exclude_titles},
+            "poster_url": {"$ne": None, "$ne": ""},
+            "trailer_url": {"$ne": None, "$ne": ""},
+            "genres": {"$regex": genre_pattern, "$options": "i"}
+        }}]
+        movies_cursor = list(db.hybridRecommendation2.aggregate(pipeline))
         
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
-            for key, value in movie.items():
-                if isinstance(value, float) and math.isnan(value):
-                    movie[key] = None
+        random.shuffle(movies_cursor)
+        processed_recommendations = _process_and_filter_movies(movies_cursor)
+        final_recommendations = processed_recommendations[:99]
 
-        return JSONResponse(content=movies)
+        print(f"✅ Regenerated and filtered {len(final_recommendations)} movies. Saving to DB.")
+        db.recommended.update_one(
+            {"userId": user_id},
+            {"$set": {"recommended": final_recommendations}},
+            upsert=True
+        )
+
+        # Remove internal MongoDB _id before sending to frontend
+        for movie in final_recommendations:
+            movie.pop("_id", None)
+
+        return JSONResponse(content=final_recommendations)
 
     except Exception as e:
-        print("❌ Failed to regenerate movies:", e)
+        print(f"❌ Failed to regenerate movies: {e}")
+        raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+
+@router.get("/recommendations/{userId}")
+def get_user_recommendations(userId: str, request: Request):
+
+    db = request.app.state.movie_db
+
+    try:
+        record = db.recommended.find_one({"userId": userId})
         
-    raise HTTPException(status_code=500, detail="Failed to regenerate movies")
+        # If no record is found, or the 'recommended' list is empty, return an empty list.
+        if not record or not record.get("recommended"):
+            print(f"No saved recommendations found for userId: {userId}")
+            return JSONResponse(content=[])
+
+        saved_recommendations = record.get("recommended", [])
+        
+        # Process the saved list using the helper function to ensure data quality.
+        print(f"Found {len(saved_recommendations)} saved recommendations for userId: {userId}. Processing...")
+        filtered_recommendations = _process_and_filter_movies(saved_recommendations)
+
+        return JSONResponse(content=filtered_recommendations)
+
+    except Exception as e:
+        print(f"❌ Error fetching recommendations for userId {userId}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
 # store recommendations in a collection
 @router.post("/store-recommendations")
@@ -396,13 +498,14 @@ async def store_recommendations(
         return JSONResponse(status_code=500, content={"error": "Failed to save recommendations"})
 
 # when new data is regenrated it will stay that way 
-@router.get("/recommendations/{user_id}")
-def get_user_recommendations(user_id: str, request: Request):
+@router.get("/recommendations/{userId}")
+def get_user_recommendations(userId: str, request: Request):
     db = request.app.state.movie_db
     try:
-        record = db.recommended.find_one({ "userId": user_id })
+        record = db.recommended.find_one({ "userId": userId })
         if not record:
-            return JSONResponse(content=[]) 
+            return JSONResponse(content=[])  
+
         return JSONResponse(content=record.get("recommended", []))
     except Exception as e:
         print("❌ Error fetching recommendations:", e)
@@ -430,6 +533,29 @@ def search_movies(request: Request, q: str = Query(..., min_length=1)):
     except Exception as e:
         print("❌ Search failed:", e)
         raise HTTPException(status_code=500, detail="Search failed")
+    
+@router.post("/historyMovies/removeAllHistory")
+async def remove_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+
+    try:
+        result = history_collection.update_one(
+            {"userId": user_id},
+            {"$set": {"historyMovies": []}}
+        )
+
+        print("🧹 Cleared history count:", result.modified_count)
+
+        return {"message": "History cleared"}
+    except Exception as e:
+        print("❌ Failed to clear history:", e)
+        raise HTTPException(status_code=500, detail="Server error")   
 
 # delete from recommendation    
 @router.post("/recommended/delete")
@@ -456,7 +582,138 @@ async def remove_from_recommended(request: Request):
         return {"message": "Movie removed from recommendations"}
     else:
         return {"message": "Movie not found or already removed"}
-    
+
+# new for the because you like/save/watch
+@router.post("/als-liked")
+async def als_liked(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "liked", request, set(body.get("excludeIds", [])))
+
+@router.post("/als-saved")
+async def als_saved(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "saved", request, set(body.get("excludeIds", [])))
+
+@router.post("/als-watched")
+async def als_watched(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "history", request, set(body.get("excludeIds", [])))    
+
+# In your Python router file
+
+def _als_filtered(userId: str, interaction_collection: str, request: Request, exclude_ids=None):
+    # ... (the top part of the function is correct and remains the same)
+    db = request.app.state.movie_db
+    als = db["alsRecommendations"]
+    movies = db["hybridRecommendation2"]
+    interactions = db[interaction_collection]
+
+    try:
+        interaction_doc = interactions.find_one({"userId": userId})
+        if not interaction_doc: return JSONResponse(content=[])
+        interaction_map = { "liked": "likedMovies", "saved": "SaveMovies", "history": "historyMovies" }
+        interaction_key = interaction_map.get(interaction_collection)
+        if not interaction_key: return JSONResponse(content=[])
+        interaction_ids = [str(mid.get("movieId") if isinstance(mid, dict) else mid)
+                           for mid in interaction_doc.get(interaction_key, [])]
+        if not interaction_ids: return JSONResponse(content=[])
+
+        final_movies = []
+        
+        # --- Primary Method: Try to find ALS recommendations first ---
+        als_results = list(als.find({"userId": userId}).sort("rating", -1))
+
+        if als_results:
+            pass
+
+        # --- Fallback Logic: Runs if primary method yields no results ---
+        if not final_movies:
+            print(f"⚠️ No ALS recommendations for {userId}. Initiating genre similarity fallback.")
+            
+            interacted_movies_cursor = list(movies.find({"movieId": {"$in": interaction_ids}}, {"genres": 1}))
+            if not interacted_movies_cursor: return JSONResponse(content=[])
+            
+            user_genre_set = set()
+            for movie in interacted_movies_cursor:
+                raw_genres = movie.get("genres", [])
+                if isinstance(raw_genres, str):
+                    user_genre_set.update(g.strip().lower() for g in raw_genres.split("|"))
+                elif isinstance(raw_genres, list):
+                    user_genre_set.update(g.strip().lower() for g in raw_genres)
+
+            if not user_genre_set: return JSONResponse(content=[])
+            print(f"User's taste profile (genres): {list(user_genre_set)}")
+
+            all_exclude_ids = set(interaction_ids) | exclude_ids
+            candidate_cursor = movies.find({
+                "movieId": {"$nin": list(all_exclude_ids)},
+                "poster_url": {"$ne": None, "$ne": ""},
+                "trailer_url": {"$ne": None, "$ne": ""}
+            }).limit(1000)
+
+            scored_candidates = []
+            for movie in candidate_cursor:
+                raw_movie_genres = movie.get("genres", [])
+                movie_genre_set = set()
+                if isinstance(raw_movie_genres, str):
+                    movie_genre_set = set(g.strip().lower() for g in raw_movie_genres.split("|"))
+                elif isinstance(raw_movie_genres, list):
+                    movie_genre_set = set(g.strip().lower() for g in raw_movie_genres)
+                
+                intersection = len(user_genre_set.intersection(movie_genre_set))
+                
+                if intersection > 0:
+                    # The score is now simply the number of shared genres.
+                    movie['similarity_score'] = intersection
+                    scored_candidates.append(movie)
+            
+            # Sort the candidates by the number of shared genres (most shared first).
+            final_movies = sorted(scored_candidates, key=lambda x: x['similarity_score'], reverse=True)
+            print(f"Fallback found {len(final_movies)} relevant movies with at least one shared genre.")
+
+        
+        # --- Final Processing ---
+        if not final_movies:
+            return JSONResponse(content=[])
+
+        processed_movies = _process_and_filter_movies(final_movies)
+        
+        return JSONResponse(content=processed_movies[:12])
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"❌ _als_filtered function failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+# GET /api/movies/counts/:userId
+@router.get("/counts/{userId}")
+def get_user_counts(userId: str, request: Request):
+    try:
+        print(f"🔍 Fetching counts for userId: {userId}")
+        db = request.app.state.movie_db
+
+        liked_doc = db["liked"].find_one({"userId": userId})
+        saved_doc = db["saved"].find_one({"userId": userId})
+        watched_doc = db["history"].find_one({"userId": userId})
+
+        liked_count = len(liked_doc.get("likedMovies", [])) if liked_doc else 0
+        saved_count = len(saved_doc.get("SaveMovies", [])) if saved_doc else 0
+        watched_count = len(watched_doc.get("historyMovies", [])) if watched_doc else 0
+
+        print(f"👍 liked count: {liked_count}")
+        print(f"💾 saved count: {saved_count}")
+        print(f"👀 watched count: {watched_count}")
+
+        return JSONResponse(content={
+            "liked": liked_count,
+            "saved": saved_count,
+            "watched": watched_count
+        })
+
+    except Exception as e:
+        print("❌ Error fetching interaction counts:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch counts")
 
 @router.get("/top-liked")
 async def get_top_liked_movies(request: Request):
@@ -497,32 +754,6 @@ async def get_top_liked_movies(request: Request):
         print("❌ Backend Error:", e)
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.get("/limit")
-def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = ""):
-    db = request.app.state.movie_db
-    skip = (page - 1) * limit
-
-    query = {}
-    if search:
-        query = {
-            "$or": [
-                {"title": {"$regex": search, "$options": "i"}},
-                {"director": {"$regex": search, "$options": "i"}}
-            ]
-        }
-
-    try:
-        cursor = db.hybridRecommendation2.find(query, {"_id": 1, "title": 1, "poster_url": 1, "director": 1})
-        total = db.hybridRecommendation2.count_documents(query)
-        movies = list(cursor.skip(skip).limit(limit))
-
-        for movie in movies:
-            movie["_id"] = str(movie["_id"])
-
-        return {"data": movies, "total": total, "page": page}
-    except Exception as e:
-        print("❌ Error:", e)
-        raise HTTPException(status_code=500, detail="Failed to fetch movies")
     
 
 # Move movies from 'added' collection to 'hybridRecommendation2', replace existing movies with the same title.    
