@@ -297,17 +297,11 @@ const clearSearchFilters = () => {
    }, [savedUser?.userId, username]);
 
   //remove this part because with this the 3 buttona and regenerate would not work
-  // useEffect(() => {
-  //   if (savedUser?.userId) {
-  //     axios.get(`${API}/api/subscription/${savedUser.userId}`)
-  //       .then(res => setIsSubscribed(res.data.isActive))
-  //       .catch(() => setIsSubscribed(false));
-  //   }
-  // }, [savedUser?.userId]);
-
-    useEffect(() => {
-     if (savedUser?.userId) {
-    setIsSubscribed(true);
+  useEffect(() => {
+    if (savedUser?.userId) {
+      axios.get(`${API}/api/subscription/${savedUser.userId}`)
+        .then(res => setIsSubscribed(res.data.isActive))
+        .catch(() => setIsSubscribed(false));
     }
   }, [savedUser?.userId]);
 
