@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 
+
 import {Play, Trash2, CheckCircle} from "lucide-react";
 import { API } from "@/config/api";
 
@@ -9,6 +10,7 @@ const StWatchLaterPage = () => {
   const [watchLaterMovies, setWatchLaterMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
+
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -33,6 +35,7 @@ const StWatchLaterPage = () => {
 
     if (isOnline) {
       // ✅ Online: fetch from backend
+
       const res = await fetch(`${API}/api/movies/watchLater/${userId}`);
       data = await res.json();
 
@@ -40,12 +43,14 @@ const StWatchLaterPage = () => {
       if (window.electron?.saveSavedQueue) {
         window.electron.saveSavedQueue(data.SaveMovies);
       }
+
     } else if (window.electron?.getSavedQueue) {
       // ✅ Offline: load from local file
       const offlineQueue = await window.electron.getSavedQueue();
       data.SaveMovies = offlineQueue || [];
     } else {
       console.warn("⚠️ Offline and no preload getSavedQueue available");
+
     }
     console.log("📽 Saved movies response:", data);
 
@@ -112,6 +117,7 @@ const StWatchLaterPage = () => {
       if (newTab) newTab.close(); // if error, close tab
     }
   };
+
 
   useEffect(() => {
   const syncSavedQueue = async () => {
@@ -201,21 +207,22 @@ const StWatchLaterPage = () => {
   }
 };
 
-  
+
   return (
     <div className="p-4">
       <StNav />
 
       <StSideBar />
-      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
+      <div className="sm:ml-64 pt-20 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {watchLaterMovies.length === 0 ? (
             <p className="text-center mt-10 text-white">
               No saved movies found.
             </p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-10">
               {watchLaterMovies.map((movie) => (
+
                 <div
                   key={movie._id || movie.movieId}
                   className="bg-white rounded-lg shadow p-2"
@@ -250,6 +257,7 @@ const StWatchLaterPage = () => {
                     </button>
                   </div>
                 </div>
+
               ))}
             </div>
           )}

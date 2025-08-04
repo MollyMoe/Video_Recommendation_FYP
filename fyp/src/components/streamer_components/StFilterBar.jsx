@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
 const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
+
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userId = savedUser?.userId || "default";
   const [isFocused, setIsFocused] = useState(false);
@@ -13,6 +14,7 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
     return stored ? JSON.parse(stored) : [];
   });
 
+
   const handleClickOutside = (event) => {
     if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
       setIsFocused(false);
@@ -21,6 +23,7 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
@@ -31,12 +34,14 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   const addToHistory = (term) => {
     const normalizedTerm = term.toLowerCase();
     if (!history.some((h) => h.toLowerCase() === normalizedTerm)) {
+
       setHistory([term, ...history.slice(0, 9)]);
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && searchQuery.trim()) {
+
       const trimmed = searchQuery.trim();
       addToHistory(trimmed);
       onSearch(trimmed);
@@ -52,6 +57,7 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 
   const handleRemove = (item, e) => {
     e.stopPropagation();
+
     setHistory(history.filter((term) => term !== item));
   };
 
@@ -64,6 +70,7 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 
       {/* Input container with max width and relative for buttons */}
       <div className="relative w-full max-w-sm">
+
         <input
           type="text"
           value={searchQuery}
@@ -71,20 +78,25 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
           onFocus={() => setIsFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search..."
+
           className="w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Search movies"
         />
+
 
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery("")}
+
             className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+
             aria-label="Clear search input"
           >
             <FaTimes />
           </button>
         )}
+
 
         <button
           type="button"
@@ -96,11 +108,14 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
               setIsFocused(false);
             }
           }}
+
           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+
           aria-label="Submit search"
         >
           <FaSearch />
         </button>
+
       </div>
 
       {isFocused && history.length > 0 && (
@@ -122,8 +137,11 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
           ))}
         </div>
       )}
+
     </div>
   );
 };
 
+
 export default StFilterBar;
+

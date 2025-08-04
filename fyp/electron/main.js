@@ -1,3 +1,4 @@
+
 // electron/main.js
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
@@ -6,8 +7,10 @@ import fs from 'fs';
 
 import fetch from 'node-fetch';
 
+// Setup __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 
 const isDev = process.env.NODE_ENV === 'development';
 const API = 'http://localhost:8000'; // or your deployed backend
@@ -18,6 +21,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -25,6 +29,7 @@ function createWindow() {
       sandbox: false,
     },
   });
+
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
@@ -34,10 +39,12 @@ function createWindow() {
   }
 
   // mainWindow.webContents.openDevTools(); // optional
+
 }
 
 app.whenReady().then(() => {
   createWindow();
+
 
   // ✅ When app boots, sync any offline signout
   setTimeout(async () => {
@@ -117,6 +124,7 @@ app.on('before-quit', async () => {
 });
 
 // Exit app when all windows closed (except on macOS)
+
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });

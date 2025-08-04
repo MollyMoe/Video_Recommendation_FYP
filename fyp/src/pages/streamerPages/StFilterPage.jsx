@@ -1,8 +1,11 @@
+
 import React, { useEffect, useState } from "react";
+
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StFilterContent from "../../components/streamer_components/StFilterContent";
 import StFilterBar from "../../components/streamer_components/StFilterBar";
+
 import { API } from "@/config/api";
 
 const StFilterPage = () => {
@@ -12,9 +15,11 @@ const StFilterPage = () => {
 
   const userId = JSON.parse(localStorage.getItem("user"))?.userId;
 
+
   const handleSearch = (query) => {
     setSearchQuery(query);
   };
+
 
   const fetchSubscription = async () => {
     try {

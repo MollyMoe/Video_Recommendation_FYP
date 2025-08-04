@@ -19,6 +19,7 @@ import AdEditProfilePage from "./pages/adminPages/AdEditProfilePage";
 import AdUserManagePage from "./pages/adminPages/AdUserManagePage";
 import AdTopLikedPage from "./pages/adminPages/AdTopLikedPage";
 import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
+
 import AdUserDetails from "./components/admin_components/AdUserDetails";
 import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAddedMovies";
 import AdUserDetailsLayout from "./layouts/AdUserDetailsLayout";
@@ -28,6 +29,8 @@ import AdUserWatchLaterPage from "./pages/adminPages/AdUserWatchLaterPage";
 import AdUserHistoryPage from "./pages/adminPages/AdUserHistoryPage";
 
 
+
+
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
@@ -35,10 +38,14 @@ import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
 import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage"; 
+
 import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscriptionPage";
 import StPaymentSuccessPage from "./pages/streamerPages/StPaymentSuccessPage";
 
 
+
+
+import { Navigate } from "react-router-dom";
 function App() {
 
   return (
@@ -51,6 +58,7 @@ function App() {
           <Route path="/inputgenre" element={<InputGenrePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/reset-password-form" element={<SetNewPasswordPage />} />
+
           <Route path="/success" element={<StPaymentSuccessPage />} />
 
           {/* Streamer Layout */}
@@ -80,6 +88,7 @@ function App() {
               <Route path="manage" element={<AdTopLikedPage />} />
               <Route path="genre" element={<AdVideoManageGenrePage />} />
               <Route path="recently-added" element={<AdRecentlyAddedMovies />} />
+
             </Route>
 
             <Route path="/admin/view/:id" element={<AdUserDetailsLayout />}>
@@ -90,6 +99,7 @@ function App() {
                 <Route path="liked" element={<AdUserLikedMoviesPage />} />
                 <Route path="watchLater" element={<AdUserWatchLaterPage/>} />
               </Route>
+
 
           </Route>
 

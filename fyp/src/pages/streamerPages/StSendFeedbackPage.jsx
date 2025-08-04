@@ -1,3 +1,4 @@
+
 // import { useState, useRef, useEffect } from "react";
 // import { BadgeCheck, Info } from "lucide-react";
 // import StNav from "../../components/streamer_components/StNav";
@@ -144,11 +145,22 @@ import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import { API } from "@/config/api";
 
+import { useState, useRef, useEffect } from "react";
+import { BadgeCheck, Info } from "lucide-react";
+// import { useUser } from "../../context/UserContext";
+import StNav from "../../components/streamer_components/StNav";
+import StSideBar from "../../components/streamer_components/StSideBar";
+
+const API = import.meta.env.VITE_API_BASE_URL;
+
+
+
 const StSendFeedbackPage = () => {
   const [feedback, setFeedback] = useState("");
   const [file, setFile] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -216,6 +228,7 @@ const StSendFeedbackPage = () => {
     if (isOnline) syncFeedbacks();
   }, [isOnline]);
 
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
@@ -271,6 +284,7 @@ const StSendFeedbackPage = () => {
     if (file) formData.append("file", file);
     formData.append("userId", currentUserId);
 
+
     try {
       const res = await fetch(`${API}/api/feedback/streamer`, {
         method: "POST",
@@ -278,13 +292,16 @@ const StSendFeedbackPage = () => {
       });
 
       const data = await res.json();
+
       if (!res.ok) throw new Error(data.error || "Submission failed");
 
       setSuccessMessage("Feedback sent successfully!");
       setFeedback("");
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+
       setErrorMessage("");
+
     } catch (err) {
       setErrorMessage(err.message);
     }

@@ -33,7 +33,9 @@ async def create_checkout_session(request: Request):
 
         # ✅ Encode all values for the URL
         encoded_success_url = (
+
             f"http://localhost:3000/#/success" #if deploy render frontend
+
             f"?userId={quote(user_id)}"
             f"&plan={quote(plan)}"
             f"&cycle={quote(cycle)}"
@@ -91,4 +93,6 @@ async def create_checkout_session(request: Request):
 
     except Exception as e:
         print("🔥 Stripe checkout session creation failed:", str(e))
+
         return JSONResponse(status_code=500, content={"error": str(e)})
+

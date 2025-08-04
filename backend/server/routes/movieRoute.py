@@ -1,3 +1,4 @@
+
 import math
 from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
@@ -83,7 +84,9 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
         print("❌ Error:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
+
 # Liked Movies
+
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
     data = await request.json()
@@ -119,6 +122,7 @@ def get_liked_movies(userId: str, request: Request):
 
     # Get all matching movies
     movies_cursor = movies_collection.find(
+
             {"movieId": {"$in": liked_ids}},
             {
                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
@@ -127,6 +131,7 @@ def get_liked_movies(userId: str, request: Request):
                 "producers": 1, "actors": 1
             }
         )
+
 
         # Convert genres string to array and deduplicate
     seen = set()
@@ -202,12 +207,14 @@ def get_history_movies(userId: str, request: Request):
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
+
             {
                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
                 "trailer_url": 1, "trailer_key": 1, "genres": 1,
                 "tmdb_id": 1, "overview": 1, "director": 1,
                 "producers": 1, "actors": 1
             }
+
         )
 
         # Convert genres string to array and deduplicate
@@ -227,6 +234,8 @@ def get_history_movies(userId: str, request: Request):
                 seen.add(mid)
                 movie["_id"] = str(movie["_id"])
                 unique_movies.append(movie)
+
+
 
 
         return {"historyMovies": unique_movies}
@@ -275,12 +284,14 @@ def get_watchLater_movies(userId: str, request: Request):
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": saveMovie_ids}},
+
             {
                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
                 "trailer_url": 1, "trailer_key": 1, "genres": 1,
                 "tmdb_id": 1, "overview": 1, "director": 1,
                 "producers": 1, "actors": 1
             }
+
         )
 
         # Convert genres string to array and deduplicate
@@ -317,6 +328,7 @@ async def remove_from_liked_movies(request: Request):
 
     user_id = data.get("userId")
     movie_id = data.get("movieId")
+
 
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")

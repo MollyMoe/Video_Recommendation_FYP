@@ -1,4 +1,5 @@
 export const plans = [
+
   {
     id: "studentMonthly",
     name: "Student Plan",
@@ -30,3 +31,4 @@ export const plans = [
 ];
 
 export default plans;
+

@@ -172,8 +172,11 @@ const fetchMovies = async () => {
       >
         {showPopup && popupMessage}
       </MovieModal>
+
     </div>
   );
 };
 
+
 export default StFilterContent;
+

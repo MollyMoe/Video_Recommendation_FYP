@@ -30,8 +30,9 @@ function MovieModal({
               </p>
               <p className="text-sm text-gray-700"><strong>Director:</strong> {movie.director || "N/A"}</p>
               <p className="text-sm text-gray-700"><strong>Actors:</strong> {Array.isArray(movie.actors) ? movie.actors.join(", ") : movie.actors || "N/A"}</p>
-              <p className="text-sm text-gray-700"><strong>Overview:</strong> {movie.overview || "N/A"}</p>
+
               <p className="font-semibold text-sm">тнР{movie.predicted_rating !== undefined ? Number(movie.predicted_rating).toFixed(1) : "N/A"}</p>
+
             </div>
           </div>
           <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">

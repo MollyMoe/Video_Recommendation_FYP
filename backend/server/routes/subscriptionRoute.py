@@ -244,4 +244,5 @@ def upsert_billing(userId: str, data: dict, request: Request):
         {"$set": data},
         upsert=True
     )
+
     return { "message": "Billing saved" }
