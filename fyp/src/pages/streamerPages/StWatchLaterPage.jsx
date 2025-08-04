@@ -23,11 +23,7 @@ const StWatchLaterPage = () => {
   }, []);
 
   const fetchWatchLaterMovies = async (userId) => {
-  if (!userId) {
-    console.warn("❗ No userId provided");
-    return;
-  }
-
+  if (!userId) return;
   setIsLoading(true);
   const start = Date.now();
   const minDelay = 500;
@@ -39,7 +35,6 @@ const StWatchLaterPage = () => {
       // ✅ Online: fetch from backend
       const res = await fetch(`${API}/api/movies/watchLater/${userId}`);
       data = await res.json();
-      console.log("🎬 Watch Later (online):", data);
 
       // ✅ Save for offline viewing
       if (window.electron?.saveSavedQueue) {
@@ -49,15 +44,15 @@ const StWatchLaterPage = () => {
       // ✅ Offline: load from local file
       const offlineQueue = await window.electron.getSavedQueue();
       data.SaveMovies = offlineQueue || [];
-      console.log("📦 Watch Later (offline):", data.SaveMovies);
     } else {
       console.warn("⚠️ Offline and no preload getSavedQueue available");
     }
+    console.log("📽 Saved movies response:", data);
 
     // ✅ Deduplicate
-    const seen = new Set();
     const uniqueMovies = [];
-
+    const seen = new Set();
+    
     for (const movie of data.SaveMovies || []) {
       const id = movie._id || movie.movieId;
       if (id && !seen.has(id)) {

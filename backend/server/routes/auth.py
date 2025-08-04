@@ -142,36 +142,31 @@ def signin(data: SigninRequest, request: Request):
                     detail="Account suspended due to inactivity over 3 days."
                 )
 
-        # 2️⃣ Check for auto sign-out after inactivity (1 day)
+        # 2️⃣ Check for auto sign-out after inactivity (2 day)
         if user.get("lastSignin"):
-            inactivity_days = (now - user["lastSignin"]).days
-            if inactivity_days >= 1:
-                print(f"⚠️ Auto signout triggered after {inactivity_days:.2f} days")
+            last_signin = user["lastSignin"]
+            if isinstance(last_signin, str):
+                last_signin = datetime.fromisoformat(last_signin)
+
+            inactivity_days = (now - last_signin).days
+            if inactivity_days >= 3:  # <-- Now 3 days instead of 2
+                print(f"⚠️ Auto signout triggered after {inactivity_days} days")
                 Model.update_one(
-                    { "userId": user_id },
-                    {
-                        "$set": {
-                            "lastSignout": now,
-                            "lastSignin": now
-                        }
-                    }
+                    {"userId": user_id},
+                    {"$set": {"lastSignout": now}}
                 )
 
-                user = Model.find_one({ "userId": user_id }, {"_id": 0 })
-
+                user = Model.find_one({"userId": user_id}, {"_id": 0})
                 return {
                     "message": "Re-logged in after session timeout.",
-                    "user": {
-                        **user,
-                        "userType": user_type
-                    }
+                    "user": {**user, "userType": user_type}
                 }
 
-        # 3️⃣ Normal login path
+        # Normal login path
         Model.update_one(
-            { "userId": user_id },
-            { "$set": { "lastSignin": now } }
-        )
+            {"userId": user_id},
+            {"$set": {"lastSignin": now}}
+)
 
         user = Model.find_one({ "userId": user_id }, {"_id": 0 })
 

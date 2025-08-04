@@ -3,19 +3,55 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { exec } = require('child_process');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 // File paths
+const basePath = path.join(os.homedir(), "cineit-cache");
+
 const sessionFilePath = path.join(os.homedir(), 'cineit-user-session.json');
 const profileFilePath = path.join(os.homedir(), 'cineit-profile-update.json');
 const feedbackFilePath = path.join(os.homedir(), 'cineit-feedback-queue.json');
 const userGenrePath = path.join(os.homedir(), 'cineit-user-genres.json');
 const allMoviesPath = path.join(os.homedir(), 'cineit-all-movies.json');
-const recommendedPath = path.join(os.homedir(), 'cineit-recommended.json');
+
 const backupScript = path.join(__dirname, "..", "scripts", "backup.sh");
 const restoreScript = path.join(__dirname, "..", "scripts", "restore.sh");
 const historyQueuePath = path.join(os.homedir(), "cineit-history-queue.json");
 const savedQueuePath = path.join(os.homedir(), "cineit-saved-queue.json");
 const likedQueuePath = path.join(os.homedir(), "cineit-liked-queue.json");
+
+const recommendedPath = path.join(basePath, 'recommended.json');
+
+const paths = {
+  topLiked: path.join(basePath, "topLiked.json"),
+  alsLiked: path.join(basePath, "alsLiked.json"),
+  likedTitles: path.join(basePath, "likedTitles.json"),
+  alsSaved: path.join(basePath, "alsSaved.json"),
+  savedTitles: path.join(basePath, "savedTitles.json"),
+  alsWatched: path.join(basePath, "alsWatched.json"),
+  watchedTitles: path.join(basePath, "watchedTitles.json"),
+  interactionCounts: path.join(basePath, "interactionCounts.json"),
+};
+
+// for als recommendations and top liked
+function safeRead(filePath, fallback = []) {
+  try {
+    if (!fs.existsSync(filePath)) return fallback;
+    const raw = fs.readFileSync(filePath, "utf-8");
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function safeWrite(filePath, data) {
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+    console.error("❌ Failed to write:", filePath, err);
+  }
+}
 
 // ✅ Helper to queue actions
 function queueAction(filePath, action) {
@@ -31,6 +67,50 @@ function queueAction(filePath, action) {
     console.error("❌ Failed to queue action:", err);
   }
 }
+
+// Download image and save to given path
+// async function downloadImage(url, filePath) {
+//   const res = await fetch(url);
+//   const buffer = await res.arrayBuffer();
+//   fs.writeFileSync(filePath, Buffer.from(buffer));
+// }
+
+// async function cacheRecommendedPosters(movies) {
+//   const folderPath = path.join(basePath, "posters", "recommended");
+//   fs.mkdirSync(folderPath, { recursive: true });
+
+//   for (const movie of movies) {
+//     if (movie.poster_url && movie.poster_url.startsWith("http")) {
+//       const id = movie.movieId || movie._id || movie.title?.replace(/\s/g, "_");
+//       const ext = path.extname(new URL(movie.poster_url).pathname) || ".jpg";
+//       const posterFile = path.join(folderPath, `${id}${ext}`);
+
+//       try {
+//         await downloadImage(movie.poster_url, posterFile);
+//         movie.poster_url = `file://${posterFile}`;
+//       } catch (err) {
+//         console.warn(`⚠️ Failed to cache poster for ${id}:`, err);
+//       }
+//     }
+//   }
+// }
+
+// function clearRecommendedPosterCache() {
+//   const folderPath = path.join(basePath, "posters", "recommended");
+
+//   if (fs.existsSync(folderPath)) {
+//     const files = fs.readdirSync(folderPath);
+//     for (const file of files) {
+//       const filePath = path.join(folderPath, file);
+//       if (fs.statSync(filePath).isFile()) {
+//         fs.unlinkSync(filePath);
+//       }
+//     }
+//     console.log("🧹 Cleared old recommended poster cache");
+//   }
+// }
+
+
 
 // function removeFromQueue(path, movieId) {
 //   try {
@@ -151,41 +231,76 @@ contextBridge.exposeInMainWorld('electron', {
     });
   },
 
-  // ✅ All Movies
-  saveAllMovies: (movies) => {
-    try {
-      fs.writeFileSync(allMoviesPath, JSON.stringify(movies, null, 2), 'utf-8');
-      console.log("💾 Saved all movies.");
-    } catch (err) {
-      console.error("❌ Failed to save all movies:", err);
+  // ✅ Carousel offline cache (topLiked, likedMovies, etc.)
+  saveCarouselData: async (type, data) => {
+    if (paths[type]) {
+      safeWrite(paths[type], data);
     }
   },
-  getAllMovies: () => {
-    return new Promise((resolve, reject) => {
-      try {
-        if (!fs.existsSync(allMoviesPath)) return resolve([]);
-        const raw = fs.readFileSync(allMoviesPath, 'utf-8');
-        resolve(JSON.parse(raw));
-      } catch (err) {
-        reject(err);
-      }
-    });
+  getCarouselData: (type) => {
+    if (paths[type]) return safeRead(paths[type]);
+    return [];
   },
 
+
+  // // ✅ All Movies
+  // saveAllMovies: (movies) => {
+  //   try {
+  //     fs.writeFileSync(allMoviesPath, JSON.stringify(movies, null, 2), 'utf-8');
+  //     console.log("💾 Saved all movies.");
+  //   } catch (err) {
+  //     console.error("❌ Failed to save all movies:", err);
+  //   }
+  // },
+  // getAllMovies: () => {
+  //   return new Promise((resolve, reject) => {
+  //     try {
+  //       if (!fs.existsSync(allMoviesPath)) return resolve([]);
+  //       const raw = fs.readFileSync(allMoviesPath, 'utf-8');
+  //       resolve(JSON.parse(raw));
+  //     } catch (err) {
+  //       reject(err);
+  //     }
+  //   });
+  // },
+
   // ✅ Recommended Movies
-  saveRecommendedMovies: (movies) => {
-    try {
-      fs.writeFileSync(recommendedPath, JSON.stringify(movies, null, 2), 'utf-8');
-      console.log("💾 Saved recommended movies.");
-    } catch (err) {
-      console.error("❌ Failed to save recommended movies:", err);
+  saveRecommendedMovies: async (movies) => {
+  try {
+    // clearRecommendedPosterCache(); // 🧼 clear before re-saving posters
+
+    let existing = [];
+    if (fs.existsSync(recommendedPath)) {
+      const raw = fs.readFileSync(recommendedPath, 'utf-8');
+      existing = JSON.parse(raw);
     }
-  },
+
+    const combined = [...movies, ...existing];
+    const seen = new Set();
+    const unique = combined.filter((movie) => {
+      const id = movie.movieId || movie._id || movie.title;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
+    const trimmed = unique.slice(0, 300);
+
+    // ✅ Only recommended posters are cached
+    // await cacheRecommendedPosters(trimmed);
+
+    fs.writeFileSync(recommendedPath, JSON.stringify(trimmed, null, 2), "utf-8");
+    console.log(`💾 Saved recommended movies. Total: ${trimmed.length}`);
+  } catch (err) {
+    console.error("❌ Failed to save recommended movies:", err);
+  }
+},
+
   getRecommendedMovies: () => {
     return new Promise((resolve, reject) => {
       try {
         if (!fs.existsSync(recommendedPath)) return resolve([]);
-        const raw = fs.readFileSync(recommendedPath, 'utf-8');
+        const raw = fs.readFileSync(recommendedPath, "utf-8");
         resolve(JSON.parse(raw));
       } catch (err) {
         reject(err);
@@ -214,7 +329,7 @@ contextBridge.exposeInMainWorld('electron', {
   // },
 
   // ✅ Offline actions for history, saved, liked
-  queueHistory: (action) => queueAction(historyQueuePath, action),
+  // queueHistory: (action) => queueAction(historyQueuePath, action),
   queueSaved: (action) => queueAction(savedQueuePath, action),
   queueLiked: (action) => queueAction(likedQueuePath, action),
 
