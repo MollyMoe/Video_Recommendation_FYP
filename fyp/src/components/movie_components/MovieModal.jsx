@@ -34,8 +34,9 @@ function MovieModal({
               </p>
               <p className="text-sm text-gray-700"><strong>Director:</strong> {movie.director || "N/A"}</p>
               <p className="text-sm text-gray-700"><strong>Actors:</strong> {Array.isArray(movie.actors) ? movie.actors.join(", ") : movie.actors || "N/A"}</p>
-              <p className="text-sm text-gray-700"><strong>Overview:</strong> {movie.overview || "N/A"}</p>
+
               <p className="font-semibold text-sm">тнР{movie.predicted_rating !== undefined ? Number(movie.predicted_rating).toFixed(1) : "N/A"}</p>
+
             </div>
           </div>
           <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
@@ -45,7 +46,7 @@ function MovieModal({
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
             </button>
-            <button onClick={() => onLike(movie.movieId)} disabled={!isSubscribed}
+            <button onClick={() => onLike(movie)} disabled={!isSubscribed}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"> 
                 <Heart className="w-4 h-4 mr-1 fill-black" /> 
                 Like

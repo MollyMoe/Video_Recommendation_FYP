@@ -1,3 +1,4 @@
+
 import math
 from typing import List
 from fastapi import APIRouter, Request, HTTPException, Body
@@ -83,9 +84,12 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
         print("❌ Error:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
+
 # Liked Movies
+
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
+    print("✅ Backend received like request:", request)
     data = await request.json()
     db = request.app.state.movie_db
     liked_collection = db["liked"]
@@ -105,6 +109,91 @@ async def add_to_liked_movies(request: Request):
 
     return {"message": "Movie added to liked list"}
 
+# @router.get("/likedMovies/{userId}")
+# def get_liked_movies(userId: str, request: Request):
+#     db = request.app.state.movie_db
+#     liked_collection = db["liked"]
+#     movies_collection = db["hybridRecommendation2"]
+
+#     liked_doc = liked_collection.find_one({"userId": userId})
+#     if not liked_doc or not liked_doc.get("likedMovies"):
+#         return {"likedMovies": []}
+
+#     liked_ids = liked_doc["likedMovies"]  # e.g., [287149, 186015]
+
+#     # Get all matching movies
+#     movies_cursor = movies_collection.find(
+
+#             {"movieId": {"$in": liked_ids}},
+#             {
+#                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+#                 "trailer_url": 1, "trailer_key": 1, "genres": 1,
+#                 "tmdb_id": 1, "overview": 1, "director": 1,
+#                 "producers": 1, "actors": 1
+#             }
+#         )
+
+
+#         # Convert genres string to array and deduplicate
+#     seen = set()
+#     unique_movies = []
+#     for movie in movies_cursor:
+#             # Convert genres string to list
+#             genres_raw = movie.get("genres", "")
+#             if isinstance(genres_raw, str):
+#                 movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
+#             elif isinstance(genres_raw, list):
+#                 movie["genres"] = [g.strip() for g in genres_raw]  # already an array
+
+#             # Deduplicate by movieId
+#             mid = movie.get("movieId")
+#             if mid not in seen:
+#                 seen.add(mid)
+#                 movie["_id"] = str(movie["_id"])
+#                 unique_movies.append(movie)
+
+
+#     return {"likedMovies": unique_movies}
+
+# @router.get("/likedMovies/{userId}")
+# def get_liked_movies(userId: str, request: Request):
+#     db = request.app.state.movie_db
+#     liked_collection = db["liked"]
+#     movies_collection = db["hybridRecommendation2"]
+
+#     liked_doc = liked_collection.find_one({"userId": userId})
+#     if not liked_doc or not liked_doc.get("likedMovies"):
+#         return {"likedMovies": []}
+
+#     liked_ids = [str(mid) for mid in liked_doc["likedMovies"]]
+
+#     movies_cursor = movies_collection.find(
+#         {"movieId": {"$in": liked_ids}},
+#         {
+#             "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+#             "trailer_url": 1, "trailer_key": 1, "genres": 1,
+#             "tmdb_id": 1, "overview": 1, "director": 1,
+#             "producers": 1, "actors": 1
+#         }
+#     )
+
+#     seen = set()
+#     unique_movies = []
+#     for movie in movies_cursor:
+#         genres_raw = movie.get("genres", "")
+#         if isinstance(genres_raw, str):
+#             movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
+#         elif isinstance(genres_raw, list):
+#             movie["genres"] = [g.strip() for g in genres_raw]
+
+#         mid = movie.get("movieId")
+#         if mid not in seen:
+#             seen.add(mid)
+#             movie["_id"] = str(movie["_id"])
+#             unique_movies.append(movie)
+
+#     return {"likedMovies": unique_movies}
+
 @router.get("/likedMovies/{userId}")
 def get_liked_movies(userId: str, request: Request):
     db = request.app.state.movie_db
@@ -115,40 +204,8 @@ def get_liked_movies(userId: str, request: Request):
     if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
-    liked_ids = liked_doc["likedMovies"]  # e.g., [287149, 186015]
-
-    # Get all matching movies
-    movies_cursor = movies_collection.find(
-            {"movieId": {"$in": liked_ids}},
-            {
-                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
-                "trailer_url": 1, "trailer_key": 1, "genres": 1,
-                "tmdb_id": 1, "overview": 1, "director": 1,
-                "producers": 1, "actors": 1
-            }
-        )
-
-        # Convert genres string to array and deduplicate
-    seen = set()
-    unique_movies = []
-    for movie in movies_cursor:
-            # Convert genres string to list
-            genres_raw = movie.get("genres", "")
-            if isinstance(genres_raw, str):
-                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
-            elif isinstance(genres_raw, list):
-                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
-
-            # Deduplicate by movieId
-            mid = movie.get("movieId")
-            if mid not in seen:
-                seen.add(mid)
-                movie["_id"] = str(movie["_id"])
-                unique_movies.append(movie)
-
-
-    return {"likedMovies": unique_movies}
-
+    # The likedMovies are full movie objects already (your screenshot shows that)
+    return {"likedMovies": liked_doc["likedMovies"]}
 
 @router.post("/history")
 async def add_to_history(request: Request):
@@ -202,12 +259,14 @@ def get_history_movies(userId: str, request: Request):
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
+
             {
                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
                 "trailer_url": 1, "trailer_key": 1, "genres": 1,
                 "tmdb_id": 1, "overview": 1, "director": 1,
                 "producers": 1, "actors": 1
             }
+
         )
 
         # Convert genres string to array and deduplicate
@@ -227,6 +286,8 @@ def get_history_movies(userId: str, request: Request):
                 seen.add(mid)
                 movie["_id"] = str(movie["_id"])
                 unique_movies.append(movie)
+
+
 
 
         return {"historyMovies": unique_movies}
@@ -275,12 +336,14 @@ def get_watchLater_movies(userId: str, request: Request):
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": saveMovie_ids}},
+
             {
                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
                 "trailer_url": 1, "trailer_key": 1, "genres": 1,
                 "tmdb_id": 1, "overview": 1, "director": 1,
                 "producers": 1, "actors": 1
             }
+
         )
 
         # Convert genres string to array and deduplicate
@@ -317,6 +380,7 @@ async def remove_from_liked_movies(request: Request):
 
     user_id = data.get("userId")
     movie_id = data.get("movieId")
+
 
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")

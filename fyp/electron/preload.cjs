@@ -143,10 +143,12 @@ contextBridge.exposeInMainWorld('electron', {
   getSession: () => {
     try {
       return JSON.parse(fs.readFileSync(sessionFilePath, 'utf-8'));
+
     } catch {
       return null;
     }
   },
+
 
   // ✅ Profile
   saveProfileUpdate: (data) => {
@@ -524,5 +526,6 @@ clearSavedQueue: () => {
     console.error("❌ Failed to clear saved queue:", err);
   }
 },
+
 
 });

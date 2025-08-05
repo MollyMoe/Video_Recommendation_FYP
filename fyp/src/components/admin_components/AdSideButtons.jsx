@@ -31,6 +31,7 @@ const AdSideButtons = ({ onUpdateClick, isSyncing }) => {
           label="Home"
           current={location.pathname === "/admin"}
         />
+
         {/* Modify the Update button to use isSyncing */}
         <button
           onClick={onUpdateClick}
@@ -44,6 +45,7 @@ const AdSideButtons = ({ onUpdateClick, isSyncing }) => {
           {isSyncing ? "Syncing..." : "Update"} {/* Text changes during sync */}
         </button>
         {/* Add the rest of your side buttons here if any */}
+
       </div>
     </aside>
   );

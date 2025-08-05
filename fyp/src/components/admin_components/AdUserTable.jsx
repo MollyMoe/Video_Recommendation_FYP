@@ -1,4 +1,6 @@
 
+
+
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { API } from "@/config/api";
@@ -7,6 +9,7 @@ const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
 
+  // Fetch all streamer users
   useEffect(() => {
     const fetchStreamers = async () => {
       try {
@@ -49,6 +52,7 @@ const AdUserTable = ({ searchQuery }) => {
   //   }
   // };
 
+
   const handleToggleSuspend = async (userId) => {
   // ✅ Keep your original structure
   const updatedUsers = users.map((user) =>
@@ -62,8 +66,10 @@ const AdUserTable = ({ searchQuery }) => {
 
   setUsers(updatedUsers);
 
+
   const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
   const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
+
 
   if (!userType) {
     console.error("❌ Missing userType for user:", userId);
@@ -120,20 +126,32 @@ const AdUserTable = ({ searchQuery }) => {
 };
 
 
+  // Handle View button
   const handleView = (user) => {
     navigate(`/admin/view/${user.userId}`, {
       state: { searchQuery },
     });
   };
 
+  // Filter users by search query
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
+    const query = searchQuery.toLowerCase();
     return users.filter((user) =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      user.username?.toLowerCase().includes(query) ||
+      user.userId?.toLowerCase().includes(query) ||
+      user.email?.toLowerCase().includes(query)
     );
   }, [searchQuery, users]);
-
-  if (filteredUsers.length === 0) return null;
+  
+  // Show message if no users match
+  if (filteredUsers.length === 0) {
+    return (
+      <div className="text-center text-white mt-10 text-lg">
+        No users found.
+      </div>
+    );
+  }
 
   return (
     <div className="sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-800">

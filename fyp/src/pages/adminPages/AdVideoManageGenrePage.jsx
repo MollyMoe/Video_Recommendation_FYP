@@ -2,10 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
-
-
-const API = import.meta.env.VITE_API_BASE_URL;
-
 const AdVideoManageGenrePage = () => {
   const [genres, setGenres] = useState([]);
   const [selectedGenres, setSelectedGenres] = useState([]);
@@ -41,7 +37,9 @@ const AdVideoManageGenrePage = () => {
       setLoadingMovies(true);
       try {
         const queryString = selectedGenres.join(",");
-        const res = await axios.get(`${API}/api/movies/byGenres?genres=${queryString}`);
+        const res = await axios.get(
+          `${API}/api/movies/byGenres?genres=${queryString}`
+        );
         setMovies(res.data);
       } catch (err) {
         console.error("❌ Failed to fetch movies by genres", err);
@@ -55,9 +53,7 @@ const AdVideoManageGenrePage = () => {
 
   const toggleGenre = (genre) => {
     setSelectedGenres((prev) =>
-      prev.includes(genre)
-        ? prev.filter((g) => g !== genre)
-        : [...prev, genre]
+      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre]
     );
   };
 
@@ -110,7 +106,8 @@ const AdVideoManageGenrePage = () => {
         {loadingMovies && selectedGenres.length > 0 && (
           <div className="text-white font-medium text-lg mb-4">
             🔄 Loading movies for:{" "}
-            <span className="text-purple-400">{selectedGenres.join(", ")}</span>...
+            <span className="text-purple-400">{selectedGenres.join(", ")}</span>
+            ...
           </div>
         )}
 
@@ -122,11 +119,12 @@ const AdVideoManageGenrePage = () => {
                 key={movie.movieId || index}
                 className="flex items-center gap-4 p-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
-
-
                 {/* Poster */}
                 <img
-                  src={movie.poster_url || "https://via.placeholder.com/80x120?text=No+Image"}
+                  src={
+                    movie.poster_url ||
+                    "https://via.placeholder.com/80x120?text=No+Image"
+                  }
                   alt={movie.title || "Movie Poster"}
                   className="w-24 h-36 object-cover rounded-md"
                 />
@@ -147,7 +145,9 @@ const AdVideoManageGenrePage = () => {
 
         {/* No movies found */}
         {!loadingMovies && selectedGenres.length > 0 && movies.length === 0 && (
-          <div className="text-white text-center mt-10">⚠️ No movies found for selected genres.</div>
+          <div className="text-white text-center mt-10">
+            ⚠️ No movies found for selected genres.
+          </div>
         )}
       </div>
     </>

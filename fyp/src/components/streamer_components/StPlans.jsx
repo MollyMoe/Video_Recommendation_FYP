@@ -1,5 +1,6 @@
 import React from 'react';
 import { plans } from '../../data/subscriptionPlan';
+
 import { Star, ArrowRight } from 'lucide-react';
 
 const StPlans = ({ onSelect, onBack }) => {
@@ -32,6 +33,7 @@ const StPlans = ({ onSelect, onBack }) => {
             className="flex justify-center items-center gap-2 py-3 text-sm font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-b-2xl transition"
           >
             Choose Plan <ArrowRight className="w-4 h-4" />
+
           </button>
         </div>
       ))}
@@ -44,8 +46,11 @@ const StPlans = ({ onSelect, onBack }) => {
           &larr; Back
         </button>
       </div>
+
     </div>
   );
 };
 
+
 export default StPlans;
+

@@ -1,5 +1,93 @@
-const isOnline = navigator.onLine;
+// // const isOnline = navigator.onLine;
 
-export const API = isOnline
-  ? "http://localhost:8000"
-  : "http://localhost:8000";
+// // export const API = isOnline
+// //   ? "http://localhost:8000"
+// //   : "http://localhost:8000";
+
+// // src/config/api.js
+// // const FALLBACKS = [
+// //   import.meta?.env?.VITE_API_BASE_URL,
+// //   'http://127.0.0.1:8000',
+// //   'http://localhost:8000'
+// // ];
+
+// // let cached = null;
+
+// // async function probe(url, timeout = 1000) {
+// //   if (!url) return false;
+// //   try {
+// //     const ctrl = new AbortController();
+// //     const t = setTimeout(() => ctrl.abort(), timeout);
+// //     const res = await fetch(`${url}/api/movies/top-liked`, { signal: ctrl.signal });
+// //     clearTimeout(t);
+// //     return res.ok;
+// //   } catch {
+// //     return false;
+// //   }
+// // }
+
+// // export async function getAPIBase() {
+// //   if (cached) return cached;
+
+// //   for (const url of FALLBACKS) {
+// //     if (await probe(url)) {
+// //       console.log(`[API] ✅ Connected to ${url}`);
+// //       cached = url;
+// //       return url;
+// //     }
+// //   }
+
+// //   throw new Error("❌ No API base reachable");
+// // }
+
+// // src/config/api.js
+// const FALLBACKS = [
+//   import.meta?.env?.VITE_API_BASE_URL,
+//   "http://127.0.0.1:8000",
+//   "http://localhost:8000"
+// ];
+
+// // ✅ Static fallback for build-time usage
+// export const API = FALLBACKS[0];
+
+const FALLBACKS = [
+  import.meta?.env?.VITE_API_BASE_URL,
+  'http://127.0.0.1:8000',
+  'http://localhost:8000'
+];
+
+// This is the static default API (usually used if no dynamic logic needed)
+export const API = FALLBACKS[0];
+
+let cached = null;
+
+// This function dynamically checks which backend URL is reachable
+async function getAPIBase() {
+  if (cached) return cached;
+
+  for (const url of FALLBACKS) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1000);
+
+      const res = await fetch(`${url}/api/movies/top-liked`, {
+        signal: controller.signal
+      });
+
+      clearTimeout(timeout);
+
+      if (res.ok) {
+        console.log(`[API] ✅ Connected to: ${url}`);
+        cached = url;
+        return url;
+      }
+    } catch (err) {
+      console.warn(`[API] ❌ Failed to connect: ${url}`);
+    }
+  }
+
+  throw new Error("❌ No available API server could be reached.");
+}
+
+export { getAPIBase };
+

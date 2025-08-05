@@ -1,10 +1,13 @@
 from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException, UploadFile, File, Form
+
 from typing import Optional, List, Dict, Any
+
 import asyncio
 import smtplib, ssl, os
 from email.message import EmailMessage
 from urllib.parse import quote
+
 from bson import ObjectId
 from pydantic import BaseModel
 
@@ -15,6 +18,7 @@ class FeedbackUpdate(BaseModel):
     is_not_solved: Optional[bool] = None # Renamed from is_addressed
     is_solved: Optional[bool] = None
 
+
 @router.post("/streamer")
 async def submit_streamer_feedback(
     request: Request,
@@ -22,15 +26,19 @@ async def submit_streamer_feedback(
     userId: str = Form(...),
     file: Optional[UploadFile] = File(None)
 ):
+
     """
     Endpoint to submit streamer feedback.
     Saves feedback to the database and sends an acknowledgment email.
     """
+
     try:
         support_db = request.app.state.support_db
         user_db = request.app.state.user_db
 
         feedback_collection = support_db["feedback"]
+
+
 
         user = user_db["streamer"].find_one({"userId": userId})
         if not user or "email" not in user:
@@ -39,9 +47,11 @@ async def submit_streamer_feedback(
         feedback_data = {
             "userId": userId,
             "feedback": feedback,
+
             "timestamp": datetime.utcnow(),
             "is_not_solved": False,  
             "is_solved": False,     
+
         }
 
         if file:
@@ -53,6 +63,8 @@ async def submit_streamer_feedback(
         result = await loop.run_in_executor(None, feedback_collection.insert_one, feedback_data)
 
         if result.inserted_id:
+
+
             try:
                 email_user = os.getenv("EMAIL_USER")
                 email_pass = os.getenv("EMAIL_PASS")
@@ -67,7 +79,9 @@ Thank you for your feedback to CineIt!
 
 We appreciate your input and will review it promptly.
 
+
 Best Regards,
+
 CineIt Support Team
 """)
 
@@ -81,6 +95,7 @@ CineIt Support Team
             return {"message": "Feedback submitted successfully", "id": str(result.inserted_id)}
 
         raise HTTPException(status_code=500, detail="Failed to submit feedback: Insertion issue.")
+
 
     except HTTPException as http_exc:
         raise http_exc

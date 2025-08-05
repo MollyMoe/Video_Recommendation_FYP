@@ -10,8 +10,10 @@
 # from server.routes.passwordRoute import router as password_router
 # from server.routes.editProfileRoute import router as edit_router
 # from server.routes.profileRoute import router as profile_router
+
 # from server.routes.feedbackRoute import router as feedback_router
 # from fastapi.staticfiles import StaticFiles
+
 # from server.routes.subscriptionRoute import router as subscription_router
 # from server.routes.stripeRoute import router as stripe_router
 
@@ -28,6 +30,7 @@
 # MOVIE_DB_URI = os.getenv("MOVIE_DB_URI")
 # JWT_SECRET = os.getenv("JWT_SECRET", "").strip()
 # SUPPORT_DB_URI = os.getenv("SUPPORT_DB_URI", "").strip()
+
 
 # print("🔗 USER_DB_URI:", repr(USER_DB_URI))
 # print("🔗 MOVIE_DB_URI:", repr(MOVIE_DB_URI))
@@ -46,12 +49,12 @@
 # user_db = user_client["users"]
 
 
-
 # movie_client = MongoClient(MOVIE_DB_URI)
 # movie_db = movie_client["NewMovieDatabase"]
 # print("✅ Connected to NewMovieDatabase. Collections:", movie_db.list_collection_names())
 
 # support_client = MongoClient(SUPPORT_DB_URI)
+
 # support_db = support_client["support"] 
 # print("✅ Connected to support. Collections:", support_db.list_collection_names())
 
@@ -61,6 +64,7 @@
 # # CORS
 # origins = [ 
 #     "http://localhost:3000",  
+
 #     "https://cineit-frontend.onrender.com",
 #     "https://cineit.onrender.com",
 # ]
@@ -89,6 +93,7 @@
 # app.include_router(stripe_router, prefix="/api")
 
 
+
 # @app.get("/")
 # def read_root():
 #     return {"message": "Backend API is running"}
@@ -105,6 +110,7 @@
 
 # @app.get("/support/feedback_items")
 # def get_feedback_items():
+
 #     # Access the 'feedback' collection within the 'support_db'
 #     feedback_items = list(app.state.support_db.feedback.find({}, {"_id": 0}))
 #     return feedback_items

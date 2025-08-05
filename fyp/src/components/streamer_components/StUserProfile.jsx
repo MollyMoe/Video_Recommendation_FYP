@@ -88,6 +88,7 @@ function StUserProfile({ userProfile }) {
     };
   }, []);
 
+
  
 const handleSignout = async () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -153,6 +154,7 @@ const handleSignout = async () => {
 
 
 
+
   return (
     // User Profile
     <div className="relative inline-block text-left" ref={dropdownRef}>
@@ -198,9 +200,11 @@ const handleSignout = async () => {
               )}
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
+
             <li onClick={handleSignout}
             className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"> 
                 <FaSignOutAlt className="mr-2" /> Sign Out
+
             </li>
           </ul>
         </div>

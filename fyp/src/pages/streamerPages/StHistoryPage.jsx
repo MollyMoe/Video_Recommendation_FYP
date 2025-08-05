@@ -1,6 +1,7 @@
 
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
+
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,11 +12,13 @@ import { API } from "@/config/api";
 const StHistoryPage = () => {
   const [historyMovies, setHistoryMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
   const [isSubscribed, setIsSubscribed] = useState(false);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     
@@ -53,6 +56,7 @@ const StHistoryPage = () => {
       setIsSubscribed(false); // fallback
     }
   };
+
 
 
   const fetchHistoryMovies = async (userId) => {
@@ -260,11 +264,15 @@ useEffect(() => {
 }, [isOnline]);
 
 
+
   return (
     <div className="p-4">
       <StNav />
+
+
       <StSideBar />
-      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
+
+      <div className="sm:ml-64 pt-20 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="-mt-4 flex justify-end mb-5">
             {/* play all history btn */}
@@ -287,8 +295,11 @@ useEffect(() => {
               No history movies found.
             </p>
           ) : (
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
               {historyMovies.map((movie) => (
+
                 <div
                   key={movie._id || movie.movieId}
                   className="bg-white rounded-lg shadow p-2 flex flex-col justify-between h-[320px]"
@@ -331,6 +342,7 @@ useEffect(() => {
                     </button>
                   </div>
                 </div>
+
               ))}
             </div>
           )}
@@ -340,7 +352,9 @@ useEffect(() => {
       {isLoading && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+
             <p className="text-lg font-semibold">Loading Movie History</p>
+
             <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
           </div>
         </div>

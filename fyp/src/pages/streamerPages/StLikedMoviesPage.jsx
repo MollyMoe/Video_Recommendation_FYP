@@ -41,7 +41,9 @@ const StLikedMoviesPage = () => {
       console.log("📦 Offline subscription data:", subscription);
     }
 
-    setIsSubscribed(subscription?.isActive ?? false);
+    setIsSubscribed(Boolean(subscription?.isActive));
+    console.log("✅ isOnline:", isOnline);
+    console.log("✅ isSubscribed:", isSubscribed, typeof isSubscribed);
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
     setIsSubscribed(false); // fallback

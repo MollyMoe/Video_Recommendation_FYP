@@ -1,5 +1,8 @@
+
 import React, { useEffect, useState } from "react";
+
 import axios from "axios";
+
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StFilterContent from "../../components/streamer_components/StFilterContent";
@@ -94,14 +97,17 @@ const StFilterPage = () => {
     fetchInitialData();
   }, [userId]);
 
+
   const handleSearch = (query) => {
     setSearchQuery(query);
     setSubmittedQuery(query);
+
 
     if (!query.trim()) {
       setMovies(allMovies); // Reset to show Top 10 view
       setIsSearching(false);
       return;
+
     }
 
     setIsSearching(true);
