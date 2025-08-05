@@ -191,23 +191,133 @@
 
 
 
-from pymongo import MongoClient
+# from pymongo import MongoClient
 
+# MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
+# client = MongoClient(MOVIE_DB_URI)
+# collection = client["NewMovieDatabase"]["hybridRecommendation2"]
+
+# # Store all genres
+# genre_set = set()
+
+# for doc in collection.find({}, { "genres": 1 }):
+#     genres = doc.get("genres")
+#     if isinstance(genres, list):
+#         genre_set.update(genres)
+#     elif isinstance(genres, str):
+#         genre_set.add(genres)
+
+# # Show sorted list of unique genres
+# print("🎬 All Genres:")
+# for g in sorted(genre_set):
+#     print("-", g)
+from pymongo import MongoClient
+from tqdm import tqdm  # Progress bar (install with `pip install tqdm` if needed)
+
+# # === MongoDB Setup ===
+# MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
+# client = MongoClient(MOVIE_DB_URI)
+# db = client["NewMovieDatabase"]
+# collection = db["hybridRecommendation2"]
+
+# # === Count total documents ===
+# total_docs = collection.count_documents({})
+
+# # === Prepare to track type counts ===
+# type_counts = {}
+
+# print(f"🔍 Checking movieId types in {total_docs} documents...")
+
+# # === Loop through all documents with movieId field ===
+# cursor = collection.find({}, { "movieId": 1 })
+
+# for doc in tqdm(cursor, total=total_docs, desc="Scanning"):
+#     if "movieId" not in doc:
+#         key = "missing"
+#     elif doc["movieId"] is None:
+#         key = "null"
+#     else:
+#         key = type(doc["movieId"]).__name__
+
+#     type_counts[key] = type_counts.get(key, 0) + 1
+
+# # === Show results ===
+# print("\n📊 movieId Type Breakdown:")
+# for t, count in type_counts.items():
+#     print(f"- {t}: {count}")
+# check type
+
+# from pymongo import MongoClient, UpdateOne
+# from tqdm import tqdm
+
+# # === 1. Connect to MongoDB ===
+# MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
+# client = MongoClient(MOVIE_DB_URI)
+# collection = client["NewMovieDatabase"]["hybridRecommendation2"]
+
+# # === 2. Find documents with movieId as int ===
+# docs_to_fix = collection.find({ "movieId": { "$type": "int" } }, { "_id": 1, "movieId": 1 })
+# total_to_fix = collection.count_documents({ "movieId": { "$type": "int" } })
+
+# print(f"🔍 Found {total_to_fix} documents with movieId as int — converting to str...")
+
+# # === 3. Batch update ===
+# batch_size = 1000
+# updates = []
+# updated_count = 0
+
+# for doc in tqdm(docs_to_fix, total=total_to_fix, desc="🔁 Updating movieId"):
+#     updates.append(
+#         UpdateOne(
+#             { "_id": doc["_id"] },
+#             { "$set": { "movieId": str(doc["movieId"]) } }
+#         )
+#     )
+
+#     if len(updates) == batch_size:
+#         result = collection.bulk_write(updates)
+#         updated_count += result.modified_count
+#         updates.clear()
+
+# # === 4. Final batch (if any) ===
+# if updates:
+#     result = collection.bulk_write(updates)
+#     updated_count += result.modified_count
+
+# print(f"✅ Done! Converted {updated_count} movieId values from int to string.")
+
+
+from pymongo import MongoClient
+from tqdm import tqdm  # Progress bar (install with `pip install tqdm` if needed)
+
+# === MongoDB Setup ===
 MOVIE_DB_URI = "mongodb+srv://claraxin:fyp2025@moviecluster.t4qlmfx.mongodb.net/NewMovieDatabase?retryWrites=true&w=majority"
 client = MongoClient(MOVIE_DB_URI)
-collection = client["NewMovieDatabase"]["hybridRecommendation2"]
+db = client["NewMovieDatabase"]
+collection = db["hybridRecommendation2"]
 
-# Store all genres
-genre_set = set()
+# === Count total documents ===
+total_docs = collection.count_documents({})
 
-for doc in collection.find({}, { "genres": 1 }):
-    genres = doc.get("genres")
-    if isinstance(genres, list):
-        genre_set.update(genres)
-    elif isinstance(genres, str):
-        genre_set.add(genres)
+# === Prepare to track type counts ===
+type_counts = {}
 
-# Show sorted list of unique genres
-print("🎬 All Genres:")
-for g in sorted(genre_set):
-    print("-", g)
+print(f"🔍 Checking movieId types in {total_docs} documents...")
+
+# === Loop through all documents with movieId field ===
+cursor = collection.find({}, { "movieId": 1 })
+
+for doc in tqdm(cursor, total=total_docs, desc="Scanning"):
+    if "movieId" not in doc:
+        key = "missing"
+    elif doc["movieId"] is None:
+        key = "null"
+    else:
+        key = type(doc["movieId"]).__name__
+
+    type_counts[key] = type_counts.get(key, 0) + 1
+
+# === Show results ===
+print("\n📊 movieId Type Breakdown:")
+for t, count in type_counts.items():
+    print(f"- {t}: {count}")

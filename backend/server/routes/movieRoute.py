@@ -245,6 +245,7 @@ async def add_to_history(request: Request):
 
 @router.get("/historyMovies/{userId}")
 def get_history_movies(userId: str, request: Request):
+    print(f"📥 GET /historyMovies/{userId} called")
     try:
         db = request.app.state.movie_db
         history_collection = db["history"]

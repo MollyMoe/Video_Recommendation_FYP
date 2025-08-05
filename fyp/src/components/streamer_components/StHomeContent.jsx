@@ -330,7 +330,8 @@ const handleAction = async (actionType, movieId) => {
     const actions = {
       like: { url: "like", message: "Movie Liked!" },
       save: { url: "watchLater", message: "Saved to Watch Later!" },
-      delete: { url: "recommended/delete", message: "Removed from recommendations" }
+      delete: { url: "recommended/delete", message: "Removed from recommendations" },
+      history: { url: "history", message: "Movie added to history!" }  // ✅ ADD THIS LINE
     };
 
     const action = actions[actionType];
