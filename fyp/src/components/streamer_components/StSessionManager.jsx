@@ -8,13 +8,13 @@ const StSessionManager = () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
 
-  // ⏳ Check if total session exceeds 3 days (testing = 3 minutes)
+  // ⏳ Check if total session exceeds 3 days 
   const checkSessionDuration = async () => {
     const signinTime = localStorage.getItem("signinTime");
     if (!signinTime) return;
 
-    const threeMinutes = 3 * 60 * 1000;
-    if (Date.now() - Number(signinTime) > threeMinutes) {
+    const threeDays =3 * 24 * 60 * 60 * 1000;
+    if (Date.now() - Number(signinTime) > threeDays) {
       await signoutUser("session-expired");
     }
   };
@@ -60,12 +60,13 @@ const StSessionManager = () => {
   useEffect(() => {
     localStorage.setItem("signinTime", Date.now().toString());
 
-    // 5. Inactivity timeout (testing: 2 mins)
-    let activityTimeout = setTimeout(() => signoutUser("inactivity"), 2 * 60 * 1000);
+    // 5. Inactivity timeout (1 and a half days)
+    const inactivityLimit = 1 * 36 * 60 * 60 * 1000;
+    let activityTimeout = setTimeout(() => signoutUser("inactivity"), inactivityLimit);
 
     const resetActivityTimer = () => {
       clearTimeout(activityTimeout);
-      activityTimeout = setTimeout(() => signoutUser("inactivity"), 2 * 60 * 1000);
+      activityTimeout = setTimeout(() => signoutUser("inactivity"), inactivityLimit);
     };
 
     // 6. Attach listeners

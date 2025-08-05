@@ -324,6 +324,38 @@ const fetchUserAndMovies = async () => {
   }
 };
 
+const handleAction = async (actionType, movieId) => {
+    if (!movieId || !savedUser?.userId) return;
+
+    const actions = {
+      like: { url: "like", message: "Movie Liked!" },
+      save: { url: "watchLater", message: "Saved to Watch Later!" },
+      delete: { url: "recommended/delete", message: "Removed from recommendations" }
+    };
+
+    const action = actions[actionType];
+    if (!action) return;
+
+    if (actionType === "delete") {
+      setMovies(prev => prev.filter(m => m.movieId !== movieId));
+      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+    }
+
+    try {
+      await axios.post(`${API}/api/movies/${action.url}`, {
+        userId: savedUser.userId,
+        movieId
+      });
+
+      if (action.message) {
+        setPopupMessage(action.message);
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 2000);
+      }
+    } catch (err) {
+      console.error(`❌ Error with action ${actionType}:`, err);
+    }
+  };
 
 const handleHistory = (movie) => {
     if (!isSubscribed || !movie) return;
@@ -482,7 +514,7 @@ const fetchAllCarouselData = async () => {
 
   // === RENDER ===
   return (
-    <div className="sm:ml-64 pt-10 px-4 sm:px-8 bg-gray-50 min-h-screen">
+    <div className="sm:ml-64 pt-10 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         
         {/* **CONDITIONAL LAYOUT SWITCH** */}
@@ -514,7 +546,7 @@ const fetchAllCarouselData = async () => {
             {/* Carousels Section */}
             <div className="mt-15">
               <MovieCarousel
-                title="🔥 Most Liked Movies"
+                title={<span className="dark:text-white">🔥 Most Liked Movies </span>}
                 movies={topLikedMovies}
                 onMovieClick={setSelectedMovie}
                 autoScroll={true} 
@@ -522,8 +554,8 @@ const fetchAllCarouselData = async () => {
               
               {/* These carousels will NOT auto-scroll because the prop is not passed (it defaults to false) */}
               {/* {interactionCounts.liked >= 5 && likedMovies.length > 0 && ( */}
-                <MovieCarousel
-                  title={<>Because you like <span className="italic text-purple-500">{likedTitles.join(", ")}</span></>}
+                <MovieCarousel 
+                  title={<span className="dark:text-white">Because you liked <span className="italic text-purple-500">{likedTitles.join(", ")}</span></span>}
                   movies={likedMovies}
                   onMovieClick={setSelectedMovie}
                 />
@@ -531,7 +563,7 @@ const fetchAllCarouselData = async () => {
               
               {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
                 <MovieCarousel
-                  title={<>Because you save <span className="italic text-green-500">{savedTitles.join(", ")}</span></>}
+                  title={<span className="dark:text-white">Because you saved <span className="italic text-green-500">{savedTitles.join(", ")}</span></span>}
                   movies={savedMovies}
                   onMovieClick={setSelectedMovie}
                 />
@@ -539,7 +571,7 @@ const fetchAllCarouselData = async () => {
               
               {interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
                 <MovieCarousel
-                  title={<>Because you watch <span className="italic text-orange-500">{watchedTitles.join(", ")}</span></>}
+                  title={<span className="dark:text-white">Because you watched <span className="italic text-orange-500">{watchedTitles.join(", ")}</span></span>}
                   movies={watchedMovies}
                   onMovieClick={setSelectedMovie}
                 />
@@ -549,7 +581,7 @@ const fetchAllCarouselData = async () => {
             {/* Main Recommendations Grid */}
             <div>
               <div className="flex justify-between items-center mb-4 px-4">
-                <h2 className="text-2xl font-semibold text-black">Recommended for You</h2>
+                <h2 className="text-2xl font-semibold text-black dark:text-white">Recommended for You</h2>
                 <button
                   onClick={handleRegenerate}
                   disabled={!isSubscribed || isLoading}

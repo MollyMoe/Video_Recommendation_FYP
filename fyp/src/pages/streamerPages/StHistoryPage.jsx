@@ -16,17 +16,43 @@ const StHistoryPage = () => {
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const handleNetworkChange = () => setIsOnline(navigator.onLine);
-    window.addEventListener("online", handleNetworkChange);
-    window.addEventListener("offline", handleNetworkChange);
-    return () => {
-      window.removeEventListener("online", handleNetworkChange);
-      window.removeEventListener("offline", handleNetworkChange);
-    };
-  }, []);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    
+  
+    useEffect(() => {
+      const handleNetworkChange = () => setIsOnline(navigator.onLine);
+      window.addEventListener("online", handleNetworkChange);
+      window.addEventListener("offline", handleNetworkChange);
+      return () => {
+        window.removeEventListener("online", handleNetworkChange);
+        window.removeEventListener("offline", handleNetworkChange);
+      };
+    }, []);
+  
+    const fetchSubscription = async (userId) => {
+    try {
+      let subscription;
+  
+      if (isOnline) {
+        const res = await fetch(`${API}/api/subscription/${userId}`);
+        subscription = await res.json();
+        console.log("🔑 Online subscription data:", subscription);
+  
+        // Save for offline use (entire object)
+        window.electron?.saveSubscription(subscription);
+      } else {
+        const offlineSub = window.electron?.getSubscription();
+        subscription = offlineSub?.userId === userId ? offlineSub : null;
+        console.log("📦 Offline subscription data:", subscription);
+      }
+  
+      setIsSubscribed(subscription?.isActive ?? false);
+    } catch (err) {
+      console.error("Failed to fetch subscription:", err);
+      setIsSubscribed(false); // fallback
+    }
+  };
 
 
   const fetchHistoryMovies = async (userId) => {
@@ -85,6 +111,7 @@ const StHistoryPage = () => {
   useEffect(() => {
     if (savedUser?.userId) {
       fetchHistoryMovies(savedUser.userId);
+      fetchSubscription(savedUser.userId);
     }
   }, []);
 
@@ -260,29 +287,32 @@ useEffect(() => {
               No history movies found.
             </p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {historyMovies.map((movie) => (
                 <div
                   key={movie._id || movie.movieId}
-                  className="bg-white rounded-lg shadow p-2"
+                  className="bg-white rounded-lg shadow p-2 flex flex-col justify-between h-[320px]"
                 >
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
                     className="rounded mb-2 w-full h-60 object-cover"
                   />
-                  <h3 className="text-sm font-semibold">{movie.title}</h3>
+                  <h3 className="text-sm font-semibold mb-2 line-clamp-2">{movie.title}</h3>
 
-                  <div className="flex justify-center gap-2 mt-2">
+                  <div className="flex justify-center gap-2 mt-auto">
                     {/* play btn */}
                     <button
-                      disabled={!isOnline}
                       onClick={() => {
                         console.log("▶️ Play clicked for:", movie.movieId);
                         handlePlay(movie.movieId, movie.trailer_url); // ✅ Pass trailerUrl here
                       }}
-                      className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                    >
+                      disabled={!isSubscribed ? true : !isOnline ? true : false}
+                      className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
+                      ${isSubscribed
+                        ? "bg-white text-black hover:bg-gray-200"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                  >
                       <Play className="w-3 h-3 mr-1 fill-black" />
                       Play
                     </button>
@@ -290,8 +320,12 @@ useEffect(() => {
                     {/* remove btn */}
                     <button
                       onClick={() => handleRemove(movie.movieId)}
-                      className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 mt-1"
-                    >
+                      disabled={!isSubscribed ? true : !isOnline ? true : false}
+                      className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
+                      ${isSubscribed
+                        ? "bg-white text-black hover:bg-gray-200"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                  >
                       <Trash2 className="w-3 h-3 mr-1 fill-black" />
                       Remove
                     </button>

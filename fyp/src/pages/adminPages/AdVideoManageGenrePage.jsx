@@ -11,15 +11,19 @@ const AdVideoManageGenrePage = () => {
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [movies, setMovies] = useState([]);
   const [loadingMovies, setLoadingMovies] = useState(false);
+  const [loadingGenres, setLoadingGenres] = useState(true); 
 
   // Fetch all genres on mount
   useEffect(() => {
     const fetchGenres = async () => {
       try {
+        setLoadingGenres(true);
         const res = await axios.get(`${API}/api/movies/all-genres`);
         setGenres(res.data);
       } catch (err) {
         console.error("❌ Failed to load genres", err);
+      }finally {
+        setLoadingGenres(false);
       }
     };
 
@@ -71,22 +75,28 @@ const AdVideoManageGenrePage = () => {
 
         {/* Genre Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
-          {genres.map((genre) => (
-            <button
-              key={genre}
-              onClick={() => toggleGenre(genre)}
-              className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                selectedGenres.includes(genre)
-                  ? "bg-purple-600 text-white border-purple-600"
-                  : "bg-white dark:bg-gray-700 text-gray-700 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-              }`}
-            >
-              {genre}
-            </button>
-          ))}
+          {loadingGenres ? (
+            <div className="text-gray-800 dark:text-white text-sm animate-pulse">
+              🔄 Loading genres...
+            </div>
+          ) : (
+            genres.map((genre) => (
+              <button
+                key={genre}
+                onClick={() => toggleGenre(genre)}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                  selectedGenres.includes(genre)
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                {genre}
+              </button>
+            ))
+          )}
 
           {/* Clear All */}
-          {selectedGenres.length > 0 && (
+          {!loadingGenres && selectedGenres.length > 0 && (
             <button
               onClick={clearGenres}
               className="px-4 py-2 rounded-lg border text-sm font-medium bg-red-600 text-white border-red-700 hover:bg-red-700"

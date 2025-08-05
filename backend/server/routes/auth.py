@@ -1,6 +1,8 @@
 
 from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException
+from datetime import datetime, timezone
+from fastapi import HTTPException, Request
 from bson import ObjectId
 from pymongo import ReturnDocument
 import bcrypt
@@ -388,34 +390,40 @@ def get_user_by_id(request: Request, userType: str, userId: str):
 
 #     return {"message": "Sign-out time updated"}
 
-from fastapi import APIRouter, Request, HTTPException
-from datetime import datetime
 
 @router.post("/update-signout-time")
 async def update_signout_time(request: Request):
-    body = await request.json()
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    
     user_id = body.get("userId")
-    user_type = body.get("userType")
+    user_type = (body.get("userType") or "").lower()
     time_str = body.get("time")
 
-    if not user_id or not user_type:
-        raise HTTPException(status_code=400, detail="Missing userId or userType")
+    if not user_id or user_type not in ["admin", "streamer"]:
+        raise HTTPException(status_code=400, detail="Missing or invalid userId/userType")
 
     try:
-        last_signout = datetime.fromisoformat(time_str.replace("Z", "+00:00")) if time_str else datetime.utcnow()
+        last_signout = (
+            datetime.fromisoformat(time_str.replace("Z", "+00:00")).astimezone(timezone.utc)
+            if time_str 
+            else datetime.now(timezone.utc)
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid time format: {e}")
 
     db = request.app.state.user_db
-    Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
+    Model = db[user_type]
 
     result = Model.update_one(
-        { "userId": user_id },
-        { "$set": { "lastSignout": last_signout } }
+        {"userId": user_id},
+        {"$set": {"lastSignout": last_signout}}
     )
 
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return { "message": "Sign-out time updated successfully" }
+    return {"message": "Sign-out time updated successfully"}
 

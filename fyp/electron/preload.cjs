@@ -8,19 +8,22 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 // File paths
 const basePath = path.join(os.homedir(), "cineit-cache");
 
-const sessionFilePath = path.join(os.homedir(), 'cineit-user-session.json');
-const profileFilePath = path.join(os.homedir(), 'cineit-profile-update.json');
-const feedbackFilePath = path.join(os.homedir(), 'cineit-feedback-queue.json');
-const userGenrePath = path.join(os.homedir(), 'cineit-user-genres.json');
+const sessionFilePath = path.join(basePath, 'cineit-user-session.json');
+const profileFilePath = path.join(basePath, 'cineit-profile-update.json');
+const feedbackFilePath = path.join(basePath, 'cineit-feedback-queue.json');
+const userGenrePath = path.join(basePath, 'cineit-user-genres.json');
 const allMoviesPath = path.join(os.homedir(), 'cineit-all-movies.json');
 
 const backupScript = path.join(__dirname, "..", "scripts", "backup.sh");
 const restoreScript = path.join(__dirname, "..", "scripts", "restore.sh");
-const historyQueuePath = path.join(os.homedir(), "cineit-history-queue.json");
-const savedQueuePath = path.join(os.homedir(), "cineit-saved-queue.json");
-const likedQueuePath = path.join(os.homedir(), "cineit-liked-queue.json");
+const historyQueuePath = path.join(basePath, "cineit-history-queue.json");
+const savedQueuePath = path.join(basePath, "cineit-saved-queue.json");
+const likedQueuePath = path.join(basePath, "cineit-liked-queue.json");
 
 const recommendedPath = path.join(basePath, 'recommended.json');
+const subscriptionPath = path.join(basePath, "subscription.json");
+const themePath = path.join(basePath, "theme.json");
+
 
 const paths = {
   topLiked: path.join(basePath, "topLiked.json"),
@@ -230,6 +233,14 @@ contextBridge.exposeInMainWorld('electron', {
       }
     });
   },
+
+  //Theme 
+  saveTheme: (data) => safeWrite(themePath, data),
+  getTheme: () => safeRead(themePath, { darkMode: false }),
+
+  //subscription
+  saveSubscription: (data) => safeWrite(subscriptionPath, data),
+  getSubscription: () => safeRead(subscriptionPath),
 
   // ✅ Carousel offline cache (topLiked, likedMovies, etc.)
   saveCarouselData: async (type, data) => {

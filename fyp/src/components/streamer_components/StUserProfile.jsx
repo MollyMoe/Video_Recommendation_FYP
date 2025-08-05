@@ -12,7 +12,7 @@ function StUserProfile({ userProfile }) {
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  const { profileImage, updateProfileImage, setCurrentRole } = useUser();
+  const { profileImage, updateProfileImage, currentRole, setCurrentRole } = useUser();
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -40,30 +40,39 @@ function StUserProfile({ userProfile }) {
       });
   }, []);
 
-
-
+ // ✅ Load dark mode from offline file
   useEffect(() => {
-    const savedTheme = localStorage.getItem("darkMode");
-    if (savedTheme === "true") {
-      setDarkMode(true);
-    }
+    const loadTheme = async () => {
+      if (window.electron?.getTheme) {
+        const data = await window.electron.getTheme();
+        if (data?.darkMode === true) {
+          setDarkMode(true);
+        }
+      }
+    };
+    loadTheme();
   }, []);
 
   useEffect(() => {
     setCurrentRole("streamer");
   }, []);
 
+  // ✅ Apply & save dark mode setting
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-    localStorage.setItem("darkMode", darkMode);
+
+    if (window.electron?.saveTheme) {
+      window.electron.saveTheme({ darkMode });
+    }
   }, [darkMode]);
 
+  // ✅ Toggle dark mode
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+    setDarkMode((prev) => !prev);
   };
 
   useEffect(() => {
