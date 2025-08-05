@@ -1,8 +1,8 @@
-// // const isOnline = navigator.onLine;
+const isOnline = navigator.onLine;
 
-// // export const API = isOnline
-// //   ? "http://localhost:8000"
-// //   : "http://localhost:8000";
+export const API = isOnline
+  ? "http://localhost:8000"
+  : "http://localhost:8000";
 
 // // src/config/api.js
 // // const FALLBACKS = [
@@ -50,44 +50,44 @@
 // // ✅ Static fallback for build-time usage
 // export const API = FALLBACKS[0];
 
-const FALLBACKS = [
-  import.meta?.env?.VITE_API_BASE_URL,
-  'http://127.0.0.1:8000',
-  'http://localhost:8000'
-];
+// const FALLBACKS = [
+//   import.meta?.env?.VITE_API_BASE_URL,
+//   'http://127.0.0.1:8000',
+//   'http://localhost:8000'
+// ];
 
-// This is the static default API (usually used if no dynamic logic needed)
-export const API = FALLBACKS[0];
+// // This is the static default API (usually used if no dynamic logic needed)
+// export const API = FALLBACKS[0];
 
-let cached = null;
+// let cached = null;
 
-// This function dynamically checks which backend URL is reachable
-async function getAPIBase() {
-  if (cached) return cached;
+// // This function dynamically checks which backend URL is reachable
+// async function getAPIBase() {
+//   if (cached) return cached;
 
-  for (const url of FALLBACKS) {
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 1000);
+//   for (const url of FALLBACKS) {
+//     try {
+//       const controller = new AbortController();
+//       const timeout = setTimeout(() => controller.abort(), 1000);
 
-      const res = await fetch(`${url}/api/movies/top-liked`, {
-        signal: controller.signal
-      });
+//       const res = await fetch(`${url}/api/movies/top-liked`, {
+//         signal: controller.signal
+//       });
 
-      clearTimeout(timeout);
+//       clearTimeout(timeout);
 
-      if (res.ok) {
-        console.log(`[API] ✅ Connected to: ${url}`);
-        cached = url;
-        return url;
-      }
-    } catch (err) {
-      console.warn(`[API] ❌ Failed to connect: ${url}`);
-    }
-  }
+//       if (res.ok) {
+//         console.log(`[API] ✅ Connected to: ${url}`);
+//         cached = url;
+//         return url;
+//       }
+//     } catch (err) {
+//       console.warn(`[API] ❌ Failed to connect: ${url}`);
+//     }
+//   }
 
-  throw new Error("❌ No available API server could be reached.");
-}
+//   throw new Error("❌ No available API server could be reached.");
+// }
 
-export { getAPIBase };
+// export { getAPIBase };
 
