@@ -7,6 +7,7 @@ import StFilterBar from "../../components/streamer_components/StFilterBar";
 
 import { API } from "@/config/api";
 
+
 const StFilterPage = () => {
   // --- ERROR FIX 1: Add all missing state declarations ---
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,8 +60,8 @@ const StFilterPage = () => {
             return {
                 ...movie,
                 trailer_key,
-                genres: movie.genres ? movie.genres.replace(/\|/g, ", ") : "",
-                producers: movie.producers ? movie.producers.replace(/\|/g, ", ") : "",
+                genres: typeof movie.genres === 'string'  ? movie.genres.replace(/\|/g, ", ") : "",
+                producers: typeof movie.producers === 'string' ? movie.producers.replace(/\|/g, ", ") : "",
                 actors: movie.actors || "",
             };
         });

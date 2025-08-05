@@ -22,15 +22,32 @@ const AdUserTable = ({ searchQuery }) => {
     fetchStreamers();
   }, []);
 
-  useEffect(() => {
-  const fetchUser = async () => {
-    const res = await fetch(`${API}/api/auth/users/streamer/${user.userId}`);
-    const data = await res.json();
-    setUser(data);
-  };
+  // const handleToggleSuspend = async (userId) => {
+  //   const updatedUsers = users.map((user) =>
+  //     user.userId === userId
+  //       ? {
+  //           ...user,
+  //           status: user.status === "Suspended" ? "Active" : "Suspended",
+  //         }
+  //       : user
+  //   );
 
-  fetchUser();
-}, []);
+  //   setUsers(updatedUsers);
+
+  //   const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
+
+  //   try {
+  //     await fetch(`${API}/api/auth/users/${userId}/status`, {
+  //       method: "PUT",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ status: newStatus }),
+  //     });
+
+  //     // ✅ If unsuspending, also reset lastSignout to now
+  //   } catch (err) {
+  //     console.error("Failed to update status:", err);
+  //   }
+  // };
 
   const handleToggleSuspend = async (userId) => {
   // ✅ Keep your original structure
@@ -42,54 +59,9 @@ const AdUserTable = ({ searchQuery }) => {
         }
       : user
   );
-  // ✅ Keep your original structure
-  const updatedUsers = users.map((user) =>
-    user.userId === userId
-      ? {
-          ...user,
-          status: user.status === "Suspended" ? "Active" : "Suspended",
-        }
-      : user
-  );
 
   setUsers(updatedUsers);
-  setUsers(updatedUsers);
 
-  const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
-  const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
-
-  if (!userType) {
-    console.error("❌ Missing userType for user:", userId);
-    return;
-  }
-  console.log("🧪 Sending:", {
-  userId,
-  userType,
-  status: newStatus,
-});
-
-  try {
-    // 🔄 Update status in DB
-    const res = await fetch(`${API}/api/auth/users/${userId}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: newStatus,
-        userType,
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      console.error("❌ Failed to update user status:", err.detail || err);
-      return;
-    }
-    console.log(`✅ User ${userId} status updated to ${newStatus}`);
-
-    // ✅ Reset lastSignout if unsuspending
-    if (newStatus === "Active") {
-      const resetRes = await fetch(`${API}/api/auth/update-signout-time`, {
-        method: "POST",
   const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
   const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
 
@@ -131,11 +103,6 @@ const AdUserTable = ({ searchQuery }) => {
           userType,
           time: new Date().toISOString(),
         }),
-        body: JSON.stringify({
-          userId,
-          userType,
-          time: new Date().toISOString(),
-        }),
       });
 
       if (!resetRes.ok) {
@@ -162,9 +129,7 @@ const AdUserTable = ({ searchQuery }) => {
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
     return users.filter((user) =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.userId.toLowerCase().includes(searchQuery.toLowerCase())
+      user.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, users]);
 
@@ -238,4 +203,3 @@ const AdUserTable = ({ searchQuery }) => {
 };
 
 export default AdUserTable;
-

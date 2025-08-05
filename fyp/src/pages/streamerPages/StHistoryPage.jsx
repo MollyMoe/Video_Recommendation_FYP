@@ -69,25 +69,30 @@ const StHistoryPage = () => {
       const res = await fetch(`${API}/api/movies/historyMovies/${userId}`);
       data = await res.json();
 
+      // ✅ Save to local storage for web browsers
+      localStorage.setItem(`history-${userId}`, JSON.stringify(data.historyMovies));
       // ✅ Optional: Save to local history queue for offline use
       if (isOnline && window.electron?.saveHistoryQueue) {
       window.electron.saveHistoryQueue(data.historyMovies);
     }
 
-    } else if (window.electron?.getHistoryQueue) {
-      // ✅ Offline: Read from local queue
-      const offlineQueue = await window.electron.getHistoryQueue();
-      data.historyMovies = offlineQueue || [];
     } else {
-      console.warn("⚠️ Offline and no preload method found.");
+      // ✅ OFFLINE LOGIC
+      if (window.electron?.getHistoryQueue) {
+        // ✅ Electron Offline: Read from local queue
+        const offlineQueue = await window.electron.getHistoryQueue();
+        data.historyMovies = offlineQueue || [];
+      } else {
+        // ✅ Web Browser Offline: Read from localStorage
+        const storedHistory = localStorage.getItem(`history-${userId}`);
+        data.historyMovies = storedHistory ? JSON.parse(storedHistory) : [];
+      }
     }
 
     console.log("📽 History movies response:", data);
 
-    // ✅ Deduplicate
     const uniqueMovies = [];
     const seen = new Set();
-
     for (const movie of data.historyMovies || []) {
       const id = movie._id || movie.movieId;
       if (!seen.has(id)) {
@@ -95,7 +100,6 @@ const StHistoryPage = () => {
         uniqueMovies.push(movie);
       }
     }
-
     setHistoryMovies(uniqueMovies);
   } catch (err) {
     console.error("❌ Failed to fetch history movies:", err);
@@ -111,7 +115,6 @@ const StHistoryPage = () => {
   useEffect(() => {
     if (savedUser?.userId) {
       fetchHistoryMovies(savedUser.userId);
-      fetchSubscription(savedUser.userId);
       fetchSubscription(savedUser.userId);
     }
   }, []);
@@ -165,8 +168,18 @@ const StHistoryPage = () => {
   setTimeout(() => setShowSuccess(false), 2000);
 
   if (!isOnline) {
-    console.log("📦 Offline — removing from history queue");
-    window.electron?.removeFromHistoryQueue?.(movieId);
+    if (window.electron?.removeFromHistoryQueue) {
+      // Electron specific offline removal
+      window.electron.removeFromHistoryQueue(movieId);
+      console.log("📦 Offline (Electron) — removing from history queue");
+    } else {
+      // ✅ Web Browser Offline: Remove from localStorage
+      const storedHistory = JSON.parse(localStorage.getItem(`history-${savedUser.userId}`) || '[]');
+      const newHistory = storedHistory.filter(m => m.movieId?.toString() !== movieId.toString());
+      localStorage.setItem(`history-${savedUser.userId}`, JSON.stringify(newHistory));
+      console.log("📦 Offline (Browser) — removed from localStorage");
+      alert("Movie removed locally. The change will not be saved to the server until you are online.");
+    }
     return;
   }
 
@@ -215,7 +228,15 @@ const handleRemoveAllHistory = async () => {
       console.error("❌ Server clear error:", err);
     }
   } else {
-    window.electron?.clearHistoryQueueByUser?.(savedUser.userId);
+    if (window.electron?.clearHistoryQueueByUser) {
+      // Electron specific offline clear
+      window.electron.clearHistoryQueueByUser(savedUser.userId);
+    } else {
+      // ✅ Web Browser Offline: Clear from localStorage
+      localStorage.removeItem(`history-${savedUser.userId}`);
+      console.log("🧹 LocalStorage history cleared.");
+      alert("History cleared locally. The change will not be saved to the server until you are online.");
+    }
   }
 };
 
@@ -265,7 +286,6 @@ useEffect(() => {
     <div className="p-4">
       <StNav />
       <StSideBar />
-
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="-mt-4 flex justify-end mb-5">
@@ -333,8 +353,6 @@ useEffect(() => {
                     </button>
                   </div>
                 </div>
-              </div>
-
               ))}
             </div>
           )}

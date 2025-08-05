@@ -10,70 +10,88 @@ const StManageSubscriptionPage = () => {
   const [step, setStep] = useState("overview");
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [user, setUser] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem("user");
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch (error) {
+      console.error("Failed to parse user from localStorage", error);
+      return null;
+    }
+  });
+
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const fetchSubscription = async () => {
-  try {
-    let data;
-
-    if (navigator.onLine && window.electron?.saveSubscription) {
-      // Online: fetch from backend, then save locally
-      const res = await fetch(`${API}/api/subscription/${user.userId}`);
-      data = await res.json();
-      setSubscription(data);
-
-      // Save to local cache
-      await window.electron.saveSubscription(data);
-    } else if (window.electron?.getSubscription) {
-      // Offline: load from local cache
-      data = await window.electron.getSubscription();
-      setSubscription(data);
-    } else {
-      console.warn("No subscription data available offline.");
+    if (!user || !user.userId) {
+      console.error("User ID is not available.");
+      return;
     }
-  } catch (err) {
-    console.error("Failed to fetch subscription:", err);
-  }
-};
 
+    try {
+      let data;
+      if (navigator.onLine) {
+        console.log("Online. Fetching subscription from API...");
+        const res = await fetch(`${API}/api/subscription/${user.userId}`);
+        data = await res.json();
+        setSubscription(data);
+
+        if (window.electron?.saveSubscription) {
+          await window.electron.saveSubscription(data);
+        }
+      } else if (window.electron?.getSubscription) {
+        console.log("Offline. Loading subscription from local cache...");
+        data = await window.electron.getSubscription();
+        setSubscription(data);
+      } else {
+        console.warn("No subscription data available offline for this environment.");
+      }
+    } catch (err) {
+      console.error("Failed to fetch subscription:", err);
+    }
+  };
 
   useEffect(() => {
-    console.log("Fetched subscription:", subscription);
-    fetchSubscription();
-  }, []);
+    if (user && user.userId) {
+      fetchSubscription();
+    }
+  }, [user]);
 
   const cancelSubscription = async () => {
-    await fetch(`${API}/api/subscription/cancel/${user.userId}`, {
-      method: "POST",
-    });
-    fetchSubscription();
+    try {
+      await fetch(`${API}/api/subscription/cancel/${user.userId}`, {
+        method: "POST",
+      });
+      fetchSubscription();
+    } catch (err) {
+      console.error("Failed to cancel subscription:", err);
+    }
   };
 
   const pollSubscriptionStatus = async () => {
-  const maxAttempts = 15;
-  let attempts = 0;
+    const maxAttempts = 15;
+    let attempts = 0;
 
-  while (attempts < maxAttempts) {
-    try {
-      const res = await fetch(`${API}/api/subscription/${user.userId}`);
-      const data = await res.json();
-      if (data.isActive && data.plan !== "Free Trial") {
-        console.log("✅ Subscription updated:", data);
-        setSubscription(data);
-        setStep("overview");
-        break;
+    while (attempts < maxAttempts) {
+      try {
+        const res = await fetch(`${API}/api/subscription/${user.userId}`);
+        const data = await res.json();
+        if (data.isActive && data.plan !== "Free Trial") {
+          console.log("✅ Subscription updated:", data);
+          setSubscription(data);
+          setStep("overview");
+          break;
+        }
+      } catch (e) {
+        console.warn("Polling error:", e);
       }
-    } catch (e) {
-      console.warn("Polling error:", e);
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      attempts++;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // wait 3 seconds
-    attempts++;
-  }
-
-  setIsRedirecting(false); // hide modal even if failed after max attempts
-};
+    setIsRedirecting(false);
+  };
 
   return (
     <div className="min-h-screen pt-24 px-6 sm:px-12 sm:ml-64 max-w-5xl mx-auto dark:bg-gray-900">
@@ -255,12 +273,11 @@ const StManageSubscriptionPage = () => {
 
                   if (data.url) {
                     if (window.electron?.openExternal) {
-                      window.electron.openExternal(data.url); // Open Stripe externally
+                      window.electron.openExternal(data.url);
                     } else {
                       window.open(data.url, "_blank");
                     }
 
-                    // 🔁 Start polling after opening Stripe
                     pollSubscriptionStatus();
                   }
                 } catch (err) {

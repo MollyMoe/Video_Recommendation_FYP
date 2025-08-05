@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios"; // Using axios for consistency
-import axios from "axios"; // Using axios for consistency
 import logoPic from "../images/Cine-It.png";
 
 import { API } from "@/config/api";
@@ -11,31 +10,22 @@ const InputGenrePage = () => {
   const [genreInput, setGenreInput] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false); // Add a loading state for better UX
-  const [isLoading, setIsLoading] = useState(false); // Add a loading state for better UX
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true); // Show loading feedback
     setError("");
-    setIsLoading(true); // Show loading feedback
-    setError("");
 
-    const genres = genreInput.split(",").map((g) => g.trim()).filter(Boolean);
     const genres = genreInput.split(",").map((g) => g.trim()).filter(Boolean);
 
     if (genres.length === 0) {
       setError("Please enter at least one genre.");
       setIsLoading(false);
-      setIsLoading(false);
       return;
     }
 
-    if (!savedUser || !savedUser.userId || !savedUser.username) {
-      setError("User information is missing. Please sign in again.");
-      setIsLoading(false);
     if (!savedUser || !savedUser.userId || !savedUser.username) {
       setError("User information is missing. Please sign in again.");
       setIsLoading(false);
@@ -59,35 +49,12 @@ const InputGenrePage = () => {
       
       // ✅ THE FIX IS HERE ✅
       console.log("Preferences saved! Navigating to sign-in page.");
-      // Step 1: Update the user's profile with their new genres
-      await axios.post(`${API}/api/preference/genre`, {
-        username: savedUser.username,
-        genres,
-      });
-
-      // Step 2: Trigger the initial recommendation generation on the backend
-      // The backend will now generate and save the first 99 movies for this user.
-      console.log("Triggering initial recommendations for the user...");
-      await axios.post(`${API}/api/movies/regenerate`, {
-        userId: savedUser.userId,
-        excludeTitles: [], // No exclusions for the first time
-      });
       
-      // ✅ THE FIX IS HERE ✅
-      console.log("Preferences saved! Navigating to sign-in page.");
-      
-      // Optional: Add a success message to the navigation state
-      navigate("/signin", { state: { message: "Your preferences have been saved! Please sign in to continue." } });
-
       // Optional: Add a success message to the navigation state
       navigate("/signin", { state: { message: "Your preferences have been saved! Please sign in to continue." } });
 
     } catch (err) {
       console.error("Error saving preferences:", err);
-      const errorMessage = err.response?.data?.detail || "Failed to save preferences. Please try again.";
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false); // Stop loading feedback
       const errorMessage = err.response?.data?.detail || "Failed to save preferences. Please try again.";
       setError(errorMessage);
     } finally {
@@ -114,23 +81,17 @@ const InputGenrePage = () => {
             }}
             placeholder="e.g., Action, Comedy, Horror"
             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
-            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
             required
-            disabled={isLoading}
             disabled={isLoading}
           />
 
-          {error && <p className="text-red-600 text-sm text-center">{error}</p>}
           {error && <p className="text-red-600 text-sm text-center">{error}</p>}
 
           <button
             type="submit"
             className="block mx-auto bg-purple-600 hover:bg-purple-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-md disabled:bg-purple-400"
             disabled={isLoading}
-            className="block mx-auto bg-purple-600 hover:bg-purple-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-md disabled:bg-purple-400"
-            disabled={isLoading}
           >
-            {isLoading ? "Saving..." : "Save Preferences"}
             {isLoading ? "Saving..." : "Save Preferences"}
           </button>
         </form>

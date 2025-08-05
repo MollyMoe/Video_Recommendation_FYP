@@ -20,6 +20,7 @@ function SignInPage() {
   const [message, setMessage] = useState(null);
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,9 +34,6 @@ function SignInPage() {
     const newErrors = {};
     if (!formData.userType) newErrors.userType = "Please select user type";
     if (!formData.username.trim()) newErrors.username = "Username required";
-    // Keep email validation if your backend uses email for sign-in validation,
-    // even if the backend POST body uses 'username' for the primary identifier.
-    // Otherwise, you might consider if 'email' input is truly necessary for sign-in.
     if (!/^\S+@\S+\.\S+$/.test(formData.email))
       newErrors.email = "Invalid email";
     if (formData.password.length < 6)
@@ -106,18 +104,13 @@ function SignInPage() {
         // ✅ Fetch profile image
         if (data.user?.userId && formData.userType) {
           const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
-          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
           try {
             const imageRes = await fetch(endpoint);
             const userInfo = await imageRes.json();
 
             if (userInfo.profileImage) {
               const key = `${formData.userType.toLowerCase()}_profileImage`;
-              // Ensure the profile image URL is relative to the base URL if it's not absolute
-              const profileImageUrl = userInfo.profileImage.startsWith("http")
-                ? userInfo.profileImage
-                : `${API}${userInfo.profileImage}`; // Assuming API is your base URL for static files too
-              localStorage.setItem(key, profileImageUrl);
+              localStorage.setItem(key, userInfo.profileImage);
             }
           } catch (error) {
             console.warn("⚠️ Could not fetch profile image:", error);
@@ -149,9 +142,7 @@ function SignInPage() {
           type: "error",
           text: "Invalid username or password.",
         });
-      }
-      // Fallback for any other errors (e.g., 500 server errors, other unhandled 4xx)
-      else {
+      } else {
         setMessage({
           type: "error",
           text: data.detail || "Login failed. Please try again.",
@@ -192,8 +183,9 @@ function SignInPage() {
   }
 };
 
+  // FIXED: Return needs to be inside the component
   return (
-    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto flex flex-col">
         {/* Header */}
         <div className="text-center py-4">
@@ -234,9 +226,9 @@ function SignInPage() {
               <button
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md
-                           bg-white text-gray-900 dark:bg-gray-700 dark:text-white
-                           focus:outline-none focus:ring-2 focus:ring-purple-400 text-left flex justify-between items-center"
+                className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md 
+                      bg-white text-gray-900 dark:bg-gray-700 dark:text-white 
+                      focus:outline-none focus:ring-2 focus:ring-purple-400 text-left flex justify-between items-center"
               >
                 <span>
                   {formData.userType === "admin"
@@ -300,11 +292,11 @@ function SignInPage() {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                className="w-full px-4 py-2 text-sm
-                           border border-gray-300 rounded-md
-                           bg-white text-gray-900
-                           dark:bg-gray-700 dark:text-white
-                           focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-4 py-2 text-sm 
+                border border-gray-300 rounded-md 
+                bg-white text-gray-900 
+                dark:bg-gray-700 dark:text-white 
+                focus:outline-none focus:ring-2 focus:ring-purple-400"
                 placeholder="Choose a username"
                 required
               />
@@ -327,11 +319,11 @@ function SignInPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 text-sm
-                           border border-gray-300 rounded-md
-                           bg-white text-gray-900
-                           dark:bg-gray-700 dark:text-white
-                           focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-4 py-2 text-sm 
+                border border-gray-300 rounded-md 
+                bg-white text-gray-900 
+                dark:bg-gray-700 dark:text-white 
+                focus:outline-none focus:ring-2 focus:ring-purple-400"
                 placeholder="Enter your email"
                 required
               />
@@ -354,11 +346,11 @@ function SignInPage() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 text-sm
-                           border border-gray-300 rounded-md
-                           bg-white text-gray-900
-                           dark:bg-gray-700 dark:text-white
-                           focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="w-full px-4 py-2 text-sm 
+             border border-gray-300 rounded-md 
+             bg-white text-gray-900 
+             dark:bg-gray-700 dark:text-white 
+             focus:outline-none focus:ring-2 focus:ring-purple-400"
                 placeholder="Enter your password"
                 required
               />

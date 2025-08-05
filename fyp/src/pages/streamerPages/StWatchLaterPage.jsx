@@ -103,7 +103,6 @@ const StWatchLaterPage = () => {
     if (savedUser?.userId) {
       fetchWatchLaterMovies(savedUser.userId);
       fetchSubscription(savedUser.userId);
-      fetchSubscription(savedUser.userId);
     }
   }, []);
 
@@ -241,11 +240,7 @@ const StWatchLaterPage = () => {
             <p className="text-center mt-10 text-white">
               No saved movies found.
             </p>
-            <p className="text-center mt-10 text-white">
-              No saved movies found.
-            </p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {watchLaterMovies.map((movie) => (
                 <div
@@ -295,26 +290,6 @@ const StWatchLaterPage = () => {
           )}
         </div>
       </div>
-
-      {isLoading && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <p className="text-lg font-semibold">Loading Watch Later Movies</p>
-            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
-          </div>
-        </div>
-      )}
-
-      {showSuccess && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <div className="flex justify-center mb-2">
-              <CheckCircle className="w-8 h-8 text-violet-500" />
-            </div>
-            <span className="font-medium">Movie removed from Watch Later list!</span>
-          </div>
-        </div>
-      )}
 
       {isLoading && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">

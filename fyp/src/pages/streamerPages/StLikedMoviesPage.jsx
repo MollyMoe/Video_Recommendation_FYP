@@ -1,23 +1,15 @@
 import { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-<<<<<<< HEAD
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
 import { API } from "@/config/api";
-=======
-import { Play, Trash2, CheckCircle } from "lucide-react";
-
-
-const API = import.meta.env.VITE_API_BASE_URL;
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [showSuccess, setShowSuccess] = useState(false);
-<<<<<<< HEAD
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
@@ -53,26 +45,10 @@ const StLikedMoviesPage = () => {
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
     setIsSubscribed(false); // fallback
-=======
-
-  const [isSubscribed, setIsSubscribed] = useState(false);
-
-
-  const fetchSubscription = async (userId) => {
-  try {
-    const res = await fetch(`${API}/api/subscription/${userId}`);
-    const data = await res.json();
-    console.log("🔑 Subscription data:", data);
-    setIsSubscribed(data.isActive); // true if trial or paid & not expired
-  } catch (err) {
-    console.error("Failed to fetch subscription:", err);
-    setIsSubscribed(false); // fail-safe
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
   }
 };
 
   const fetchLikedMovies = async (userId) => {
-<<<<<<< HEAD
   if (!userId) {
     console.warn("❗ No userId provided");
     return;
@@ -87,14 +63,6 @@ const StLikedMoviesPage = () => {
 
     if (isOnline) {
       // ✅ Online: fetch from FastAPI
-=======
-    // if (!username || !savedUser?.userId) return;
-    if (!userId) return;
-    setIsLoading(true);
-
-    const start = Date.now(); // Track start time
-    try {
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
       const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
       data = await res.json();
       console.log("🎬 Liked movies (online):", data);
@@ -103,7 +71,6 @@ const StLikedMoviesPage = () => {
       if (window.electron?.saveLikedQueue) {
         window.electron.saveLikedQueue(data.likedMovies);
       }
-<<<<<<< HEAD
     } else if (window.electron?.getLikedQueue) {
       // ✅ Offline: load from local file
       const offlineQueue = await window.electron.getLikedQueue();
@@ -111,19 +78,6 @@ const StLikedMoviesPage = () => {
       console.log("📦 Liked movies (offline):", data.likedMovies);
     } else {
       console.warn("⚠️ Offline and no preload getLikedQueue available");
-=======
-
-      setLikedMovies(uniqueMovies);
-    } catch (err) {
-      console.error("❌ Failed to fetch liked movies:", err);
-    } finally {
-      const elapsed = Date.now() - start;
-      const minDelay = 500; // milliseconds
-
-      setTimeout(() => {
-        setIsLoading(false);
-      }, Math.max(0, minDelay - elapsed)); // ensure at least 500ms visible
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
     }
 
     // ✅ Deduplicate
@@ -190,7 +144,6 @@ const StLikedMoviesPage = () => {
     }
   };
 
-<<<<<<< HEAD
   useEffect(() => {
   const syncLikedQueue = async () => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -281,49 +234,6 @@ const StLikedMoviesPage = () => {
 };
 
 
-=======
-  const handleRemove = async (movieId) => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (!movieId || !savedUser?.userId) {
-      console.warn("Missing movieId or userId");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: savedUser.userId,
-          movieId: movieId,
-        }),
-      });
-
-      const data = await res.json();
-      console.log("🗑️ Remove response:", data);
-
-      console.log(
-        "Before removal:",
-        likedMovies.map((m) => typeof m.movieId),
-        typeof movieId
-      );
-
-      // ✅ Remove movie from frontend UI state
-      setLikedMovies((prev) =>
-        prev.filter((m) => m.movieId.toString() !== movieId.toString())
-      );
-
-      setShowSuccess(true); // ✅ show popup
-      setTimeout(() => setShowSuccess(false), 2000); // auto-hide
-    } catch (err) {
-      console.error("❌ Error removing liked movie:", err);
-    }
-  };
-
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
   return (
     <div className="p-4">
       <StNav />
@@ -338,7 +248,6 @@ const StLikedMoviesPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {likedMovies.map((movie) => (
                 <div
-<<<<<<< HEAD
                   key={movie._id || movie.movieId}
                   className="bg-white rounded-lg shadow p-2 flex flex-col justify-between h-[320px]"
                 >
@@ -357,28 +266,11 @@ const StLikedMoviesPage = () => {
                         handlePlay(movie.movieId, movie.trailer_url); // ✅ Pass trailerUrl here
                       }}
                       disabled={!isSubscribed}
-=======
-                key={movie._id || movie.movieId}
-                className="bg-white rounded-lg shadow p-2 flex flex-col justify-between h-[320px]"
-              >
-                <img
-                  src={movie.poster_url || "https://via.placeholder.com/150"}
-                  alt={movie.title || "No Title"}
-                  className="rounded mb-2 w-full h-60 object-cover"
-                />
-                <h3 className="text-sm font-semibold mb-2 line-clamp-2">{movie.title}</h3>
-                <div className="flex justify-between gap-2 mt-auto">
-                  {/* Play button */}
-                  <button
-                    onClick={() => handlePlay(movie.movieId, movie.trailer_url)}
-                    disabled={!isSubscribed}
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
                     className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
                       ${isSubscribed
                         ? "bg-white text-black hover:bg-gray-200"
                         : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
                   >
-<<<<<<< HEAD
                       <Play className="w-3 h-3 mr-1 fill-black" />
                       Play
                     </button>
@@ -388,33 +280,15 @@ const StLikedMoviesPage = () => {
                       onClick={() => handleRemove(movie.movieId)}
                      disabled={!isSubscribed}
                       className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
-=======
-                    <Play className="w-4 h-4 mr-1 fill-black" />
-                    Play
-                  </button>
-
-                  {/* Remove button */}
-                  <button
-                    onClick={() => handleRemove(movie.movieId)}
-                    disabled={!isSubscribed}
-                    className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
                       ${isSubscribed
                         ? "bg-white text-black hover:bg-gray-200"
                         : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
                   >
-<<<<<<< HEAD
                       <Trash2 className="w-3 h-3 mr-1 fill-black" />
                       Remove
                     </button>
                   </div>
-=======
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Remove
-                  </button>
->>>>>>> 491a76d26d226c6fd73bbbf122357334c3740087
                 </div>
-              </div>
               ))}
             </div>
           )}

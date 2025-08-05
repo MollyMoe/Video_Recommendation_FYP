@@ -54,23 +54,7 @@ function StUserProfile({ userProfile }) {
   }, []);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user?._id || user.userType !== "streamer") return;
-
-    fetch(`http://localhost:3001/api/profile/streamers/${user._id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.profileImage && data.profileImage !== "") {
-          const fullPath = "http://localhost:3001" + data.profileImage;
-          setProfileImage(fullPath); // local state
-          updateProfileImage(fullPath, "streamer"); // ✅ sync with global context
-        } else {
-          updateProfileImage("", "streamer"); // ✅ clear global if user has no image
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to fetch streamer profile image:", err);
-      });
+    setCurrentRole("streamer");
   }, []);
 
   // ✅ Apply & save dark mode setting
@@ -216,13 +200,7 @@ const handleSignout = async () => {
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
             <li onClick={handleSignout}
             className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"> 
-            <li>
-              <Link
-                to="/signin"
-                className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-              >
                 <FaSignOutAlt className="mr-2" /> Sign Out
-              </Link>
             </li>
           </ul>
         </div>

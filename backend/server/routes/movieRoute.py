@@ -1,6 +1,6 @@
 import math
 from typing import List
-from fastapi import APIRouter, Request, Query, HTTPException, Body
+from fastapi import APIRouter, Request, HTTPException, Body
 from fastapi.responses import JSONResponse
 from bson import ObjectId, errors
 from pydantic import BaseModel
@@ -14,7 +14,7 @@ from typing import List, Dict
 from collections import Counter
 
 class Movie(BaseModel):
-    _id: Optional[str]
+    _id: Optional[str]  # ObjectId as string
     movieId: Union[str, int]
     predicted_rating: Optional[float]
     title: Optional[str]
@@ -27,8 +27,6 @@ class Movie(BaseModel):
     director: Optional[str]
     producers: Optional[str]
     actors: Optional[str]
-    createdAt: Optional[datetime] = None
-    lastSyncedBatchId: Optional[str] = None 
 
 def to_objectid_safe(id_str):
     try:
@@ -47,12 +45,13 @@ def get_all_movies(request: Request):
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])
+
+            # Replace all NaN values with None
             for key, value in movie.items():
                 if isinstance(value, float) and math.isnan(value):
                     movie[key] = None
 
         return JSONResponse(content=movies)
-
     except Exception as e:
         print("❌ Failed to fetch movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
@@ -92,7 +91,7 @@ async def add_to_liked_movies(request: Request):
     liked_collection = db["liked"]
 
     user_id = data.get("userId")
-    movie_id = data.get("movieId")
+    movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
 
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
@@ -101,7 +100,6 @@ async def add_to_liked_movies(request: Request):
     liked_collection.update_one(
         {"userId": user_id},
         {"$addToSet": {"likedMovies": movie_id}},
-        upsert=True
         upsert=True
     )
 
@@ -117,8 +115,9 @@ def get_liked_movies(userId: str, request: Request):
     if not liked_doc or not liked_doc.get("likedMovies"):
         return {"likedMovies": []}
 
-    liked_ids = liked_doc["likedMovies"]
+    liked_ids = liked_doc["likedMovies"]  # e.g., [287149, 186015]
 
+    # Get all matching movies
     movies_cursor = movies_collection.find(
             {"movieId": {"$in": liked_ids}},
             {
@@ -185,11 +184,6 @@ async def add_to_history(request: Request):
     except Exception as e:
         print("❌ Error saving history:", e)
         raise HTTPException(status_code=500, detail="Failed to save history")
-        return {"message": "Movie moved to end of history"}
-
-    except Exception as e:
-        print("❌ Error saving history:", e)
-        raise HTTPException(status_code=500, detail="Failed to save history")
 
 
 @router.get("/historyMovies/{userId}")
@@ -242,7 +236,6 @@ def get_history_movies(userId: str, request: Request):
         raise HTTPException(status_code=500, detail="Failed to fetch history movies")
     
     
-    
 @router.post("/watchLater")
 async def add_to_watchLater(request: Request):
     data = await request.json()
@@ -278,7 +271,6 @@ def get_watchLater_movies(userId: str, request: Request):
         if not save or not save.get("SaveMovies"):
             return {"SaveMovies": []}
 
-        saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
         saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
 
         movies_cursor = movies_collection.find(

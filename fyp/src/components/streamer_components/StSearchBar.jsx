@@ -45,8 +45,6 @@ const [history, setHistory] = useState(() => {
   useEffect(() => {
     localStorage.setItem(storageKey, JSON.stringify(history));
   }, [history, storageKey]);
-    localStorage.setItem(storageKey, JSON.stringify(history));
-  }, [history, storageKey]);
 
   const addToHistory = (term) => {
     const normalizedTerm = term.toLowerCase();
@@ -114,7 +112,6 @@ const [history, setHistory] = useState(() => {
         <button
           type="button"
           onClick={() => {
-            if (!isSubscribed) return;
             const trimmed = searchQuery.trim();
             if (trimmed) {
               addToHistory(trimmed);
