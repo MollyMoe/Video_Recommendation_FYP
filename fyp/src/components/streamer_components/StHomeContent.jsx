@@ -9,10 +9,20 @@ import MovieModal from "../movie_components/MovieModal";
 import FilterButtons from "../movie_components/FilterButtons";
 import { getAPIBase } from "@/config/api";
 
-const base = await getAPIBase();
+
 
 
 function StHomeContent({ userId, searchQuery }) {
+
+  const [base, setBase] = useState("");
+
+  useEffect(() => {
+    const resolveAPIBase = async () => {
+      const resolved = await getAPIBase();
+      setBase(resolved);
+    };
+    resolveAPIBase();
+  }, []);
 
   const [movies, setMovies] = useState([]);
   const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
