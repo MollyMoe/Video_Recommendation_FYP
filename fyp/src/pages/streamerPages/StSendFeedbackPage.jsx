@@ -142,16 +142,14 @@
 import { useState, useRef, useEffect } from "react";
 import { BadgeCheck, Info } from "lucide-react";
 import StNav from "../../components/streamer_components/StNav";
-import StSideBar from "../../components/streamer_components/StSideBar";
+
 import { API } from "@/config/api";
 
-import { useState, useRef, useEffect } from "react";
-import { BadgeCheck, Info } from "lucide-react";
 // import { useUser } from "../../context/UserContext";
-import StNav from "../../components/streamer_components/StNav";
+
 import StSideBar from "../../components/streamer_components/StSideBar";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+
 
 
 

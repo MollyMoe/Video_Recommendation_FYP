@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API = import.meta.env.VITE_API_BASE_URL;
-
 const TopLiked = () => {
   const [topMovies, setTopMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,7 +22,9 @@ const TopLiked = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="text-center text-white">Loading top liked movies...</div>;
+    return (
+      <div className="text-center text-white">Loading top liked movies...</div>
+    );
   }
 
   return (
@@ -44,7 +44,10 @@ const TopLiked = () => {
             </div>
 
             <img
-              src={details?.poster_url || "https://via.placeholder.com/80x120?text=No+Image"}
+              src={
+                details?.poster_url ||
+                "https://via.placeholder.com/80x120?text=No+Image"
+              }
               alt={details?.title || "Movie Poster"}
               className="w-24 h-36 object-cover rounded-md"
             />
@@ -62,7 +65,9 @@ const TopLiked = () => {
               <p className="text-lg font-semibold text-pink-600 dark:text-pink-400 mr-10">
                 ❤️ {likeCount}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mr-10">Likes</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mr-10">
+                Likes
+              </p>
             </div>
           </div>
         ))}

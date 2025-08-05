@@ -87,6 +87,41 @@ const fetchMovies = async () => {
   }
 };
 
+  
+const handleAction = async (actionType, movieId) => {
+  if (!movieId || !savedUser?.userId) return;
+
+  const actions = {
+    like: { url: "like", message: "Movie Liked!" },
+    save: { url: "watchLater", message: "Saved to Watch Later!" },
+    delete: { url: "recommended/delete", message: "Removed from recommendations" }
+  };
+
+  const action = actions[actionType];
+  if (!action) return;
+
+  if (actionType === "delete") {
+    setMovies(prev => prev.filter(m => m.movieId !== movieId));
+    setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+  }
+
+  try {
+    await axios.post(`${API}/api/movies/${action.url}`, {
+      userId: savedUser.userId,
+      movieId
+    });
+
+    if (action.message) {
+      setPopupMessage(action.message);
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 2000);
+    }
+  } catch (err) {
+    console.error(`❌ Error with action ${actionType}:`, err);
+  }
+};
+
+
 
 
     const handleHistory = (movie) => {
@@ -94,39 +129,6 @@ const fetchMovies = async () => {
     handleAction('history', movie.movieId);
     if (movie.trailer_url) {
       window.open(movie.trailer_url, "_blank");
-    }
-  };
-
-    const handleAction = async (actionType, movieId) => {
-    if (!movieId || !savedUser?.userId) return;
-
-    const actions = {
-      like: { url: "like", message: "Movie Liked!" },
-      save: { url: "watchLater", message: "Saved to Watch Later!" },
-      delete: { url: "recommended/delete", message: "Removed from recommendations" }
-    };
-
-    const action = actions[actionType];
-    if (!action) return;
-
-    if (actionType === "delete") {
-      setMovies(prev => prev.filter(m => m.movieId !== movieId));
-      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
-    }
-
-    try {
-      await axios.post(`${API}/api/movies/${action.url}`, {
-        userId: savedUser.userId,
-        movieId
-      });
-
-      if (action.message) {
-        setPopupMessage(action.message);
-        setShowPopup(true);
-        setTimeout(() => setShowPopup(false), 2000);
-      }
-    } catch (err) {
-      console.error(`❌ Error with action ${actionType}:`, err);
     }
   };
 

@@ -45,7 +45,7 @@ import StPaymentSuccessPage from "./pages/streamerPages/StPaymentSuccessPage";
 
 
 
-import { Navigate } from "react-router-dom";
+
 function App() {
 
   return (

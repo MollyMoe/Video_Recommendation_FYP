@@ -42,7 +42,7 @@ function MovieModal({
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
             </button>
-            <button onClick={() => onLike(movie.movieId)} disabled={!isSubscribed}
+            <button onClick={() => onLike(movie)} disabled={!isSubscribed}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"> 
                 <Heart className="w-4 h-4 mr-1 fill-black" /> 
                 Like

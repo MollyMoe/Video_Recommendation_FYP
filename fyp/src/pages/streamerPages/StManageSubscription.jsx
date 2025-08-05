@@ -3,8 +3,6 @@ import StPlans from "../../components/streamer_components/StPlans";
 import StBillingForm from "../../components/streamer_components/StBillingForm";
 import { FaChevronRight } from "react-icons/fa";
 
-const API = import.meta.env.VITE_API_BASE_URL;
-
 const StManageSubscriptionPage = () => {
   const [subscription, setSubscription] = useState(null);
   const [step, setStep] = useState("overview");
@@ -36,29 +34,29 @@ const StManageSubscriptionPage = () => {
   };
 
   const pollSubscriptionStatus = async () => {
-  const maxAttempts = 15;
-  let attempts = 0;
+    const maxAttempts = 15;
+    let attempts = 0;
 
-  while (attempts < maxAttempts) {
-    try {
-      const res = await fetch(`${API}/api/subscription/${user.userId}`);
-      const data = await res.json();
-      if (data.isActive && data.plan !== "Free Trial") {
-        console.log("✅ Subscription updated:", data);
-        setSubscription(data);
-        setStep("overview");
-        break;
+    while (attempts < maxAttempts) {
+      try {
+        const res = await fetch(`${API}/api/subscription/${user.userId}`);
+        const data = await res.json();
+        if (data.isActive && data.plan !== "Free Trial") {
+          console.log("✅ Subscription updated:", data);
+          setSubscription(data);
+          setStep("overview");
+          break;
+        }
+      } catch (e) {
+        console.warn("Polling error:", e);
       }
-    } catch (e) {
-      console.warn("Polling error:", e);
+
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // wait 3 seconds
+      attempts++;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // wait 3 seconds
-    attempts++;
-  }
-
-  setIsRedirecting(false); // hide modal even if failed after max attempts
-};
+    setIsRedirecting(false); // hide modal even if failed after max attempts
+  };
 
   return (
     <div className="min-h-screen pt-24 px-6 sm:px-12 sm:ml-64 max-w-5xl mx-auto dark:bg-gray-900">
@@ -96,19 +94,20 @@ const StManageSubscriptionPage = () => {
                     <h2 className="text-2xl font-semibold text-purple-600 dark:text-purple-400">
                       {subscription.plan}
                     </h2>
-                    {subscription.plan && subscription.plan !== "Free Trial" && (
-                      <>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {subscription.cycle || "Monthly"} subscription
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          SGD {subscription.price}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Next payment: {subscription.nextPayment}
-                        </p>
-                      </>
-                    )}
+                    {subscription.plan &&
+                      subscription.plan !== "Free Trial" && (
+                        <>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {subscription.cycle || "Monthly"} subscription
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            SGD {subscription.price}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Next payment: {subscription.nextPayment}
+                          </p>
+                        </>
+                      )}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
                     <button
@@ -138,11 +137,15 @@ const StManageSubscriptionPage = () => {
                     </p>
                     {subscription?.expiresOn && (
                       <p className="text-xs text-gray-400 mt-1">
-                        Expiring on: {new Date(subscription.expiresOn).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
+                        Expiring on:{" "}
+                        {new Date(subscription.expiresOn).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }
+                        )}
                       </p>
                     )}
                   </div>
@@ -168,7 +171,9 @@ const StManageSubscriptionPage = () => {
 
           <div className="flex justify-between items-center">
             <div>
-              <p className="font-semibold text-sm text-gray-800 dark:text-white">Billing</p>
+              <p className="font-semibold text-sm text-gray-800 dark:text-white">
+                Billing
+              </p>
               <p className="text-xs text-gray-500">Edit billing details</p>
             </div>
             <button onClick={() => setStep("billing")}>
@@ -199,22 +204,30 @@ const StManageSubscriptionPage = () => {
 
       {step === "pay" && selectedPlan && (
         <div className="bg-white dark:bg-gray-800 max-w-lg mx-auto border border-gray-300 dark:border-gray-600 rounded-2xl p-8 shadow-lg space-y-6">
-          <h2 className="text-2xl font-bold text-center text-black dark:text-white">Confirm Your Plan</h2>
+          <h2 className="text-2xl font-bold text-center text-black dark:text-white">
+            Confirm Your Plan
+          </h2>
 
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Plan</span>
-              <span className="text-gray-900 dark:text-white">{selectedPlan.name}</span>
+              <span className="text-gray-900 dark:text-white">
+                {selectedPlan.name}
+              </span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Cycle</span>
-              <span className="text-gray-900 dark:text-white">{selectedPlan.cycle}</span>
+              <span className="text-gray-900 dark:text-white">
+                {selectedPlan.cycle}
+              </span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Price</span>
-              <span className="text-gray-900 dark:text-white">SGD ${selectedPlan.price.toFixed(2)}</span>
+              <span className="text-gray-900 dark:text-white">
+                SGD ${selectedPlan.price.toFixed(2)}
+              </span>
             </div>
           </div>
 
@@ -224,17 +237,20 @@ const StManageSubscriptionPage = () => {
               onClick={async () => {
                 setIsRedirecting(true);
                 try {
-                  const res = await fetch(`${API}/api/stripe/create-checkout-session`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      userId: user.userId,
-                      plan: selectedPlan.name,
-                      cycle: selectedPlan.cycle,
-                      price: selectedPlan.price,
-                      email: user.email,
-                    }),
-                  });
+                  const res = await fetch(
+                    `${API}/api/stripe/create-checkout-session`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        userId: user.userId,
+                        plan: selectedPlan.name,
+                        cycle: selectedPlan.cycle,
+                        price: selectedPlan.price,
+                        email: user.email,
+                      }),
+                    }
+                  );
 
                   const data = await res.json();
 
@@ -258,7 +274,6 @@ const StManageSubscriptionPage = () => {
               Proceed to Checkout
             </button>
 
-
             <button
               className="text-sm text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-white"
               onClick={() => setStep("choose")}
@@ -275,17 +290,21 @@ const StManageSubscriptionPage = () => {
           onBack={() => setStep("overview")}
         />
       )}
-      
+
       {/* 🔁 Stripe loading modal */}
       {isRedirecting && (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-          <p className="text-lg font-semibold">Waiting for payment confirmation...</p>
-          <div className="mt-2 animate-spin h-6 w-6 border-4 border-purple-500 border-t-transparent rounded-full mx-auto" />
-          <p className="text-xs text-gray-500 mt-2">You may close the Stripe page after payment.</p>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+            <p className="text-lg font-semibold">
+              Waiting for payment confirmation...
+            </p>
+            <div className="mt-2 animate-spin h-6 w-6 border-4 border-purple-500 border-t-transparent rounded-full mx-auto" />
+            <p className="text-xs text-gray-500 mt-2">
+              You may close the Stripe page after payment.
+            </p>
+          </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   );
 };

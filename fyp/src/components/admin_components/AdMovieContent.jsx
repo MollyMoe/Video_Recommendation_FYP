@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { FaTrash } from 'react-icons/fa';
-import axios from 'axios';
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import React, { useEffect, useState } from "react";
+import { FaTrash } from "react-icons/fa";
+import axios from "axios";
 
 const AdMovieContent = ({ searchQuery }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -24,7 +22,7 @@ const AdMovieContent = ({ searchQuery }) => {
       const total = res.data.total;
       setTotalPages(Math.ceil(total / 20));
     } catch (err) {
-      console.error('❌ Failed to fetch movies', err);
+      console.error("❌ Failed to fetch movies", err);
     } finally {
       setIsLoading(false);
     }
@@ -69,10 +67,10 @@ const AdMovieContent = ({ searchQuery }) => {
 
     if (spaceRight < tooltipWidth) {
       // Not enough space on right, show tooltip on left
-      setTooltipPosition({ [movieId]: 'left' });
+      setTooltipPosition({ [movieId]: "left" });
     } else {
       // Enough space on right, show tooltip on right
-      setTooltipPosition({ [movieId]: 'right' });
+      setTooltipPosition({ [movieId]: "right" });
     }
   };
 
@@ -83,18 +81,17 @@ const AdMovieContent = ({ searchQuery }) => {
 
   if (isLoading) {
     return (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <p className="text-lg font-semibold">Loading Movie...</p>
-            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
-          </div>
+      <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+          <p className="text-lg font-semibold">Loading Movie...</p>
+          <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
         </div>
+      </div>
     );
   }
 
   return (
     <div className="sm:ml-40 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700 mr-50">
-
       {/* 🎬 Movie Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {movies.map((movie) => (
@@ -123,13 +120,15 @@ const AdMovieContent = ({ searchQuery }) => {
             {hoveredMovieId === movie._id && (
               <div
                 className={`absolute top-0 ${
-                  tooltipPosition[movie._id] === 'left'
-                    ? 'right-full mr-4'
-                    : 'left-full ml-4'
+                  tooltipPosition[movie._id] === "left"
+                    ? "right-full mr-4"
+                    : "left-full ml-4"
                 } w-56 p-3 bg-white dark:bg-gray-700 shadow-lg z-50 text-black dark:text-white`}
               >
                 <h3 className="font-semibold text-sm mb-1">{movie.title}</h3>
-                <p className="text-sm mb-1">Director: {movie.director || 'Unknown'}</p>
+                <p className="text-sm mb-1">
+                  Director: {movie.director || "Unknown"}
+                </p>
               </div>
             )}
           </div>
@@ -169,7 +168,6 @@ const AdMovieContent = ({ searchQuery }) => {
           →
         </button>
       </div>
-
 
       {/* Delete Confirmation Modal */}
       {isConfirmOpen && (
