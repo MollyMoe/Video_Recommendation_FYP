@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import offlineFallback from "../../images/offlineFallback.jpg";
 
 function MovieCard({ movie, onClick }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -17,21 +18,21 @@ function MovieCard({ movie, onClick }) {
       };
     }, []);
 
-useEffect(() => {
-  let isMounted = true;
+// useEffect(() => {
+//   let isMounted = true;
 
-  const fetchLocalPoster = async () => {
-    if (!isOnline && window.electron?.getPoster) {
-      const posterPath = await window.electron.getPoster(movie.movieId); // custom preload function
-      if (isMounted) setLocalPoster(posterPath || null);
-    }
-  };
+//   const fetchLocalPoster = async () => {
+//     if (!isOnline && window.electron?.getPoster) {
+//       const posterPath = await window.electron.getPoster(movie.movieId); // custom preload function
+//       if (isMounted) setLocalPoster(posterPath || null);
+//     }
+//   };
 
-  fetchLocalPoster();
-  return () => {
-    isMounted = false;
-  };
-}, [isOnline, movie.movieId]);
+//   fetchLocalPoster();
+//   return () => {
+//     isMounted = false;
+//   };
+// }, [isOnline, movie.movieId]);
 
   // Determine trailer alignment class
 const trailerAlign = 'left-1/2 -translate-x-1/2';
@@ -50,14 +51,16 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
         }`}
       >
         <img
-          src={movie.poster_url || 'https://via.placeholder.com/150'}
-          alt={movie.title || 'No title'}
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-          className="w-full h-full object-cover rounded-lg"
-        />
+        src={movie.poster_url}
+        alt={movie.title || "No title"}
+        loading="lazy"
+        onError={(e) => {
+          if (e.currentTarget.src !== offlineFallback) {
+            e.currentTarget.src = offlineFallback;
+          }
+        }}
+        className="w-full h-full object-cover rounded-lg"
+      />
       </div>
 
       {/* Trailer Preview */}
@@ -79,7 +82,7 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
                 alt={movie.title}
                 loading="lazy"
                 onError={(e) => {
-                  e.currentTarget.src = "/fallback-poster.jpg"; // put in `public` folder
+                  e.currentTarget.src = offlineFallback;
                 }}
                 className="w-full h-full object-cover rounded-lg"
                   />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Dialog } from "@headlessui/react";
 import { Play, Heart, Bookmark, Trash2 } from "lucide-react";
+import offlineFallback from "../../images/offlineFallback.jpg";
 
 function MovieModal({ 
   movie, 
@@ -22,7 +23,10 @@ function MovieModal({
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="relative bg-white p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl">
           <div className="flex space-x-6">
-            <img src={movie.poster_url} alt={movie.title} className="rounded-lg w-40 h-auto object-cover" />
+            <img src={movie.poster_url} alt={movie.title} className="rounded-lg w-40 h-auto object-cover"
+                onError={(e) => {e.currentTarget.src = offlineFallback;
+                }}
+            />
             <div className="flex flex-col justify-center space-y-3 flex-grow">
               <h2 className="text-2xl font-semibold">{movie.title}</h2>
               <p className="text-sm text-gray-700">

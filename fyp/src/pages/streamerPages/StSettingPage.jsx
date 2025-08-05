@@ -63,6 +63,7 @@ const StSettingPage = () => {
   const fetchUser = async () => {
     if (!isOnline) {
       console.warn("⚠️ Offline — using cached profile");
+
       const cached = window.electron?.getProfileUpdate?.();
       if (cached) {
         setFormData({
@@ -79,13 +80,22 @@ const StSettingPage = () => {
 
     try {
       const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-      if (!res.ok) throw new Error(`Server error ${res.status}: ${await res.text()}`);
+
+      if (!res.ok) {
+        const errorText = await res.text(); // prevent parsing non-JSON
+        throw new Error(`Server responded with ${res.status}: ${errorText}`);
+      }
+
       const data = await res.json();
 
       setFormData({
         username: data.username || "",
         contact: data.email || "",
-        genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
+        genre: Array.isArray(data.genres)
+          ? data.genres.join(", ")
+          : typeof data.genre === "string"
+          ? data.genre
+          : "",
       });
 
       if (data.profileImage) {
@@ -97,7 +107,11 @@ const StSettingPage = () => {
         userId: data.userId,
         username: data.username,
         email: data.email,
-        genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
+        genre: Array.isArray(data.genres)
+          ? data.genres.join(", ")
+          : typeof data.genre === "string"
+          ? data.genre
+          : "",
         profileImage: data.profileImage,
       });
     } catch (err) {
@@ -106,7 +120,7 @@ const StSettingPage = () => {
   };
 
   fetchUser();
-}, [isOnline]); // 🔁 refetch when network status changes
+}, [isOnline]);
 
 
 const handleChange = async (e) => {
