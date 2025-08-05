@@ -112,6 +112,7 @@ const StHistoryPage = () => {
     if (savedUser?.userId) {
       fetchHistoryMovies(savedUser.userId);
       fetchSubscription(savedUser.userId);
+      fetchSubscription(savedUser.userId);
     }
   }, []);
 
@@ -264,6 +265,7 @@ useEffect(() => {
     <div className="p-4">
       <StNav />
       <StSideBar />
+
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           <div className="-mt-4 flex justify-end mb-5">
@@ -331,6 +333,8 @@ useEffect(() => {
                     </button>
                   </div>
                 </div>
+              </div>
+
               ))}
             </div>
           )}

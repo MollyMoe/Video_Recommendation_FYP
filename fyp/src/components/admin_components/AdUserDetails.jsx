@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import AdUserTable from "./AdUserTable";
 import { API } from "@/config/api";
 
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserDetails = () => {
   const SideButton = ({ to, label, current, children }) => {
@@ -61,6 +62,7 @@ const [page, setPage] = useState(restoredPage);
 
   return (
     <div className="min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800 ">
+      {/* Back button fixed position */}
       <div className="fixed top-[125px] left-7 z-50 bg-white dark:bg-gray-800">
         <Link
           to="/admin/manageUser"
@@ -71,14 +73,16 @@ const [page, setPage] = useState(restoredPage);
         </Link>
       </div>
 
+      {/* Main user details card */}
       <div className="p-6 w-[500px] h-[500px] mx-auto bg-white border border-gray-300 rounded shadow flex flex-col">
-          <img
-            src={user.profileImage}
-            className="w-25 h-25 mt-7 ml-7 rounded-full border-3 border-neutral-50 shadow-xl"
-          />
-        {/* User info */}
+        {/* User Profile Image */}
+        <img
+          src={user.profileImage}
+          className="w-25 h-25 mt-7 ml-7 rounded-full border-3 border-neutral-50 shadow-xl"
+        />
+        {/* User info fields */}
         <div className="flex flex-col gap-6 w-full flex-grow justify-center">
-          {/* Username */}
+          {/* Username field */}
           <div className="flex items-center">
             <label className="w-48 font-medium text-gray-700">Username</label>
             <div className="relative w-full">
@@ -92,9 +96,11 @@ const [page, setPage] = useState(restoredPage);
             </div>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact Info field */}
           <div className="flex items-center">
-            <label className="w-48 font-medium text-gray-700">Contact Info</label>
+            <label className="w-48 font-medium text-gray-700">
+              Contact Info
+            </label>
             <div className="relative w-full">
               <span className="absolute left-0 top-0 bottom-0 w-px bg-gray-400"></span>
               <input
@@ -106,9 +112,11 @@ const [page, setPage] = useState(restoredPage);
             </div>
           </div>
 
-          {/* Preference Movie Genre */}
+          {/* Preference Movie Genre field */}
           <div className="flex items-center">
-            <label className="w-48 font-medium text-gray-700">Preference Movie Genre</label>
+            <label className="w-48 font-medium text-gray-700">
+              Preference Movie Genre
+            </label>
             <div className="relative w-full">
               <span className="absolute left-0 top-0 bottom-0 w-px bg-gray-400"></span>
               <input
@@ -120,9 +128,11 @@ const [page, setPage] = useState(restoredPage);
             </div>
           </div>
 
-          {/* Joined Since */}
+          {/* Joined Since field */}
           <div className="flex items-center">
-            <label className="w-48 font-medium text-gray-700">Joined Since</label>
+            <label className="w-48 font-medium text-gray-700">
+              Joined Since
+            </label>
             <div className="relative w-full">
               <span className="absolute left-0 top-0 bottom-0 w-px bg-gray-400"></span>
               <input
@@ -134,9 +144,28 @@ const [page, setPage] = useState(restoredPage);
             </div>
           </div>
         </div>
+        {/* Action buttons for liked, watch history, and saved movies */}
+        <div className="flex flex-row flex-wrap justify-center gap-3 mt-7 w-full">
+          <Link
+            to={`/admin/view/${id}/like`}
+            className="flex-1 min-w-[120px] text-center py-2 px-2 rounded-md shadow-sm text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 border-gray-400"
+          >
+            Liked Movies
+          </Link>
+          <Link
+            to={`/admin/view/${id}/history`}
+            className="flex-1 min-w-[120px] text-center py-2 px-2 rounded-md shadow-sm text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 border-gray-400"
+          >
+            Watch History
+          </Link>
+          <Link
+            to={`/admin/view/${id}/watchLater`}
+            className="flex-1 min-w-[120px] text-center py-2 px-2 rounded-md shadow-sm text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 border-gray-400"
+          >
+            Saved Movies
+          </Link>
+        </div>
       </div>
-
-
     </div>
   );
 };

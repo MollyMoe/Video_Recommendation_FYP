@@ -25,6 +25,9 @@ dist-ssr/
 .idea
 
 # System files
+.idea
+
+# System files
 .DS_Store
 *.suo
 *.ntvs*

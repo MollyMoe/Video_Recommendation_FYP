@@ -66,6 +66,11 @@ const StSideBar = () => {
               label="Filter Recommendations"
               current={location.pathname === "/home/filter"}
             />
+            <StSidebarButton
+              to="/home/filter"
+              label="Filter Recommendations"
+              current={location.pathname === "/home/filter"}
+            />
           </li>
 
           <hr className="my-2 border-gray-300" />
@@ -85,6 +90,11 @@ const StSideBar = () => {
             />
           </li>
           <li>
+            <StSidebarButton
+              to="/home/sendfeedback"
+              label="Send Feedback"
+              current={location.pathname === "/home/sendfeedback"}
+            />
             <StSidebarButton
               to="/home/sendfeedback"
               label="Send Feedback"

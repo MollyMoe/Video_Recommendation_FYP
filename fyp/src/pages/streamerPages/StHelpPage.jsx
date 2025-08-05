@@ -5,9 +5,11 @@ const faqs = [
   {
     question: "How do I like a movie?",
     answer: "Click the 'Like' button in the movie details popup after selecting a movie card. The movie will then be added to your 'Liked Movies' list.",
+    answer: "Click the 'Like' button in the movie details popup after selecting a movie card. The movie will then be added to your 'Liked Movies' list.",
   },
   {
     question: "How do I save a movie to watch later?",
+    answer: "Click the 'Save' button in the movie details popup after selecting a movie card. You'll find it later in the 'Watch Later' tab.",
     answer: "Click the 'Save' button in the movie details popup after selecting a movie card. You'll find it later in the 'Watch Later' tab.",
   },
   {
@@ -24,6 +26,62 @@ const faqs = [
   },
   {
     question: "Why don't I see any recommendations?",
+    answer: "Make sure you've selected your preferred genres. You can do this in Settings if you have not done so when you signed up.",
+  },
+      {
+    question: "I forgot my password — how can I reset it?",
+    answer: "Click on 'Forgot Password?' option on the login screen and follow the instructions sent to your email.",
+  },
+    {
+    question: "How are recommendations generated?",
+    answer: "Our algorithm analyses your liked movies, watch history, and preferred genres to suggest similar titles.",
+  },
+    {
+    question: "How do I remove a movie from my liked list?",
+    answer: "Go to your 'Liked Movies' tab and click the 'Remove' button to remove it.",
+  },
+    {
+    question: "What does the rating mean on a movie card?",
+    answer: "It reflects the average user rating based on viewer feedback.",
+  },
+    {
+    question: "What if I don't want recommendations based on a certain genre?",
+    answer: "You can update your preferred genres in the 'Settings' page to refine recommendations.",
+  },
+    {
+    question: "How do I send feedback on my expriences using the application?",
+    answer: "You can provide a feedback for us in the 'Send Feedback' page to help us improve on the web application.",
+  },
+    {
+    question: "How do I report a broken or incorrect movie listing?",
+    answer: "Notify us by providing a feedback along with a screenshot of the issue in the 'Send Feedback' page.",
+  },
+    {
+    question: "Is there a mobile app available?",
+    answer: "Not yet — but we're working on a mobile app! Stay tuned for updates.",
+  },
+    {
+    question: "Is my viewing history private?",
+    answer: "Yes, only you can see your watch history.",
+  },
+    {
+    question: "Is my data shared with third parties?",
+    answer: "No, we respect your privacy and do not share your personal data without your consent.",
+  },
+    {
+    question: "Can I recover a deleted account?",
+    answer: "Unfortunately, once an account is deleted, all associated data is permanently erased.",
+  },
+      {
+    question: "How often are the recommendations updated?",
+    answer: "Recommendations are updated dynamically based on your latest activity and watch trends.",
+  },
+    {
+    question: "Who can I contact for support?",
+    answer: (
+      <>You can reach us anytime at <span className="text-blue-500 font-semibold">cineit.helpdesk@gmail.com</span>.,
+  </>
+    ),
     answer: "Make sure you've selected your preferred genres. You can do this in Settings if you have not done so when you signed up.",
   },
       {

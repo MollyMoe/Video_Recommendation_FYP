@@ -17,6 +17,7 @@ from pathlib import Path
 from fastapi.responses import JSONResponse
 from pymongo import ReturnDocument
 from urllib.parse import quote
+from datetime import datetime
 
 # Define the path to your .env file first
 root_dir = Path(__file__).resolve().parents[2] 
@@ -76,8 +77,8 @@ def signup(request: Request, user: SignUpRequest):
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
         "createdAt": datetime.utcnow(),
-        "lastSignin": datetime.utcnow(),       # Stored as Date for queries
-        "lastSignout": datetime.utcnow(),      # Stored as Date, not ISO string
+        "lastSignin": datetime.utcnow(),
+        "lastSignout": datetime.utcnow(), 
         "__v": 0
     }
 
@@ -364,66 +365,57 @@ def get_user_by_id(request: Request, userType: str, userId: str):
 
     return user
 
-# @router.post("/update-signout-time")
-# async def update_signout_time(request: Request):
-#     body = await request.json()
-#     user_id = body.get("userId")
-#     user_type = body.get("userType")  # Needed to decide which collection
-#     time_str = body.get("time")
-
-#     if not user_id or not user_type:
-#         raise HTTPException(status_code=400, detail="Missing userId or userType")
-
-#     from dateutil.parser import parse
-#     last_signout = parse(time_str) if time_str else datetime.utcnow()
-
-#     db = request.app.state.user_db
-#     Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
-
-#     result = Model.update_one(
-#         { "userId": user_id },
-#         { "$set": { "lastSignout": last_signout } }
-#     )
-
-#     if result.modified_count == 0:
-#         raise HTTPException(status_code=404, detail="User not found")
-
-#     return {"message": "Sign-out time updated"}
-
-
 @router.post("/update-signout-time")
 async def update_signout_time(request: Request):
-    try:
-        body = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON")
-    
+    body = await request.json()
     user_id = body.get("userId")
-    user_type = (body.get("userType") or "").lower()
+    user_type = body.get("userType")
     time_str = body.get("time")
 
-    if not user_id or user_type not in ["admin", "streamer"]:
-        raise HTTPException(status_code=400, detail="Missing or invalid userId/userType")
+    if not user_id or not user_type:
+        raise HTTPException(status_code=400, detail="Missing userId or userType")
 
     try:
-        last_signout = (
-            datetime.fromisoformat(time_str.replace("Z", "+00:00")).astimezone(timezone.utc)
-            if time_str 
-            else datetime.now(timezone.utc)
-        )
+        last_signout = datetime.fromisoformat(time_str.replace("Z", "+00:00")) if time_str else datetime.utcnow()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid time format: {e}")
 
     db = request.app.state.user_db
-    Model = db[user_type]
+    Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
 
     result = Model.update_one(
-        {"userId": user_id},
-        {"$set": {"lastSignout": last_signout}}
+        { "userId": user_id },
+        { "$set": { "lastSignout": last_signout } }
     )
 
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"message": "Sign-out time updated successfully"}
+    return { "message": "Sign-out time updated successfully" }
 
+@router.post("/updateSignoutTime")
+def update_signout_time(request: Request, body: dict):
+    db = request.app.state.user_db
+    user_id = body.get("userId")
+    reason = body.get("reason", "unknown")
+    time_str = body.get("time")  # expecting ISO string
+
+    if not user_id or not time_str:
+        raise HTTPException(status_code=400, detail="Missing userId or time")
+
+    for collection_name in ["streamer", "admin"]:
+        collection = db[collection_name]
+        user = collection.find_one({"userId": user_id})
+        if user:
+            collection.update_one(
+                {"userId": user_id},
+                {
+                    "$set": {
+                        "lastSignoutTime": time_str,
+                        "lastSignoutReason": reason
+                    }
+                }
+            )
+            return {"message": "Sign-out time recorded", "userType": collection_name}
+
+    raise HTTPException(status_code=404, detail="User not found")

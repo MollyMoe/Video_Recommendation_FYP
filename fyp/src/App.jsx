@@ -38,6 +38,21 @@ import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
 import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscriptionPage";
 import StPaymentSuccessPage from "./pages/streamerPages/StPaymentSuccessPage";
 
+import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
+import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
+import StFilterPage from "./pages/streamerPages/StFilterPage";
+import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
+import AdVideoManagePage from "./pages/adminPages/AdVideoManagePage";
+import AdVideoManageLayout from "./layouts/AdVideoManageLayout";
+import AdUserDetailsLayout from "./layouts/AdUserDetailsLayout";
+import Overview from "./pages/adminPages/Overview";
+import { Navigate } from "react-router-dom";
+import AdUserLikedMovies from "./pages/adminPages/AdUserLikedMovies";
+import AdUserWatchLater from "./pages/adminPages/AdUserWatchLater";
+import AdUserHistory from "./pages/adminPages/AdUserHistory";
+import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAddedMovies";
+import AdUserFeedback from "./components/admin_components/AdUserFeedback";
+
 
 function App() {
 
@@ -52,6 +67,7 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/reset-password-form" element={<SetNewPasswordPage />} />
           <Route path="/success" element={<StPaymentSuccessPage />} />
+          <Route path="/success" element={<StPaymentSuccess />} />
 
           {/* Streamer Layout */}
           <Route path="/home" element={<StreamerLayout />}>
@@ -64,7 +80,6 @@ function App() {
             <Route path="help" element={<StHelpPage />} />
             <Route path="sendfeedback" element={<StSendFeedbackPage />} />
             <Route path="subscription" element={<StManageSubscriptionPage />} />
-            
           </Route>
 
           {/* Admin Layout */}
@@ -72,7 +87,24 @@ function App() {
             <Route index element={<AdDashboardPage />} />
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
-            <Route path="view/:id" element={<AdUserDetails />} />
+            <Route path="feedback" element={<AdUserFeedback />} />
+            
+              {/* Video Manage Layout */}
+              <Route path="video" element={<AdVideoManageLayout />}>
+                <Route index element={<Navigate to="videoHomePage" replace />} />
+                <Route path="videoHomePage" element={<AdVideoHomePage />} />
+                <Route path="manage" element={<AdVideoManagePage />} />
+                <Route path="recently-added" element={<AdRecentlyAddedMovies />} />
+              </Route>
+
+              <Route path="/admin/view/:id" element={<AdUserDetailsLayout />}>
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<Overview />} />
+                <Route path="subscription" element={<AdUserDetails />} />
+                <Route path="history" element={<AdUserHistory />} />
+                <Route path="liked" element={<AdUserLikedMovies />} />
+                <Route path="watchLater" element={<AdUserWatchLater/>} />
+              </Route>
             
             <Route path="video" element={<AdVideoManageLayout />}>
               <Route index element={<Navigate to="videoHomePage" replace />} />

@@ -12,10 +12,15 @@ import { API } from "@/config/api";
 
 function StHomeContent({ userId, searchQuery }) {
 
+function StHomeContent({ userId, searchQuery }) {
+
   const [movies, setMovies] = useState([]);
+  const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
   const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
+  const [allShownTitles, setAllShownTitles] = useState(new Set());
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const [allShownTitles, setAllShownTitles] = useState(new Set());
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
