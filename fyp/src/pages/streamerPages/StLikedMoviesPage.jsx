@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-
 import { Play, Trash2, CheckCircle } from "lucide-react";
+
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,6 +11,21 @@ const StLikedMoviesPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+
+  const fetchSubscription = async (userId) => {
+  try {
+    const res = await fetch(`${API}/api/subscription/${userId}`);
+    const data = await res.json();
+    console.log("🔑 Subscription data:", data);
+    setIsSubscribed(data.isActive); // true if trial or paid & not expired
+  } catch (err) {
+    console.error("Failed to fetch subscription:", err);
+    setIsSubscribed(false); // fail-safe
+  }
+};
 
   const fetchLikedMovies = async (userId) => {
     // if (!username || !savedUser?.userId) return;
@@ -53,6 +68,7 @@ const StLikedMoviesPage = () => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
       fetchLikedMovies(savedUser.userId);
+      fetchSubscription(savedUser.userId);
     }
   }, []);
 
@@ -133,62 +149,54 @@ const StLikedMoviesPage = () => {
   return (
     <div className="p-4">
       <StNav />
-
       <StSideBar />
-      <div className="sm:ml-64 pt-20 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
+      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {likedMovies.length === 0 ? (
             <p className="text-center mt-10 text-white">
               No liked movies found.
             </p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {likedMovies.map((movie) => (
-
-
                 <div
-                  key={movie._id || movie.movieId}
-                  className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-[350px]"
-                >
-                  {/* Movie Poster */}
-                  <img
-                    src={movie.poster_url || "https://via.placeholder.com/150"}
-                    alt={movie.title || "No Title"}
-                    className="w-full h-64 object-cover"
-                  />
+                key={movie._id || movie.movieId}
+                className="bg-white rounded-lg shadow p-2 flex flex-col justify-between h-[320px]"
+              >
+                <img
+                  src={movie.poster_url || "https://via.placeholder.com/150"}
+                  alt={movie.title || "No Title"}
+                  className="rounded mb-2 w-full h-60 object-cover"
+                />
+                <h3 className="text-sm font-semibold mb-2 line-clamp-2">{movie.title}</h3>
+                <div className="flex justify-between gap-2 mt-auto">
+                  {/* Play button */}
+                  <button
+                    onClick={() => handlePlay(movie.movieId, movie.trailer_url)}
+                    disabled={!isSubscribed}
+                    className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
+                      ${isSubscribed
+                        ? "bg-white text-black hover:bg-gray-200"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                  >
+                    <Play className="w-4 h-4 mr-1 fill-black" />
+                    Play
+                  </button>
 
-                  {/* Title + Buttons */}
-                  <div className="flex flex-col flex-1 px-4 pt-3 pb-2">
-                    {/* Title with grow */}
-                    <h3 className="text-sm font-semibold text-black line-clamp-2 flex-grow m-0 ">
-                      {movie.title || "Untitled"}
-                    </h3>
-
-                    {/* Buttons close to title */}
-                    <div className="m-0 flex justify-center gap-3">
-                    {/* play btn */}
-                    <button
-                      onClick={() => {
-                        console.log("▶️ Play clicked for:", movie.movieId);
-                        handlePlay(movie.movieId, movie.trailer_url); // ✅ Pass trailerUrl here
-                      }}
-                      className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                    >
-                      <Play className="w-3 h-3 mr-1 fill-black" />
-                      Play
-                    </button>
-
-                    {/* remove btn */}
-                    <button
-                      onClick={() => handleRemove(movie.movieId)}
-                      className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                    >
-                      <Trash2 className="w-3 h-3 mr-1 fill-black" />
-                      Remove
-                    </button>
-                    </div>
-                  </div>
+                  {/* Remove button */}
+                  <button
+                    onClick={() => handleRemove(movie.movieId)}
+                    disabled={!isSubscribed}
+                    className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
+                      ${isSubscribed
+                        ? "bg-white text-black hover:bg-gray-200"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Remove
+                  </button>
                 </div>
+              </div>
               ))}
             </div>
           )}

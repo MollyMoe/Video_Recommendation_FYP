@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
-
-const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
+const StSearchBar = ({ searchQuery, setSearchQuery, onSearch, isSubscribed }) => {
 const savedUser = JSON.parse(localStorage.getItem("user"));
 const userId = savedUser?.userId || "default";
 const [isFocused, setIsFocused] = useState(false);
@@ -70,10 +69,15 @@ const [history, setHistory] = useState(() => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search..."
-          className="w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="Search movies"
+          onKeyDown={(e) => {
+            if (!isSubscribed) return;
+            handleKeyDown(e);
+          }}
+          disabled={!isSubscribed}
+          placeholder={isSubscribed ? "Search..." : "Subscribe to unlock search"}
+          className={`w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 ${
+            isSubscribed ? "focus:ring-blue-500" : "cursor-not-allowed text-gray-400 bg-gray-200"
+          }`}
         />
         {searchQuery && (
           <button
@@ -88,6 +92,7 @@ const [history, setHistory] = useState(() => {
         <button
           type="button"
           onClick={() => {
+            if (!isSubscribed) return;
             const trimmed = searchQuery.trim();
             if (trimmed) {
               addToHistory(trimmed);

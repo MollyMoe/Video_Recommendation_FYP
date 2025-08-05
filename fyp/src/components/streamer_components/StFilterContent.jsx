@@ -1,275 +1,162 @@
+import React, { useState } from "react";
 import axios from "axios";
-import { Dialog } from "@headlessui/react";
-import { Play, Heart, Bookmark, Star } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Star } from "lucide-react"; 
+import MovieModal from "../movie_components/MovieModal";
+import MovieCard from "../movie_components/MovieCard";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const StFilterContent = ({ searchQuery }) => {
-  const [movies, setMovies] = useState([]);
-  const [allMovies, setAllMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+const StFilterContent = ({ submittedQuery, movies, isLoading, isSearching, setMovies }) => {
   const [selectedMovie, setSelectedMovie] = useState(null);
-  
-  // Add state for the popup message
   const [popupMessage, setPopupMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
-  useEffect(() => {
-    console.log("📦 Fetching personalized recommendations and sorting them by rating.");
-  const fetchExpandedRecommendationsWithPriority = async () => {
-    if (!savedUser?.userId) {
-      console.log("No user ID found. Skipping movie fetch.");
-      setIsLoading(false);
-      return;
+  const handleAction = async (actionType, movieId) => {
+    if (!movieId || !savedUser?.userId) return;
+    const actions = {
+      like: { url: "like", message: "Movie Liked!" },
+      save: { url: "watchLater", message: "Saved to Watch Later!" },
+      delete: { url: "recommended/delete", message: "Removed from recommendations" }
+    };
+    const action = actions[actionType];
+    if (!action) return;
+
+    if (actionType === "delete") {
+      setMovies(prev => prev.filter(m => m.movieId !== movieId));
     }
-
-    setIsLoading(true);
-
     try {
-      const [likedRes, recommendedRes] = await Promise.all([
-        axios.get(`${API}/api/movies/top-liked`),
-        axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`)
-      ]);
-
-      const likedMovieIds = likedRes.data.map(item => String(item.movieId));
-      let recommendedMovies = recommendedRes.data;
-
-      if (!Array.isArray(recommendedMovies)) {
-        console.error("Recommendations API did not return an array. Using empty array.");
-        recommendedMovies = [];
+      await axios.post(`${API}/api/movies/${action.url}`, {
+        userId: savedUser.userId,
+        movieId
+      });
+      if (action.message) {
+        setPopupMessage(action.message);
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 2000);
       }
-
-      // Prioritise recommended movies that are in liked database
-      const inLiked = [];
-      const notInLiked = [];
-
-      for (const movie of recommendedMovies) {
-        if (likedMovieIds.includes(String(movie.movieId))) {
-          inLiked.push(movie);
-        } else {
-          notInLiked.push(movie);
-        }
-      }
-
-      // Sort both lists by predicted rating
-      const sortedInLiked = inLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
-      const sortedNotInLiked = notInLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
-
-      // Combine, prioritise liked database over user recommendations
-      const finalList = [...sortedInLiked, ...sortedNotInLiked];
-
-      console.log("🎬 Final prioritized list of recommended movies:", finalList);
-
-      setAllMovies(finalList);
-      setMovies(finalList);
     } catch (err) {
-      console.error("Failed to fetch liked & recommended movies:", err);
-      setMovies([]);
-      setAllMovies([]);
-    } finally {
-      setIsLoading(false);
+      console.error(`❌ Error with action ${actionType}:`, err);
     }
   };
-
-  fetchExpandedRecommendationsWithPriority();
-}, [savedUser?.userId]);
-
-  useEffect(() => {
-    const trimmedQuery = searchQuery?.trim().toLowerCase();
     
-    if (!trimmedQuery) {
-      setMovies(allMovies);
-      return;
-    }
-
-    // New filtering logic that handles arrays and filters the allMovies list
-    const filtered = allMovies.filter(movie => {
-        const title = movie.title?.toLowerCase() || "";
-        const director = movie.director?.toLowerCase() || "";
-        const overview = movie.overview?.toLowerCase() || "";
-        const actors = (Array.isArray(movie.actors) ? movie.actors.join(" ").toLowerCase() : movie.actors?.toLowerCase()) || "";
-        const genres = (Array.isArray(movie.genres) ? movie.genres.join(" ").toLowerCase() : movie.genres?.toLowerCase()) || "";
-        const producers = (Array.isArray(movie.producers) ? movie.producers.join(" ").toLowerCase() : movie.producers?.toLowerCase()) || "";
-
-        return (
-            title.includes(trimmedQuery) ||
-            director.includes(trimmedQuery) ||
-            overview.includes(trimmedQuery) ||
-            actors.includes(trimmedQuery) ||
-            genres.includes(trimmedQuery) ||
-            producers.includes(trimmedQuery)
-        );
-    });
-
-    setMovies(filtered);
-  }, [searchQuery, allMovies]);
-
-  const handleHistory = async (movie) => {
-    if (!movie?.movieId || !savedUser?.userId) return;
-    try {
-      await fetch(`${API}/api/movies/history`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: savedUser.userId, movieId: movie.movieId }),
-      });
-      if (movie.trailer_url) {
-        window.open(movie.trailer_url, "_blank");
-      }
-    } catch (err) {
-      console.error("❌ Error saving history:", err);
-    }
-  };
-
-  const handleWatchLater = async (movieId) => {
-    if (!movieId || !savedUser?.userId) return;
-    try {
-      await fetch(`${API}/api/movies/watchLater`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: savedUser.userId, movieId }),
-      });
-      setPopupMessage("Saved to Watch Later!");
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 2000);
-    } catch (err) {
-      console.error("Save movie:", err);
-    }
-  };
-
-  const handleLike = async (movieId) => {
-    if (!movieId || !savedUser?.userId) return;
-    try {
-      await fetch(`${API}/api/movies/like`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: savedUser.userId, movieId }),
-      });
-      setPopupMessage("Movie liked!");
-      setShowPopup(true);
-      setTimeout(() => setShowPopup(false), 2000);
-    } catch (err) {
-      console.error("Error liking movie:", err);
+  const handleHistory = (movie) => {
+    if (!movie) return;
+    handleAction('history', movie.movieId);
+    if (movie.trailer_url) {
+      window.open(movie.trailer_url, "_blank");
     }
   };
 
   return (
-    <div className="pt-8 px-4 min-h-screen">
-      <div className="max-w-xl mx-auto space-y-4">
-        {isLoading && (
-          <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-              <p className="text-lg font-semibold">Loading movies...</p>
-              <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
-            </div>
+    <div className="pt-24 sm:pt-20 px-4 sm:px-8 dark:bg-gray-900 min-h-screen mt-40">
+      {/* Searching Overlay */}
+      {isSearching && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+            <p className="text-lg font-semibold">Searching for Movies...</p>
+            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
           </div>
-        )}
-        
-        <h2 className="text-xl font-bold text-gray-200 mb-4">Top 10 Rated movies based on your Recommendations</h2>
+        </div>
+      )}
 
-        {movies.length === 0 && !isLoading ? (
-          <div className="text-center text-gray-500 mt-20">
-            No movies found.
-          </div>
-        ) : (
-          movies.slice(0, 10).map((movie, index) => (
-            <div
-              key={movie._id || movie.movieId}
-              className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
-              onClick={() => setSelectedMovie(movie)}
-            >
-              <div className="text-xl font-bold w-8 text-center text-purple-600 dark:text-yellow-400">
-                {index + 1}
-              </div>
-              <img
-                src={movie.poster_url || "https://placehold.co/80x120?text=No+Image"}
-                alt={movie.title || "Movie Poster"}
-                className="w-16 h-24 object-cover rounded-md"
-              />
-              <div className="flex-1 min-w-0 ml-4">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
-                  {movie.title || "Unknown Title"}
-                </h2>
-              </div>
-              <div className="text-right flex items-center gap-1">
-                <Star className="w-5 h-5 text-yellow-500" />
-                <div className="flex flex-col items-center">
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {movie.predicted_rating?.toFixed(1) || "N/A"}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
+      {/* Only render this when not searching */}
+      {!isSearching && (
+        submittedQuery.trim() ? (
+          // Search Results View
+          <div className="relative">
+            <h2 className="text-xl text-center mr-25 font-bold text-gray-800 dark:text-gray-200 mb-4">
+              Search Results for "{submittedQuery}"
+            </h2>
+            {movies.length > 0 ? (
+              <div className="pl-20">
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  {movies.map((movie) => (
+                    <MovieCard
+                      key={movie._id || movie.movieId}
+                      movie={movie}
+                      onClick={() => setSelectedMovie(movie)}
+                    />
+                  ))}
                 </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      <Dialog open={!!selectedMovie} onClose={() => setSelectedMovie(null)} className="relative z-50">
-        <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="bg-white p-6 rounded-2xl max-w-xl w-full space-y-4 shadow-2xl relative">
-            <div className="flex space-x-6">
-              <img
-                src={selectedMovie?.poster_url}
-                alt={selectedMovie?.title}
-                className="rounded-lg w-40 h-auto object-cover"
-              />
-              <div className="flex flex-col justify-center space-y-3 flex-grow">
-                <h2 className="text-2xl font-semibold">{selectedMovie?.title}</h2>
-                <p className="text-sm text-gray-700">{Array.isArray(selectedMovie?.genres) ? selectedMovie.genres.join(", ") : selectedMovie?.genres}</p>
-                <p className="text-sm text-gray-700"><strong>Director:</strong> {selectedMovie?.director || "N/A"}</p>
-                <p className="text-sm text-gray-700">
-                  <strong>Actors:</strong> {Array.isArray(selectedMovie?.actors) ? selectedMovie.actors.join(", ") : selectedMovie?.actors || "N/A"}
+            ) : (
+              <div className="grid place-items-center w-full h-15">
+                <p className="text-gray-500 dark:text-gray-400 text-lg mr-20">
+                  No movies found matching your search.
                 </p>
-                <p className="text-sm text-gray-700"><strong>Overview:</strong> {selectedMovie?.overview || "N/A"}</p>
-                <p className="text-sm text-gray-700"><strong>Rating: ⭐</strong> {selectedMovie?.predicted_rating?.toFixed(1) || "N/A"}</p>
-              </div>
-            </div>
-
-            <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
-              <button
-                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                onClick={() => handleHistory(selectedMovie)}
-              >
-                <Play className="w-3 h-3 mr-1 fill-black" />
-                Play
-              </button>
-              <button
-                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                onClick={() => handleLike(selectedMovie.movieId)}
-              >
-                <Heart className="w-4 h-4 mr-1 fill-black" />
-                Like
-              </button>
-              <button
-                className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                onClick={() => handleWatchLater(selectedMovie.movieId)}
-              >
-                <Bookmark className="w-4 h-4 mr-1 fill-black" />
-                Save
-              </button>
-            </div>
-
-            <div className="flex justify-end pt-4">
-              <button
-                onClick={() => setSelectedMovie(null)}
-                className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm"
-              >
-                Close
-              </button>
-            </div>
-            
-            {showPopup && (
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white text-purple-800 px-4 py-2 rounded shadow text-sm z-50">
-                {popupMessage}
               </div>
             )}
-          </Dialog.Panel>
-        </div>
-      </Dialog>
+          </div>
+        ) : (
+          // Top 10 Recommendations View
+          <div className="w-full max-w-2xl mx-auto">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+              Top 10 Rated Movies Based On Your Recommendations
+            </h2>
+            <div className="w-full max-w-2xl ml-0">
+              {movies.length > 0 ? (
+                <div className="space-y-4">
+                  {movies.slice(0, 10).map((movie, index) => (
+                    <div
+                      key={movie._id || movie.movieId}
+                      className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer"
+                      onClick={() => setSelectedMovie(movie)}
+                    >
+                      <div className="text-2xl font-bold w-12 text-center text-purple-600 dark:text-yellow-400">
+                        {index + 1}
+                      </div>
+                      <img
+                        src={movie.poster_url || "https://placehold.co/80x120?text=No+Image"}
+                        alt={movie.title || "Movie Poster"}
+                        className="w-16 h-24 object-cover rounded-md ml-2"
+                      />
+                      <div className="flex-1 min-w-0 ml-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                          {movie.title || "Unknown Title"}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {movie.genres ? movie.genres.split(",")[0] : "Movie"}
+                        </p>
+                      </div>
+                      <div className="text-right flex items-center gap-2 pr-2">
+                        <Star className="w-5 h-5 text-yellow-500" fill="currentColor" />
+                        <div className="flex flex-col items-center">
+                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                            {movie.predicted_rating?.toFixed(1) || "N/A"}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Rating</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid place-items-center w-full h-64">
+                  <p className="text-center text-gray-500 dark:text-gray-400 text-lg">
+                    No recommended movies found.<br />Like some movies to get started!
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      )}
+
+      {/* Movie Modal stays outside the conditional */}
+      <MovieModal
+        isOpen={!!selectedMovie}
+        movie={selectedMovie}
+        onClose={() => setSelectedMovie(null)}
+        onPlay={handleHistory}
+        onLike={() => handleAction("like", selectedMovie?.movieId)}
+        onSave={() => handleAction("save", selectedMovie?.movieId)}
+        onDelete={() => handleAction("delete", selectedMovie?.movieId)}
+        isSubscribed={true}
+      >
+        {showPopup && popupMessage}
+      </MovieModal>
     </div>
   );
 };
