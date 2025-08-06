@@ -356,27 +356,72 @@ contextBridge.exposeInMainWorld('electron', {
   removeFromHistoryQueue: (movieId) =>
   queueAction(historyQueuePath, { type: "delete", movieId }),
 
+  queueHistoryAction: (action) => queueAction(historyQueuePath, action),
 
+  removeMovieFromHistoryCache: (movieId) => {
+    try {
+      const data = fs.readFileSync(historyQueuePath, "utf-8");
+      const parsed = JSON.parse(data);
+      const filtered = parsed.filter(m => m.movieId?.toString() !== movieId.toString());
+      fs.writeFileSync(historyQueuePath, JSON.stringify(filtered, null, 2));
+      console.log(`🗑️ Updated history cache after removing: ${movieId}`);
+    } catch (err) {
+      console.error("❌ Failed to update local history cache:", err);
+    }
+  },
+  
   //History page
-  saveHistoryQueue: (historyMovies) => {
+  // saveHistoryQueue: (historyMovies) => {
+  // try {
+  //   fs.writeFileSync(historyQueuePath, JSON.stringify(historyMovies, null, 2), 'utf-8');
+  //   console.log("💾 Saved history queue.");
+  // } catch (err) {
+  //   console.error("❌ Failed to save history queue:", err);
+  // }
+
+  saveHistoryQueue: (queue) => {
   try {
-    fs.writeFileSync(historyQueuePath, JSON.stringify(historyMovies, null, 2), 'utf-8');
-    console.log("💾 Saved history queue.");
+    if (!Array.isArray(queue)) throw new Error("Queue is not array");
+    const json = JSON.stringify(queue, null, 2);
+    fs.writeFileSync(historyQueuePath, json);
+    console.log("✅ Saved history queue to:", historyQueuePath);
   } catch (err) {
     console.error("❌ Failed to save history queue:", err);
   }
 },
 
-  getHistoryQueue: () => {
+
+//   getHistoryQueue: () => {
+//   try {
+//     if (fs.existsSync(historyQueuePath)) {
+//       return JSON.parse(fs.readFileSync(historyQueuePath, 'utf-8'));
+//     }
+//     return [];
+//   } catch {
+//     return [];
+//   }
+// },
+
+getHistoryQueue: () => {
   try {
     if (fs.existsSync(historyQueuePath)) {
-      return JSON.parse(fs.readFileSync(historyQueuePath, 'utf-8'));
+      const raw = fs.readFileSync(historyQueuePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+
+      // ✅ Filter only movies with at least a title or poster_url
+      const filtered = parsed.filter(entry => {
+        const movie = entry.movie || entry;
+        return movie?.title || movie?.poster_url;
+      });
+
+      return filtered;
     }
     return [];
   } catch {
     return [];
   }
 },
+
 
 getRawHistoryQueue: () => {
   try {

@@ -257,6 +257,16 @@ def get_history_movies(userId: str, request: Request):
 
         history_ids = [str(mid) for mid in history_doc["historyMovies"]]
 
+                # 🔍 Add debug prints here
+        print("✅ history_ids to search:", history_ids)
+        print("🔍 First few movieIds in DB:")
+        for doc in movies_collection.find().limit(5):
+            print(" -", doc.get("movieId"), type(doc.get("movieId")))
+
+        # 🛡 Safety check
+        if not history_ids:
+            return {"historyMovies": []}
+
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
@@ -296,7 +306,32 @@ def get_history_movies(userId: str, request: Request):
     except Exception as e:
         print("❌ Error fetching history movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch history movies")
-    
+
+@router.post("/historyMovies/delete")
+async def remove_from_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    movie_id = str(movie_id)
+
+    result = history_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"historyMovies": movie_id}}
+    )
+
+    print("🧹 Removed from history:", result.modified_count)
+
+    if result.modified_count > 0:
+        return {"message": "Movie removed from history"}
+    else:
+        return {"message": "Movie not found or already removed"}
     
 @router.post("/watchLater")
 async def add_to_watchLater(request: Request):
@@ -434,31 +469,7 @@ async def remove_from_watchLater(request: Request):
         return {"message": "Movie not found or already removed"}
     
 
-@router.post("/historyMovies/delete")
-async def remove_from_history(request: Request):
-    data = await request.json()
-    db = request.app.state.movie_db
-    history_collection = db["history"]
 
-    user_id = data.get("userId")
-    movie_id = data.get("movieId")
-
-    if not user_id or movie_id is None:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-    movie_id = str(movie_id)
-
-    result = history_collection.update_one(
-        {"userId": user_id},
-        {"$pull": {"historyMovies": movie_id}}
-    )
-
-    print("🧹 Removed from history:", result.modified_count)
-
-    if result.modified_count > 0:
-        return {"message": "Movie removed from history"}
-    else:
-        return {"message": "Movie not found or already removed"}
     
 
 def _process_and_filter_movies(movie_list: List[Dict]) -> List[Dict]:
