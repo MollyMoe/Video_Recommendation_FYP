@@ -23,8 +23,7 @@ export default defineConfig({
     port: 3000,
     strictPort: true, 
     hmr: process.env.NODE_ENV !== 'production',
-    strictPort: true, 
-    hmr: process.env.NODE_ENV !== 'production',
+    strictPort: true,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
@@ -38,4 +37,3 @@ export default defineConfig({
     emptyOutDir: true,
   },
 })
-

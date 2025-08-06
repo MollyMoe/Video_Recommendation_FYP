@@ -1,8 +1,6 @@
 
-
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { API } from "@/config/api";
 import { API } from "@/config/api";
 
 const AdUserTable = ({ searchQuery }) => {
@@ -12,7 +10,6 @@ const AdUserTable = ({ searchQuery }) => {
   useEffect(() => {
     const fetchStreamers = async () => {
       try {
-        const res = await fetch(`${API}/api/auth/users/streamer`);
         const res = await fetch(`${API}/api/auth/users/streamer`);
         const data = await res.json();
         console.log("Fetched streamers:", data);
@@ -45,32 +42,7 @@ const AdUserTable = ({ searchQuery }) => {
   //       headers: { "Content-Type": "application/json" },
   //       body: JSON.stringify({ status: newStatus }),
   //     });
-  // const handleToggleSuspend = async (userId) => {
-  //   const updatedUsers = users.map((user) =>
-  //     user.userId === userId
-  //       ? {
-  //           ...user,
-  //           status: user.status === "Suspended" ? "Active" : "Suspended",
-  //         }
-  //       : user
-  //   );
 
-  //   setUsers(updatedUsers);
-
-  //   const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
-
-  //   try {
-  //     await fetch(`${API}/api/auth/users/${userId}/status`, {
-  //       method: "PUT",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ status: newStatus }),
-  //     });
-
-  //     // ✅ If unsuspending, also reset lastSignout to now
-  //   } catch (err) {
-  //     console.error("Failed to update status:", err);
-  //   }
-  // };
   //     // ✅ If unsuspending, also reset lastSignout to now
   //   } catch (err) {
   //     console.error("Failed to update status:", err);
@@ -87,54 +59,9 @@ const AdUserTable = ({ searchQuery }) => {
         }
       : user
   );
-  // ✅ Keep your original structure
-  const updatedUsers = users.map((user) =>
-    user.userId === userId
-      ? {
-          ...user,
-          status: user.status === "Suspended" ? "Active" : "Suspended",
-        }
-      : user
-  );
 
   setUsers(updatedUsers);
-  setUsers(updatedUsers);
 
-  const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
-  const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
-
-  if (!userType) {
-    console.error("❌ Missing userType for user:", userId);
-    return;
-  }
-  console.log("🧪 Sending:", {
-  userId,
-  userType,
-  status: newStatus,
-});
-
-  try {
-    // 🔄 Update status in DB
-    const res = await fetch(`${API}/api/auth/users/${userId}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: newStatus,
-        userType,
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      console.error("❌ Failed to update user status:", err.detail || err);
-      return;
-    }
-    console.log(`✅ User ${userId} status updated to ${newStatus}`);
-
-    // ✅ Reset lastSignout if unsuspending
-    if (newStatus === "Active") {
-      const resetRes = await fetch(`${API}/api/auth/update-signout-time`, {
-        method: "POST",
   const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
   const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
 
@@ -176,27 +103,7 @@ const AdUserTable = ({ searchQuery }) => {
           userType,
           time: new Date().toISOString(),
         }),
-        body: JSON.stringify({
-          userId,
-          userType,
-          time: new Date().toISOString(),
-        }),
       });
-
-      if (!resetRes.ok) {
-        const err = await resetRes.json();
-        console.warn("⚠️ Failed to reset lastSignout:", err.detail || err);
-      } else {
-        console.log("✅ lastSignout reset after unsuspending");
-      }
-    }
-
-    console.log(`✅ User ${userId} status updated to ${newStatus}`);
-  } catch (err) {
-    console.error("❌ Error toggling suspension:", err);
-  }
-};
-
 
       if (!resetRes.ok) {
         const err = await resetRes.json();
@@ -250,7 +157,6 @@ const AdUserTable = ({ searchQuery }) => {
           </thead>
           <tbody>
             {filteredUsers.map((user) => (
-            {filteredUsers.map((user) => (
               <tr key={user._id}>
                 <td className="px-10 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   {user.userId}
@@ -297,4 +203,3 @@ const AdUserTable = ({ searchQuery }) => {
 };
 
 export default AdUserTable;
-
