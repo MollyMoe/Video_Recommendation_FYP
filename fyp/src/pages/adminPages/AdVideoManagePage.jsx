@@ -25,12 +25,20 @@ const TopLikedMovies = () => {
   }, []);
 
   if (isLoading) {
-    return <div className="text-center text-white">Loading top liked movies...</div>;
+    return <div className="text-center text-gray-600 dark:text-gray-400 mt-10">Loading top liked movies...</div>;
+  }
+
+    // Display a message if no top movies are found
+  if (topMovies.length === 0) {
+    return (
+      <div className="text-center text-gray-600 dark:text-gray-400 mt-10">
+        <p className="text-lg">No top liked movies to display yet.</p>
+      </div>
+    );
   }
 
   return (
     <>
-    <AdSideButtons />
     <div className="p-6 dark:bg-gray-900 min-h-screen">
 
     <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">

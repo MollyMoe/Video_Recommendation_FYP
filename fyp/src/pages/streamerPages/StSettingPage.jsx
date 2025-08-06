@@ -30,7 +30,8 @@ const StSettingPage = () => {
   const modalRef = useRef(null);
   const navigate = useNavigate();
   const { profileImage, updateProfileImage, setCurrentRole } = useUser();
-
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
   const [passwordData, setPasswordData] = useState({
@@ -40,11 +41,26 @@ const StSettingPage = () => {
   });
   const [passwordError, setPasswordError] = useState("");
 
+    const fetchSubscription = async (userId) => {
+    try {
+      const res = await fetch(`${API}/api/subscription/${userId}`);
+      const data = await res.json();
+      console.log("🔑 Subscription data:", data);
+      setIsSubscribed(data.isActive); // true if trial or paid & not expired
+    } catch (err) {
+      console.error("Failed to fetch subscription:", err);
+      setIsSubscribed(false); // fail-safe
+    }
+  };
+
+
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!savedUser?.userId) return;
 
     setCurrentRole("streamer");
+
+    fetchSubscription(savedUser.userId);
 
     // Step 1: Use cached image or fallback first
     const cachedImage = localStorage.getItem("streamer_profileImage");
@@ -293,8 +309,8 @@ const StSettingPage = () => {
               <button
                 type="button"
                 onClick={triggerFileInput}
-                className="mt-20 mx-20 bg-white text-black shadow-md hover:bg-gray-200 border border-gray-300 font-small rounded-lg text-sm px-5 py-2.5 text-center"
-              >
+                className={`mt-20 mx-20 bg-white text-black hover:bg-gray-200 shadow-md border border-gray-300 font-small rounded-lg text-sm px-5 py-2.5`}
+              > 
                 Change Profile Pic
               </button>
             </div>
@@ -313,12 +329,12 @@ const StSettingPage = () => {
                 name={field}
                 value={formData[field]}
                 onChange={handleChange}
-                disabled={field === "contact"}
+                disabled={field === "contact" || (field === "genre" && !isSubscribed)}
                 className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
                 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
                 ${
-                  field === "contact"
+                  (field === "contact" || (field === "genre" && !isSubscribed))
                     ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800"
                     : ""
                 }`}
@@ -330,7 +346,7 @@ const StSettingPage = () => {
           <div className="mb-5">
             <button
               type="submit"
-              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+              className={`w-32 bg-white text-black hover:bg-gray-200 text-xs px-6 py-2 rounded-lg shadow-md border border-gray-300`}
             >
               Save Changes
             </button>

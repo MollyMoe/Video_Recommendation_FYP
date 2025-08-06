@@ -1,4 +1,3 @@
-from fastapi import APIRouter, Request, HTTPException
 from bson import ObjectId
 from pymongo import ReturnDocument
 import bcrypt
@@ -10,7 +9,8 @@ from email.message import EmailMessage
 from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 from pathlib import Path
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Request, HTTPException
+from datetime import datetime
 from pymongo import ReturnDocument
 from urllib.parse import quote
 
@@ -33,10 +33,20 @@ class SignUpRequest(BaseModel):
 router = APIRouter()
 
 @router.get("/users/streamer")
-def get_streamers(request: Request):
+def get_streamers(request: Request, search: str = None):
     db = request.app.state.user_db
-    streamers = list(db.streamer.find({}, {"_id": 0}))
-    print("Streamers fetched from DB:", streamers)
+    query = {}
+
+    if search:
+        query = {
+            "$or": [
+                {"userId": {"$regex": search, "$options": "i"}},
+                {"email": {"$regex": search, "$options": "i"}},
+                {"username": {"$regex": search, "$options": "i"}},
+            ]
+        }
+
+    streamers = list(db.streamer.find(query, {"_id": 0}))
     return streamers
 
 @router.post("/signup")
@@ -70,6 +80,7 @@ def signup(request: Request, user: SignUpRequest):
         "genres": [],
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
+        "createdAt": datetime.utcnow(),
         "__v": 0
     }
 
@@ -226,4 +237,30 @@ def get_user_by_id(request: Request, userType: str, userId: str):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+@router.post("/update-signout-time")
+async def update_signout_time(request: Request):
+    body = await request.json()
+    user_id = body.get("userId")
+    user_type = body.get("userType")
+    time_str = body.get("time")
 
+    if not user_id or not user_type:
+        raise HTTPException(status_code=400, detail="Missing userId or userType")
+
+    try:
+        last_signout = datetime.fromisoformat(time_str.replace("Z", "+00:00")) if time_str else datetime.utcnow()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid time format: {e}")
+
+    db = request.app.state.user_db
+    Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
+
+    result = Model.update_one(
+        { "userId": user_id },
+        { "$set": { "lastSignout": last_signout } }
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return { "message": "Sign-out time updated successfully" }

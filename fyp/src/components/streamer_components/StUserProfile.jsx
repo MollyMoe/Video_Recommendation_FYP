@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
+import axios from "axios";
 import { Link } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-const defaultImage =
-  "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
+const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
 function StUserProfile({ userProfile }) {
   const [open, setOpen] = useState(false);
@@ -40,6 +40,8 @@ function StUserProfile({ userProfile }) {
       });
   }, []);
 
+
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("darkMode");
     if (savedTheme === "true") {
@@ -47,6 +49,9 @@ function StUserProfile({ userProfile }) {
     }
   }, []);
 
+  useEffect(() => {
+    setCurrentRole("streamer");
+  }, []);
 
   useEffect(() => {
     if (darkMode) {
@@ -73,6 +78,64 @@ function StUserProfile({ userProfile }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+ 
+const handleSignout = async () => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  const API = import.meta.env.VITE_API_BASE_URL;
+
+  if (savedUser?.userId) {
+    // 🟡 If online: update backend
+    if (navigator.onLine) {
+      try {
+        await axios.post(`${API}/api/auth/update-signout-time`, {
+          userId: savedUser.userId,
+          userType: savedUser.userType,
+          time: new Date().toISOString(),
+          reason: "manual",
+        });
+        console.log("✅ Signout time recorded to backend");
+      } catch (err) {
+        console.error("❌ Failed to record signout time:", err);
+      }
+    } 
+    // 🔴 If offline: save locally
+    else if (window.electron?.saveOfflineSignout) {
+      try {
+        window.electron.saveOfflineSignout({ userId: savedUser.userId });
+        console.log("📁 Offline signout saved locally");
+      } catch (err) {
+        console.warn("⚠️ Failed to save offline session:", err);
+      }
+    }
+  }
+
+  // 🔁 Clear all sessions
+  localStorage.removeItem("user");
+
+  if (window.electron?.clearOfflineSignout) {
+    try {
+      window.electron.clearOfflineSignout(); // this is usually for cleanup after boot sync
+    } catch (err) {
+      console.warn("⚠️ Failed to clear offline session:", err);
+    }
+  }
+
+    if (window.electron?.saveOfflineSignout) {
+    window.electron.saveOfflineSignout({ userId: savedUser.userId });
+  } else {
+    console.warn("🧪 Not running in Electron — skipping offline save");
+  }
+
+
+  // ✅ Always redirect
+  if (window.location.hash.includes("#")) {
+    window.location.hash = "#/signin"; // HashRouter
+  } else {
+    window.location.href = "/signin"; // BrowserRouter
+  }
+};
+
 
   return (
     // User Profile
@@ -119,13 +182,9 @@ function StUserProfile({ userProfile }) {
               )}
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
-            <li>
-              <Link
-                to="/signin"
-                className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-              >
+            <li onClick={handleSignout}
+            className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"> 
                 <FaSignOutAlt className="mr-2" /> Sign Out
-              </Link>
             </li>
           </ul>
         </div>

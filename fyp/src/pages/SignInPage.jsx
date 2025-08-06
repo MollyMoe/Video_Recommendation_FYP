@@ -90,7 +90,7 @@ function SignInPage() {
             username: data.user.username,
             userType: data.user.userType,
             password: formData.password,
-            lastSignout: new Date().toISOString(),
+            lastSignin: new Date().toISOString(),
           });
         } else {
           console.warn("⚠️ Electron API not available. Skipping offline session save.");
@@ -125,7 +125,7 @@ function SignInPage() {
         setMessage({ type: "success", text: "Login successful!" });
       } else if (
         res.status === 403 &&
-        data.error?.toLowerCase().includes("suspended")
+        data.error?.toLowerCase().includes("Suspended")
       ) {
         setMessage({
           type: "error",

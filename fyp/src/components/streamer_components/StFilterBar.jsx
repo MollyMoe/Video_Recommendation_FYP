@@ -13,8 +13,6 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
     return stored ? JSON.parse(stored) : [];
   });
 
-
-
   const handleClickOutside = (event) => {
     if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
       setIsFocused(false);
@@ -23,9 +21,7 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -34,15 +30,14 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 
   const addToHistory = (term) => {
     const normalizedTerm = term.toLowerCase();
-    const exists = history.some((h) => h.toLowerCase() === normalizedTerm);
-    if (!exists) {
+    if (!history.some((h) => h.toLowerCase() === normalizedTerm)) {
       setHistory([term, ...history.slice(0, 9)]);
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && searchQuery.trim()) {
-      e.preventDefault(); // Prevent form submission or unwanted side effects
+      e.preventDefault();
       const trimmed = searchQuery.trim();
       addToHistory(trimmed);
       onSearch(trimmed);
@@ -58,16 +53,22 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 
   const handleRemove = (item, e) => {
     e.stopPropagation();
-    const updated = history.filter((term) => term !== item);
-    setHistory(updated);
+    setHistory(history.filter((term) => term !== item));
+  };
+  
+  const handleClear = () => {
+    setSearchQuery(""); 
+    onSearch("");       
   };
 
-  return (
-    <div className="flex-1 px-5 hidden md:flex justify-center" ref={wrapperRef}>
-      <div className="w-full max-w-md z-60">
-        <div className=" w-screen h-27 bg-white w-full" >
-        <h1 className="mt-[20px] text-xl font-bold text-gray-700 mb-4">What would you like to watch?</h1>
 
+  return (
+    <div className="w-full flex flex-col items-center px-4 mt-8">
+      <h1 className="text-xl font-bold text-gray-700 mb-3 text-center">
+        What would you like to watch?
+      </h1>
+
+      <div className="relative w-full max-w-sm" ref={wrapperRef}>
         <input
           type="text"
           value={searchQuery}
@@ -75,20 +76,21 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
           onFocus={() => setIsFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search..."
-          className="w-104 pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="Search movies"
         />
-       </div>
+
         {searchQuery && (
           <button
             type="button"
-            onClick={() => setSearchQuery("")}
-            className="absolute inset-y-0 right-10 flex items-center text-gray-500 hover:text-gray-700 px-2 mt-[50px]"
+            onClick={handleClear} // <<< Use the new handler
+            className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
             aria-label="Clear search input"
           >
             <FaTimes />
           </button>
         )}
+
         <button
           type="button"
           onClick={() => {
@@ -99,31 +101,26 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch }) => {
               setIsFocused(false);
             }
           }}
-          className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 mt-[48px]"
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
           aria-label="Submit search"
         >
           <FaSearch />
         </button>
-
+        
         {isFocused && history.length > 0 && (
-          <div
-            className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-md max-h-60 overflow-auto"
-            role="listbox"
-            aria-label="Search history"
+          <div 
+            className="absolute top-full mt-2 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto z-20"
           >
             {history.map((item) => (
               <div
                 key={item}
                 onClick={() => handleHistoryClick(item)}
                 className="flex justify-between items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                role="option"
-                tabIndex={0}
               >
                 <span>{item}</span>
                 <button
                   onClick={(e) => handleRemove(item, e)}
                   className="text-gray-500 hover:text-gray-700"
-                  aria-label={`Remove ${item} from search history`}
                 >
                   <FaBackspace />
                 </button>

@@ -27,6 +27,12 @@ import AdVideoManageLayout from "./layouts/AdVideoManageLayout";
 import AdUserDetailsLayout from "./layouts/AdUserDetailsLayout";
 import Overview from "./pages/adminPages/Overview";
 import { Navigate } from "react-router-dom";
+import AdUserLikedMovies from "./pages/adminPages/AdUserLikedMovies";
+import AdUserWatchLater from "./pages/adminPages/AdUserWatchLater";
+import AdUserHistory from "./pages/adminPages/AdUserHistory";
+import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAddedMovies";
+import AdUserFeedback from "./components/admin_components/AdUserFeedback";
+import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
 
 
 function App() {
@@ -62,19 +68,24 @@ function App() {
             <Route path="videoHomePage" element={<AdVideoHomePage />} />
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
-            <Route path="view/:id" element={<AdUserDetails />} />
+            <Route path="feedback" element={<AdUserFeedback />} />
             
               {/* Video Manage Layout */}
               <Route path="video" element={<AdVideoManageLayout />}>
                 <Route index element={<Navigate to="videoHomePage" replace />} />
                 <Route path="videoHomePage" element={<AdVideoHomePage />} />
                 <Route path="manage" element={<AdVideoManagePage />} />
+                <Route path="genre" element={<AdVideoManageGenrePage />} />
+                <Route path="recently-added" element={<AdRecentlyAddedMovies />} />
               </Route>
 
-              {/* User Details Layout */}
               <Route path="/admin/view/:id" element={<AdUserDetailsLayout />}>
                 <Route index element={<Navigate to="overview" replace />} />
                 <Route path="overview" element={<Overview />} />
+                <Route path="subscription" element={<AdUserDetails />} />
+                <Route path="history" element={<AdUserHistory />} />
+                <Route path="liked" element={<AdUserLikedMovies />} />
+                <Route path="watchLater" element={<AdUserWatchLater/>} />
               </Route>
           </Route>
         </Routes>

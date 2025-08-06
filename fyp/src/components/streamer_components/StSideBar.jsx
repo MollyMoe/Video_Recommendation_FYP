@@ -1,12 +1,26 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const StSideBar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const StSidebarButton = ({ to, label, current, children }) => {
+    const handleClick = (e) => {
+      e.preventDefault();
+      if (current) {
+        // Reload the page if clicking on the active route
+        window.location.reload();
+      } else {
+        // Navigate normally
+        navigate(to);
+      }
+    };
+
     return (
-      <Link
-        to={to}
+      <a
+        href={to}
+        onClick={handleClick}
         className={`block p-4 rounded-lg ${
           current
             ? "bg-gray-200 text-black font-semibold"
@@ -14,11 +28,10 @@ const StSideBar = () => {
         }`}
       >
         {children || label}
-      </Link>
+      </a>
     );
   };
 
-  const location = useLocation();
   return (
     <aside
       id="logo-sidebar"
@@ -51,14 +64,16 @@ const StSideBar = () => {
               current={location.pathname === "/home/watchLater"}
             />
           </li>
+          <li>
             <StSidebarButton
               to="/home/like"
               label="Liked Movie"
               current={location.pathname === "/home/like"}
             />
+          </li>
 
           <hr className="my-2 border-gray-300" />
-          
+
           <li>
             <StSidebarButton
               to="/home/filter"
@@ -95,7 +110,6 @@ const StSideBar = () => {
               to="/home/subscription"
               label="Subscription"
               current={location.pathname === "/home/subscription"}
-              Manage Subscriptions
             />
           </li>
         </ul>

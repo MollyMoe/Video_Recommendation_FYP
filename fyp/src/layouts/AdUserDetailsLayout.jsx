@@ -1,5 +1,6 @@
 import { Outlet, useParams, useLocation, Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { House, ArrowLeft } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,15 +26,33 @@ const AdUserDetailsLayout = () => {
 
   if (!user) return <div className="text-red-600">Loading user...</div>;
 
+  const formattedDate = new Date(user.createdAt).toLocaleDateString("en-US");
+
   return (
     <div className="flex min-h-screen bg-gray-100 pt-20">
       {/* Sidebar */}
-      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white dark:bg-gray-800 dark:border-gray-700">
-        <div className="h-full px-3 pb-4 overflow-y-auto">
-          <Link to="/admin" className="block px-4 py-2 text-black dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700">Home</Link>
-          <Link to="/admin/manageUser" className="block px-4 py-2 text-black dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700">Users</Link>
-          <Link to="/admin" className="block px-4 py-2 text-black dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700">Subscription</Link>
-          <Link to="/admin/manageUser" state={{ searchQuery }} className="block px-4 py-2 text-black dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700">Back</Link>
+      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white/70 dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
+        <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
+
+          {/* Home */}
+          <Link
+            to="/admin"
+            className="flex items-center gap-3 px-4 py-2 text-gray-800 dark:text-white hover:bg-fuchsia-200 dark:hover:bg-gray-700 rounded-lg"
+          >
+            <House className="w-4 h-4" />
+            Home
+          </Link>
+
+          {/* Back */}
+          <Link
+            to="/admin/manageUser"
+            state={{ searchQuery }}
+            className="flex items-center gap-3 px-4 py-2 text-gray-800 dark:text-white hover:bg-fuchsia-200 dark:hover:bg-gray-700 rounded-lg"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link>
+
         </div>
       </aside>
 
@@ -45,6 +64,7 @@ const AdUserDetailsLayout = () => {
           <div>
             <h2 className="text-2xl font-bold">{user.username}</h2>
             <p className="text-gray-600">{user.email}</p>
+            <p className="text-gray-600 text-sm">Created on : {formattedDate}</p>
           </div>
         </div>
 
@@ -54,9 +74,9 @@ const AdUserDetailsLayout = () => {
             {[
               { label: "Overview", to: "overview" },
               { label: "Subscription", to: "subscription" },
-              { label: "Activity", to: "activity" },
-              { label: "Suspension", to: "suspension" },
               { label: "Liked Videos", to: "liked" },
+              { label: "Watch Later", to: "watchLater" },
+              { label: "Watch History", to: "history" },
             ].map(({ label, to }) => (
               <NavLink
                 key={to}
