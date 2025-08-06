@@ -5,11 +5,9 @@ const faqs = [
   {
     question: "How do I like a movie?",
     answer: "Click the 'Like' button in the movie details popup after selecting a movie card. The movie will then be added to your 'Liked Movies' list.",
-    answer: "Click the 'Like' button in the movie details popup after selecting a movie card. The movie will then be added to your 'Liked Movies' list.",
   },
   {
     question: "How do I save a movie to watch later?",
-    answer: "Click the 'Save' button in the movie details popup after selecting a movie card. You'll find it later in the 'Watch Later' tab.",
     answer: "Click the 'Save' button in the movie details popup after selecting a movie card. You'll find it later in the 'Watch Later' tab.",
   },
   {
