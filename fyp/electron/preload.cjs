@@ -23,7 +23,7 @@ const likedQueuePath = path.join(basePath, "cineit-liked-queue.json");
 const recommendedPath = path.join(basePath, 'recommended.json');
 const subscriptionPath = path.join(basePath, "subscription.json");
 const themePath = path.join(basePath, "theme.json");
-
+const likedDataPath = path.join(basePath, "likedData.json");
 
 const paths = {
   topLiked: path.join(basePath, "topLiked.json"),
@@ -241,6 +241,10 @@ contextBridge.exposeInMainWorld('electron', {
   //subscription
   saveSubscription: (data) => safeWrite(subscriptionPath, data),
   getSubscription: () => safeRead(subscriptionPath),
+
+  //liked Data for filter page
+  saveLikedData: (data) => safeWrite(likedDataPath, data),
+  getLikedData: () => safeRead(likedDataPath),
 
   // ✅ Carousel offline cache (topLiked, likedMovies, etc.)
   saveCarouselData: async (type, data) => {

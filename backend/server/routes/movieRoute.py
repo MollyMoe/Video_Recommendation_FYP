@@ -107,47 +107,48 @@ async def add_to_liked_movies(request: Request):
 
 @router.get("/likedMovies/{userId}")
 def get_liked_movies(userId: str, request: Request):
-    db = request.app.state.movie_db
-    liked_collection = db["liked"]
-    movies_collection = db["hybridRecommendation2"]
+    try:
+        db = request.app.state.movie_db
+        liked_collection = db["liked"]
+        movies_collection = db["hybridRecommendation2"]
 
-    liked_doc = liked_collection.find_one({"userId": userId})
-    if not liked_doc or not liked_doc.get("likedMovies"):
-        return {"likedMovies": []}
+        liked_doc = liked_collection.find_one({"userId": userId})
+        if not liked_doc or not liked_doc.get("likedMovies"):
+            return {"likedMovies": []}
 
-    liked_ids = liked_doc["likedMovies"]  # e.g., [287149, 186015]
+        liked_ids = [str(mid) for mid in liked_doc["likedMovies"]]  # maintain order
 
-    # Get all matching movies
-    movies_cursor = movies_collection.find(
+        # 1. Fetch matching movies
+        movies_cursor = movies_collection.find(
             {"movieId": {"$in": liked_ids}},
-            {
-                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
-                "trailer_url": 1, "trailer_key": 1, "genres": 1,
-                "tmdb_id": 1, "overview": 1, "director": 1,
-                "producers": 1, "actors": 1
-            }
+            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1}
         )
 
-        # Convert genres string to array and deduplicate
-    seen = set()
-    unique_movies = []
-    for movie in movies_cursor:
-            # Convert genres string to list
-            genres_raw = movie.get("genres", "")
-            if isinstance(genres_raw, str):
-                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
-            elif isinstance(genres_raw, list):
-                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
+        # 2. Build a movie lookup dictionary
+        movie_dict = {
+            str(movie["movieId"]): {
+                "_id": str(movie["_id"]),
+                "movieId": movie["movieId"],
+                "poster_url": movie.get("poster_url"),
+                "title": movie.get("title"),
+                "trailer_url": movie.get("trailer_url"),
+            }
+            for movie in movies_cursor
+        }
 
-            # Deduplicate by movieId
-            mid = movie.get("movieId")
-            if mid not in seen:
+        # 3. Reconstruct list in the order of liked_ids (most recent first)
+        ordered_liked_movies = []
+        seen = set()
+        for mid in reversed(liked_ids):  # Reverse to make newest liked appear first
+            if mid not in seen and mid in movie_dict:
+                ordered_liked_movies.append(movie_dict[mid])
                 seen.add(mid)
-                movie["_id"] = str(movie["_id"])
-                unique_movies.append(movie)
 
+        return {"likedMovies": ordered_liked_movies}
 
-    return {"likedMovies": unique_movies}
+    except Exception as e:
+        print("❌ Error fetching liked movies:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch liked movies")
 
 
 @router.post("/history")
@@ -193,48 +194,44 @@ def get_history_movies(userId: str, request: Request):
         history_collection = db["history"]
         movies_collection = db["hybridRecommendation2"]
 
+        # 1. Get user history
         history_doc = history_collection.find_one({"userId": userId})
         if not history_doc or not history_doc.get("historyMovies"):
             return {"historyMovies": []}
 
         history_ids = [str(mid) for mid in history_doc["historyMovies"]]
 
-
+        # 2. Fetch movie details from DB
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
-            {
-                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
-                "trailer_url": 1, "trailer_key": 1, "genres": 1,
-                "tmdb_id": 1, "overview": 1, "director": 1,
-                "producers": 1, "actors": 1
-            }
+            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1}
         )
 
-        # Convert genres string to array and deduplicate
+        # 3. Create a lookup dict for fast access by movieId
+        movie_dict = {
+            movie["movieId"]: {
+                "_id": str(movie["_id"]),
+                "movieId": movie["movieId"],
+                "poster_url": movie.get("poster_url"),
+                "title": movie.get("title"),
+                "trailer_url": movie.get("trailer_url"),
+            }
+            for movie in movies_cursor
+        }
+
+        # 4. Reconstruct ordered list (latest movie appears first)
+        ordered_movies = []
         seen = set()
-        unique_movies = []
-        for movie in movies_cursor:
-            # Convert genres string to list
-            genres_raw = movie.get("genres", "")
-            if isinstance(genres_raw, str):
-                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
-            elif isinstance(genres_raw, list):
-                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
-
-            # Deduplicate by movieId
-            mid = movie.get("movieId")
-            if mid not in seen:
+        for mid in reversed(history_ids):
+            if mid not in seen and mid in movie_dict:
+                ordered_movies.append(movie_dict[mid])
                 seen.add(mid)
-                movie["_id"] = str(movie["_id"])
-                unique_movies.append(movie)
 
-
-        return {"historyMovies": unique_movies}
+        return {"historyMovies": ordered_movies}
 
     except Exception as e:
         print("❌ Error fetching history movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch history movies")
-    
     
 @router.post("/watchLater")
 async def add_to_watchLater(request: Request):
@@ -273,36 +270,33 @@ def get_watchLater_movies(userId: str, request: Request):
 
         saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
 
+        # 1. Fetch all matching movie details
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": saveMovie_ids}},
-            {
-                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
-                "trailer_url": 1, "trailer_key": 1, "genres": 1,
-                "tmdb_id": 1, "overview": 1, "director": 1,
-                "producers": 1, "actors": 1
-            }
+            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1}
         )
 
-        # Convert genres string to array and deduplicate
+        # 2. Build lookup dict by movieId
+        movie_dict = {
+            movie["movieId"]: {
+                "_id": str(movie["_id"]),
+                "movieId": movie["movieId"],
+                "poster_url": movie.get("poster_url"),
+                "title": movie.get("title"),
+                "trailer_url": movie.get("trailer_url"),
+            }
+            for movie in movies_cursor
+        }
+
+        # 3. Reconstruct ordered list (newest saved first)
+        ordered_movies = []
         seen = set()
-        unique_movies = []
-        for movie in movies_cursor:
-            # Convert genres string to list
-            genres_raw = movie.get("genres", "")
-            if isinstance(genres_raw, str):
-                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
-            elif isinstance(genres_raw, list):
-                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
-
-            # Deduplicate by movieId
-            mid = movie.get("movieId")
-            if mid not in seen:
+        for mid in reversed(saveMovie_ids):
+            if mid not in seen and mid in movie_dict:
+                ordered_movies.append(movie_dict[mid])
                 seen.add(mid)
-                movie["_id"] = str(movie["_id"])
-                unique_movies.append(movie)
 
-
-        return {"SaveMovies": unique_movies}
+        return {"SaveMovies": ordered_movies}
 
     except Exception as e:
         print("❌ Error fetching saved movies:", e)

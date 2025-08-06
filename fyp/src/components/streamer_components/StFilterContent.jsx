@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Star } from "lucide-react"; // Make sure to install: npm install lucide-react
 import MovieModal from "../movie_components/MovieModal";
 import MovieCard from "../movie_components/MovieCard";
+import offlineFallback from "../../images/offlineFallback.jpg";
 
 import { API } from "@/config/api";
 
@@ -10,44 +11,91 @@ const StFilterContent = ({ submittedQuery, movies, isLoading, isSearching, setMo
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [popupMessage, setPopupMessage] = useState("");
   const [showPopup, setShowPopup] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+useEffect(() => {
+  const handleOnlineStatus = () => setIsOnline(navigator.onLine);
+  window.addEventListener("online", handleOnlineStatus);
+  window.addEventListener("offline", handleOnlineStatus);
+  return () => {
+    window.removeEventListener("online", handleOnlineStatus);
+    window.removeEventListener("offline", handleOnlineStatus);
+  };
+}, []);
+
+useEffect(() => {
+  const loadOfflineRecommendations = async () => {
+    if (!isOnline && window.electron?.getRecommendedMovies) {
+      const offlineMovies = await window.electron.getRecommendedMovies();
+      setMovies(offlineMovies);
+    }
+  };
+
+  loadOfflineRecommendations();
+}, [isOnline]);
+
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
   const handleAction = async (actionType, movieId) => {
-    if (!movieId || !savedUser?.userId) return;
-    const actions = {
-      like: { url: "like", message: "Movie Liked!" },
-      save: { url: "watchLater", message: "Saved to Watch Later!" },
-      delete: { url: "recommended/delete", message: "Removed from recommendations" }
-    };
-    const action = actions[actionType];
-    if (!action) return;
+  if (!movieId || !savedUser?.userId) return;
+  const actions = {
+    like: { url: "like", message: "Movie Liked!", queueKey: "likeQueue" },
+    save: { url: "watchLater", message: "Saved to Watch Later!", queueKey: "watchLaterQueue" },
+    delete: { url: "recommended/delete", message: "Removed from recommendations", queueKey: null }
+  };
+  const action = actions[actionType];
+  if (!action) return;
 
-    if (actionType === "delete") {
-      setMovies(prev => prev.filter(m => m.movieId !== movieId));
-    }
-    try {
+  if (actionType === "delete") {
+    setMovies(prev => prev.filter(m => m.movieId !== movieId));
+  }
+
+  try {
+    if (isOnline) {
       await axios.post(`${API}/api/movies/${action.url}`, {
         userId: savedUser.userId,
         movieId
       });
-      if (action.message) {
-        setPopupMessage(action.message);
-        setShowPopup(true);
-        setTimeout(() => setShowPopup(false), 2000);
+    } else {
+      if (action.queueKey && window.electron?.addToQueue) {
+        await window.electron.addToQueue(action.queueKey, {
+          userId: savedUser.userId,
+          movieId,
+          action: actionType
+        });
       }
-    } catch (err) {
-      console.error(`❌ Error with action ${actionType}:`, err);
     }
-  };
+
+    if (action.message) {
+      setPopupMessage(action.message);
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 2000);
+    }
+  } catch (err) {
+    console.error(`❌ Error with action ${actionType}:`, err);
+  }
+};
+
     
   const handleHistory = (movie) => {
-    if (!movie) return;
-    handleAction('history', movie.movieId);
-    if (movie.trailer_url) {
-      window.open(movie.trailer_url, "_blank");
-    }
-  };
+  if (!movie) return;
+
+  if (isOnline) {
+    handleAction("history", movie.movieId); // optional, if you use API
+  } else {
+    window.electron?.addToQueue("historyQueue", {
+      userId: savedUser.userId,
+      movieId: movie.movieId,
+      action: "history"
+    });
+  }
+
+  if (movie.trailer_url) {
+    window.open(movie.trailer_url, "_blank");
+  }
+};
+
 
   return (
     <div className="pt-24 sm:pt-20 px-4 sm:px-8 dark:bg-gray-900 min-h-screen mt-40">
@@ -108,8 +156,14 @@ const StFilterContent = ({ submittedQuery, movies, isLoading, isSearching, setMo
                         {index + 1}
                       </div>
                       <img
-                        src={movie.poster_url || "https://placehold.co/80x120?text=No+Image"}
-                        alt={movie.title || "Movie Poster"}
+                        src={movie.poster_url}
+                                alt={movie.title || "No title"}
+                                loading="lazy"
+                                onError={(e) => {
+                                  if (e.currentTarget.src !== offlineFallback) {
+                                    e.currentTarget.src = offlineFallback;
+                                  }
+                                }}
                         className="w-16 h-24 object-cover rounded-md ml-2"
                       />
                       <div className="flex-1 min-w-0 ml-4">

@@ -30,30 +30,32 @@ const StHistoryPage = () => {
       };
     }, []);
   
-    const fetchSubscription = async (userId) => {
-    try {
-      let subscription;
-  
-      if (isOnline) {
-        const res = await fetch(`${API}/api/subscription/${userId}`);
-        subscription = await res.json();
-        console.log("🔑 Online subscription data:", subscription);
-  
-        // Save for offline use (entire object)
-        window.electron?.saveSubscription(subscription);
-      } else {
-        const offlineSub = window.electron?.getSubscription();
-        subscription = offlineSub?.userId === userId ? offlineSub : null;
-        console.log("📦 Offline subscription data:", subscription);
-      }
-  
-      setIsSubscribed(subscription?.isActive ?? false);
-    } catch (err) {
-      console.error("Failed to fetch subscription:", err);
-      setIsSubscribed(false); // fallback
-    }
-  };
+   const fetchSubscription = async (userId) => {
+  try {
+    let subscription;
 
+    if (isOnline) {
+      const res = await fetch(`${API}/api/subscription/${userId}`);
+      subscription = await res.json();
+      console.log("🔑 Online subscription data:", subscription);
+      window.electron?.saveSubscription(subscription);
+    } else {
+      const offlineSub = window.electron?.getSubscription();
+      subscription = offlineSub?.userId === userId ? offlineSub : null;
+      console.log("📦 Offline subscription data:", subscription);
+    }
+
+    console.log("🧪 Subscription before setting:", subscription);
+    setIsSubscribed(subscription?.isActive === true); // force exact boolean match
+  } catch (err) {
+    console.error("Failed to fetch subscription:", err);
+    setIsSubscribed(false); // fallback
+  }
+};
+
+useEffect(() => {
+  console.log("🎯 Updated isSubscribed:", isSubscribed);
+}, [isSubscribed]);
 
   const fetchHistoryMovies = async (userId) => {
   if (!userId) return;

@@ -32,8 +32,6 @@ const StWatchLaterPage = () => {
       const res = await fetch(`${API}/api/subscription/${userId}`);
       subscription = await res.json();
       console.log("🔑 Online subscription data:", subscription);
-
-      // Save for offline use (entire object)
       window.electron?.saveSubscription(subscription);
     } else {
       const offlineSub = window.electron?.getSubscription();
@@ -41,12 +39,17 @@ const StWatchLaterPage = () => {
       console.log("📦 Offline subscription data:", subscription);
     }
 
-    setIsSubscribed(subscription?.isActive ?? false);
+    console.log("🧪 Subscription before setting:", subscription);
+    setIsSubscribed(subscription?.isActive === true); // force exact boolean match
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
     setIsSubscribed(false); // fallback
   }
 };
+
+useEffect(() => {
+  console.log("🎯 Updated isSubscribed:", isSubscribed);
+}, [isSubscribed]);
 
   const fetchWatchLaterMovies = async (userId) => {
   if (!userId) return;
