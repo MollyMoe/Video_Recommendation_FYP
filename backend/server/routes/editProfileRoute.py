@@ -54,5 +54,5 @@ def update_streamer(request: Request, userId: str, body: StreamerUpdate):
 
     updated_user["_id"] = str(updated_user["_id"])
 
-    return updated_user
 
+    return updated_user
