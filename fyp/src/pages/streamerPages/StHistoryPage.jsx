@@ -81,6 +81,7 @@ const StHistoryPage = () => {
     } else if (window.electron?.getHistoryQueue) {
       // ✅ Offline: Read from local queue
       const offlineQueue = await window.electron.getHistoryQueue();
+      console.log("📦 Offline history queue read:", offlineQueue);
       data.historyMovies = offlineQueue || [];
     } else {
       console.warn("⚠️ Offline and no preload method found.");
@@ -100,7 +101,10 @@ const StHistoryPage = () => {
       }
     }
 
+    console.log("🎯 Final unique history movies:", uniqueMovies);
+
     setHistoryMovies(uniqueMovies);
+
   } catch (err) {
     console.error("❌ Failed to fetch history movies:", err);
   } finally {

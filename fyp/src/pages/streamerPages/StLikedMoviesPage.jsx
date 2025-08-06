@@ -74,10 +74,10 @@ const StLikedMoviesPage = () => {
         window.electron.saveLikedQueue(data.likedMovies);
       }
     } else if (window.electron?.getLikedQueue) {
-      // ✅ Offline: load from local file
-      const offlineQueue = await window.electron.getLikedQueue();
-      data.likedMovies = offlineQueue || [];
-      console.log("📦 Liked movies (offline):", data.likedMovies);
+// ✅ Offline: use raw liked queue
+      const rawQueue = await window.electron?.getRawLikedQueue?.();
+      console.log("📦 Offline raw liked movies:", rawQueue);
+      data.likedMovies = rawQueue || [];
     } else {
       console.warn("⚠️ Offline and no preload getLikedQueue available");
     }

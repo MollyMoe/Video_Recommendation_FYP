@@ -74,7 +74,14 @@ const StWatchLaterPage = () => {
     } else if (window.electron?.getSavedQueue) {
       // ✅ Offline: load from local file
       const offlineQueue = await window.electron.getSavedQueue();
-      data.SaveMovies = offlineQueue || [];
+      console.log("📦 Offline Saved Queue:", offlineQueue);
+      
+      // data.SaveMovies = offlineQueue || [];
+      data.SaveMovies = offlineQueue;
+      console.log("✅ Bypass deduplication for testing:", data.SaveMovies);
+      setWatchLaterMovies(data.SaveMovies);
+      return;
+
     } else {
       console.warn("⚠️ Offline and no preload getSavedQueue available");
 
@@ -92,6 +99,7 @@ const StWatchLaterPage = () => {
         uniqueMovies.push(movie);
       }
     }
+    console.log("🎯 Final SaveMovies before render:", uniqueMovies);
 
     setWatchLaterMovies(uniqueMovies);
   } catch (err) {

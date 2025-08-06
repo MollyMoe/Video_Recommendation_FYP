@@ -38,7 +38,7 @@ const paths = {
 
 // for als recommendations and top liked
 function safeRead(filePath, fallback = []) {
-  try {
+  try {    
     if (!fs.existsSync(filePath)) return fallback;
     const raw = fs.readFileSync(filePath, "utf-8");
     return JSON.parse(raw);
@@ -488,15 +488,25 @@ clearLikedQueue: () => {
     const seen = new Set();
     const movies = [];
 
-    for (const action of actions) {
-      if (action.movie) {
-        const id = action.movie.movieId || action.movie._id;
-        if (id && !seen.has(id)) {
-          seen.add(id);
-          movies.push(action.movie);
-        }
+    // for (const action of actions) {
+    //   if (action.movie) {
+    //     const id = action.movie.movieId || action.movie._id;
+    //     if (id && !seen.has(id)) {
+    //       seen.add(id);
+    //       movies.push(action.movie);
+    //     }
+    //   }
+    // }
+
+    for (const item of actions) {
+      const movie = item.movie || item;  // ✅ Fallback to direct object
+      const id = movie?.movieId || movie?._id;
+      if (movie && id && !seen.has(id)) {
+        seen.add(id);
+        movies.push(movie);
       }
     }
+    
 
     return movies;
   } catch (err) {
