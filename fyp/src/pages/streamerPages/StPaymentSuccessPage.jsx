@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
-const StPaymentSuccess = () => {
+const StPaymentSuccessPage = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState(null);
 
@@ -77,4 +77,4 @@ const StPaymentSuccess = () => {
   );
 };
 
-export default StPaymentSuccess;
+export default StPaymentSuccessPage;

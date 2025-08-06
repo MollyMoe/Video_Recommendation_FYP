@@ -44,5 +44,5 @@ async def upload_profile_image(request: Request, userType: str, userId: str, pro
         return {"message": "Profile image updated", "profileImage": image_url}
 
     except Exception as e:
-        print("❌ Upload Error:", e)
+
         raise HTTPException(status_code=500, detail="Upload failed")

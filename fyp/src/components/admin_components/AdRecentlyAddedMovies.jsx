@@ -7,7 +7,9 @@ const API = import.meta.env.VITE_API_BASE_URL;
 const AdRecentlyAddedMovies = () => {
     const [recentlyAddedPersistent, setRecentlyAddedPersistent] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const { updateFlag } = useOutletContext(); 
+
+    const outletContext = useOutletContext() || {};
+    const { updateFlag } = outletContext;
 
     useEffect(() => {
         const fetchRecentlyAddedPersistent = async () => {

@@ -22,7 +22,7 @@ const AdVideoManageGenrePage = () => {
         setGenres(res.data);
       } catch (err) {
         console.error("❌ Failed to load genres", err);
-      } finally {
+      }finally {
         setLoadingGenres(false);
       }
     };
@@ -72,6 +72,7 @@ const AdVideoManageGenrePage = () => {
         <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
           🎞️ Filter Movies by Genre
         </h1>
+
         {/* Genre Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
           {loadingGenres ? (
@@ -104,7 +105,7 @@ const AdVideoManageGenrePage = () => {
             </button>
           )}
         </div>
-        
+
         {/* Loading indicator */}
         {loadingMovies && selectedGenres.length > 0 && (
           <div className="text-white font-medium text-lg mb-4">

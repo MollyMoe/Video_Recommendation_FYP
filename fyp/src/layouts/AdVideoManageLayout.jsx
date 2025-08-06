@@ -1,21 +1,19 @@
 // AdVideoManageLayout.jsx
-import React, {useState} from "react";
+import React from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import AdSideButtons from "../components/admin_components/AdSideButtons";
-
 
 const tabs = [
   { label: "All Movies", path: "/admin/video/videoHomePage" },
   { label: "Top Liked", path: "/admin/video/manage" },
   { label: "Genres", path: "/admin/video/genre" },
-  { label: "Recently Added", path: "/admin/video/recently-added" }, //need to add in 
+
+  { label: "Recently Added", path: "/admin/video/recently-added" },
 ];
 
 const AdVideoManageLayout = () => {
   const location = useLocation();
   const currentPath = location.pathname;
-  const [updateFlag, setUpdateFlag] = useState(0); // default 0
-
 
   return (
     <>
@@ -38,7 +36,7 @@ const AdVideoManageLayout = () => {
         </div>
 
         {/* Dynamic page content renders here */}
-        <Outlet context={{ updateFlag }} />
+        <Outlet />
       </div>
     </>
   );

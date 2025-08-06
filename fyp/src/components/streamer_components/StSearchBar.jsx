@@ -5,9 +5,24 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
 const savedUser = JSON.parse(localStorage.getItem("user"));
 const userId = savedUser?.userId || "default";
 const [isFocused, setIsFocused] = useState(false);
+const [isSubscribed, setIsSubscribed] = useState(false);
 const wrapperRef = useRef(null);
 
 const storageKey = `searchHistory_${userId}`;
+
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnlineStatus = () => setIsOnline(navigator.onLine);
+
+    window.addEventListener("online", handleOnlineStatus);
+    window.addEventListener("offline", handleOnlineStatus);
+
+    return () => {
+      window.removeEventListener("online", handleOnlineStatus);
+      window.removeEventListener("offline", handleOnlineStatus);
+    };
+  }, []);
 
 const [history, setHistory] = useState(() => {
   const stored = localStorage.getItem(storageKey);
@@ -69,9 +84,19 @@ const [history, setHistory] = useState(() => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search..."
-          className="w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onKeyDown={(e) => {
+            if (!isSubscribed) return;
+            handleKeyDown(e);
+          }}
+          placeholder={ !isOnline
+          ? "Unavailable while offline!"
+          : !isSubscribed
+          ? "Subscribe to unlock search"
+          : "Search..."}
+          disabled={!isOnline || !isSubscribed} // 🔒 disable if offline
+          className= {`w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 ${
+            isOnline || isSubscribed ? "focus:ring-blue-500" : "cursor-not-allowed text-gray-400 bg-gray-200"
+          }`}
           aria-label="Search movies"
         />
         {searchQuery && (

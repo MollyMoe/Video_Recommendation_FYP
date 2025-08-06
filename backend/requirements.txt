@@ -6,4 +6,4 @@ python-dotenv
 pydantic[email]
 python-multipart
 cloudinary 
-pyspark==3.5.1
+stripe

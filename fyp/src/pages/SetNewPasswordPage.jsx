@@ -3,8 +3,7 @@ import { useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import logoPic from "../images/Cine-It.png";
 import { useSearchParams } from "react-router-dom";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const SetNewPasswordPage = () => {
   const [searchParams] = useSearchParams();

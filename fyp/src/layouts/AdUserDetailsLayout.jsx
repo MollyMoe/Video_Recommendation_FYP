@@ -1,8 +1,7 @@
 import { Outlet, useParams, useLocation, Link, NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-//import { API } from "@/config/api";
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const AdUserDetailsLayout = () => {
   const { id } = useParams();

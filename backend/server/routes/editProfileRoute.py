@@ -53,5 +53,5 @@ def update_streamer(request: Request, userId: str, body: StreamerUpdate):
         raise HTTPException(status_code=404, detail="User not found")
 
     updated_user["_id"] = str(updated_user["_id"])
-    return updated_user
 
+    return updated_user

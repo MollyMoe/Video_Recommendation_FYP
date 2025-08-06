@@ -33,7 +33,7 @@ async def create_checkout_session(request: Request):
 
         # ✅ Encode all values for the URL
         encoded_success_url = (
-            f"http://localhost:3000/#/success"
+            f"http://localhost:3000/#/success" #if deploy render frontend
             f"?userId={quote(user_id)}"
             f"&plan={quote(plan)}"
             f"&cycle={quote(cycle)}"

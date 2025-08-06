@@ -26,7 +26,7 @@ import AdUserOverviewPage from "./pages/adminPages/AdUserOverviewPage";
 import AdUserLikedMoviesPage from "./pages/adminPages/AdUserLikedMoviesPage";
 import AdUserWatchLaterPage from "./pages/adminPages/AdUserWatchLaterPage";
 import AdUserHistoryPage from "./pages/adminPages/AdUserHistoryPage";
-import AdUserFeedback from "./components/admin_components/AdUserFeedback";
+
 
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -72,7 +72,6 @@ function App() {
             <Route index element={<AdDashboardPage />} />
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
-            <Route path="feedback" element={<AdUserFeedback />} />
             <Route path="view/:id" element={<AdUserDetails />} />
             
             <Route path="video" element={<AdVideoManageLayout />}>

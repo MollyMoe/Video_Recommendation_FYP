@@ -5,6 +5,7 @@ import logoPic from "../../images/Cine-It.png";
 import { FaSearch } from "react-icons/fa";
 import StUserProfile from "./StUserProfile";
 
+
 const StNav = () => {
   const [open, setOpen] = useState(false);
 

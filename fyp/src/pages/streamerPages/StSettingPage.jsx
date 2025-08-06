@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
+import { API } from "@/config/api";
 
-const API = import.meta.env.VITE_API_BASE_URL;
 const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
 const StSettingPage = () => {
@@ -28,9 +28,20 @@ const StSettingPage = () => {
   const fileInputRef = useRef(null);
   const modalRef = useRef(null);
   const navigate = useNavigate();
-  const { profileImage, updateProfileImage, setCurrentRole } = useUser();
-
+  const { profileImage, updateProfileImage, setCurrentRole } = useUser();;
   const savedUser = JSON.parse(localStorage.getItem("user"));
+
+   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+    useEffect(() => {
+      const handleNetworkChange = () => setIsOnline(navigator.onLine);
+      window.addEventListener("online", handleNetworkChange);
+      window.addEventListener("offline", handleNetworkChange);
+      return () => {
+        window.removeEventListener("online", handleNetworkChange);
+        window.removeEventListener("offline", handleNetworkChange);
+      };
+    }, []);
 
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -40,40 +51,77 @@ const StSettingPage = () => {
   const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!savedUser?.userId) return;
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!savedUser?.userId) return;
 
-    setCurrentRole("streamer");
+  setCurrentRole("streamer");
 
-    // Step 1: Use cached image or fallback first
-    const cachedImage = localStorage.getItem("streamer_profileImage");
-    const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
-    updateProfileImage(fallbackImage, "streamer");
+  const cachedImage = localStorage.getItem("streamer_profileImage");
+  const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
+  updateProfileImage(fallbackImage, "streamer");
 
-    // Step 2: Try fetching latest from backend
-    const fetchUser = async () => {
-      try {
-        const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-        const data = await res.json();
+  const fetchUser = async () => {
+    if (!isOnline) {
+      console.warn("⚠️ Offline — using cached profile");
 
-        setFormData((prev) => ({
-          ...prev,
-          username: data.username || "",
-          contact: data.email || "",
-          genre: Array.isArray(data.genres) ? data.genres.join(", ") : "",
-        }));
+      const cached = window.electron?.getProfileUpdate?.();
+      if (cached) {
+        setFormData({
+          username: cached.username || "",
+          contact: cached.email || "",
+          genre: cached.genre || "",
+        });
 
-        if (data.profileImage) {
-          updateProfileImage(data.profileImage, "streamer");
-          localStorage.setItem("streamer_profileImage", data.profileImage);
-        }
-      } catch (err) {
-        console.warn("⚠️ Offline or failed to fetch profile:", err);
+        const image = cached.profileImage || cachedImage || defaultImage;
+        updateProfileImage(image, "streamer");
       }
-    };
+      return;
+    }
 
-    fetchUser();
-  }, []);
+    try {
+      const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+
+      if (!res.ok) {
+        const errorText = await res.text(); // prevent parsing non-JSON
+        throw new Error(`Server responded with ${res.status}: ${errorText}`);
+      }
+
+      const data = await res.json();
+
+      setFormData({
+        username: data.username || "",
+        contact: data.email || "",
+        genre: Array.isArray(data.genres)
+          ? data.genres.join(", ")
+          : typeof data.genre === "string"
+          ? data.genre
+          : "",
+      });
+
+      if (data.profileImage) {
+        updateProfileImage(data.profileImage, "streamer");
+        localStorage.setItem("streamer_profileImage", data.profileImage);
+      }
+
+      window.electron?.saveProfileUpdate({
+        userId: data.userId,
+        username: data.username,
+        email: data.email,
+        genre: Array.isArray(data.genres)
+          ? data.genres.join(", ")
+          : typeof data.genre === "string"
+          ? data.genre
+          : "",
+        profileImage: data.profileImage,
+      });
+    } catch (err) {
+      console.warn("⚠️ Failed to fetch profile:", err.message);
+    }
+  };
+
+  fetchUser();
+}, [isOnline]);
+
 
 const handleChange = async (e) => {
     const { name, value, files } = e.target;
@@ -121,39 +169,176 @@ const handleChange = async (e) => {
     fileInputRef.current.click();
   };
 
+// useEffect(() => {
+//   const handleOnline = () => setIsOnline(true);
+//   const handleOffline = () => setIsOnline(false);
+//   window.addEventListener("online", handleOnline);
+//   window.addEventListener("offline", handleOffline);
+//   return () => {
+//     window.removeEventListener("online", handleOnline);
+//     window.removeEventListener("offline", handleOffline);
+//   };
+// }, []);
+
+
 const handleSubmit = async (e) => {
   e.preventDefault();
-  try {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    console.log("Using ID for update:", savedUser.userId); 
 
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!savedUser?.userId) {
+    console.warn("❗ No saved user found.");
+    alert("User session expired. Please sign in again.");
+    return;
+  }
+
+  const updatePayload = {
+    username: formData.username,
+    genre: formData.genre,
+    userId: savedUser.userId,
+  };
+
+  // ✅ OFFLINE MODE
+  if (!isOnline) {
+    if (window.electron?.saveProfileUpdate) {
+      try {
+        window.electron.saveProfileUpdate(updatePayload);
+        setSuccessMessage("You're offline. Changes saved locally and will sync once you're online.");
+        setShowSuccessModal(true);
+      } catch (err) {
+        console.error("❌ Failed to save offline update:", err);
+        alert("Offline save failed. Please reconnect and try again.");
+      }
+    } else {
+      console.warn("⚠️ Electron bridge not available — offline save skipped");
+      alert("Offline update not supported in this environment.");
+    }
+    return;
+  }
+
+  // ✅ ONLINE MODE
+  try {
     const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        username: formData.username,
-        genre: formData.genre,
-      }),
+      body: JSON.stringify(updatePayload),
     });
 
-    if (!res.ok) throw new Error("Failed to update");
+    if (!res.ok) throw new Error(`Failed to update profile: ${res.status}`);
 
     const updated = await res.json();
-    setSuccessMessage("Profile updated!");
+    setSuccessMessage("Profile updated successfully!");
     setShowSuccessModal(true);
 
-    // ✅ Set flag to refresh homepage recommendations
+    // 🔄 Update localStorage for freshness
     localStorage.setItem("refreshAfterSettings", "true");
-
-    // ✅ Update user data in localStorage
     localStorage.setItem("user", JSON.stringify(updated));
   } catch (err) {
-    console.error("Update error:", err);
-    alert("Could not update profile.");
+    console.error("❌ Update error:", err);
+    alert("Could not update profile. Please try again later.");
   }
 };
+
+ useEffect(() => {
+  const refreshUser = async () => {
+    if (!isOnline || !savedUser?.userId) return;
+
+    try {
+      const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+      const data = await res.json();
+      localStorage.setItem("user", JSON.stringify(data)); // 🔄 Refresh localStorage
+    } catch (err) {
+      console.warn("Failed to refresh user:", err);
+    }
+  };
+
+  refreshUser();
+}, [isOnline]);
+
+
+useEffect(() => {
+  const syncOfflineChanges = async () => {
+    if (!window.electron?.getProfileUpdate) {
+      console.warn("⚠️ Electron bridge missing. Cannot sync offline profile.");
+      return;
+    }
+
+    const offlineData = window.electron.getProfileUpdate();
+    if (!offlineData || !offlineData.userId) {
+      console.log("🟢 No offline profile update to sync.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/api/editProfile/streamer/${offlineData.userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: offlineData.username,
+          genre: offlineData.genre,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server error ${res.status}: ${errText}`);
+      }
+
+      const updated = await res.json();
+      localStorage.setItem("user", JSON.stringify(updated));
+      localStorage.setItem("refreshAfterSettings", "true");
+
+      if (window.electron?.clearProfileUpdate) {
+        window.electron.clearProfileUpdate();
+      }
+
+      console.log("✅ Successfully synced offline profile update.");
+    } catch (err) {
+      console.warn("❌ Failed to sync offline profile update:", err.message || err);
+    }
+  };
+
+  if (isOnline) {
+    syncOfflineChanges();
+  }
+}, [isOnline]);
+
+// const handleSubmit = async (e) => {
+//   e.preventDefault();
+//   try {
+//     const savedUser = JSON.parse(localStorage.getItem("user"));
+//     console.log("Using ID for update:", savedUser.userId); 
+
+//     const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
+//       method: "PUT",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         username: formData.username,
+//         genre: formData.genre,
+//       }),
+//     });
+
+//     if (!res.ok) throw new Error("Failed to update");
+
+//     const updated = await res.json();
+//     setSuccessMessage("Profile updated!");
+//     setShowSuccessModal(true);
+
+//     // ✅ Set flag to refresh homepage recommendations
+//     localStorage.setItem("refreshAfterSettings", "true");
+
+//     // ✅ Update user data in localStorage
+//     localStorage.setItem("user", JSON.stringify(updated));
+//   } catch (err) {
+//     console.error("Update error:", err);
+//     alert("Could not update profile.");
+//   }
+// };
 
 
   const closeModal = () => {
@@ -266,7 +451,12 @@ const handleSubmit = async (e) => {
               <button
                 type="button"
                 onClick={triggerFileInput}
-                className="mt-20 mx-20 bg-white text-black shadow-md hover:bg-gray-200 border border-gray-300 font-small rounded-lg text-sm px-5 py-2.5 text-center"
+                disabled={!isOnline}
+                className={`mt-20 mx-20 shadow-md font-small rounded-lg text-sm px-5 py-2.5 text-center ${
+                  isOnline
+                    ? "bg-white text-black hover:bg-gray-200 border border-gray-300"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
                 Change Profile Pic
               </button>
@@ -304,7 +494,12 @@ const handleSubmit = async (e) => {
             <button
               type="button"
               onClick={() => setShowPasswordModal(true)}
-              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300"
+              disabled={!isOnline}
+              className={`w-32 text-xs px-6 py-2 rounded-lg shadow-md ${
+                isOnline
+                  ? "bg-white text-black hover:bg-gray-200 border border-gray-300"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
               Change Password
             </button>
@@ -314,11 +509,16 @@ const handleSubmit = async (e) => {
               <button
                 type="button"
                 onClick={() => setShowConfirm(true)}
-                className="w-32 text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-xs px-5 py-2.5 
-                text-center dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-800"
+                disabled={!isOnline}
+                className={`w-32 text-xs px-5 py-2.5 font-medium rounded-lg text-center ${
+                  isOnline
+                    ? "text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-800"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
               >
                 Delete Account
               </button>
+
 
               {/* Confirm Delete */}
               {showConfirm && (
@@ -443,4 +643,3 @@ const handleSubmit = async (e) => {
 };
 
 export default StSettingPage;
-

@@ -1,63 +1,108 @@
 import React, { useEffect, useState } from "react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-import StSearchBar from "../../components/streamer_components/StSearchBar";
-import {Play, Trash2, CheckCircle} from "lucide-react";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import {Play, Trash2, CheckCircle} from "lucide-react";
+import { API } from "@/config/api";
 
 const StWatchLaterPage = () => {
   const [watchLaterMovies, setWatchLaterMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
 
+  useEffect(() => {
+    const handleNetworkChange = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleNetworkChange);
+    window.addEventListener("offline", handleNetworkChange);
+    return () => {
+      window.removeEventListener("online", handleNetworkChange);
+      window.removeEventListener("offline", handleNetworkChange);
+    };
+  }, []);
+
+  const fetchSubscription = async (userId) => {
+  try {
+    let subscription;
+
+    if (isOnline) {
+      const res = await fetch(`${API}/api/subscription/${userId}`);
+      subscription = await res.json();
+      console.log("🔑 Online subscription data:", subscription);
+
+      // Save for offline use (entire object)
+      window.electron?.saveSubscription(subscription);
+    } else {
+      const offlineSub = window.electron?.getSubscription();
+      subscription = offlineSub?.userId === userId ? offlineSub : null;
+      console.log("📦 Offline subscription data:", subscription);
+    }
+
+    setIsSubscribed(subscription?.isActive ?? false);
+  } catch (err) {
+    console.error("Failed to fetch subscription:", err);
+    setIsSubscribed(false); // fallback
+  }
+};
 
   const fetchWatchLaterMovies = async (userId) => {
+  if (!userId) return;
+  setIsLoading(true);
+  const start = Date.now();
+  const minDelay = 500;
 
-    
-    if (!userId) return;
-    setIsLoading(true);
+  try {
+    let data = { SaveMovies: [] };
 
-    const start = Date.now(); //Track start time
-    try {
-
-
-
+    if (isOnline) {
+      // ✅ Online: fetch from backend
       const res = await fetch(`${API}/api/movies/watchLater/${userId}`);
-      const data = await res.json();
+      data = await res.json();
 
-      console.log("🎬 Watch Later response:", data);
-
-      // Remove duplicates by _id or movieId
-      const uniqueMovies = [];
-      const seen = new Set();
-
-      for (const movie of data.SaveMovies || []) {
-        const id = movie._id || movie.movieId;
-        if (!seen.has(id)) {
-          seen.add(id);
-          uniqueMovies.push(movie);
-        }
+      // ✅ Save for offline viewing
+      if (window.electron?.saveSavedQueue) {
+        window.electron.saveSavedQueue(data.SaveMovies);
       }
-
-      setWatchLaterMovies(uniqueMovies);
-    } catch (err) {
-      console.error("❌ Failed to fetch watch later movies:", err);
-    } finally {
-      const elapsed = Date.now() - start;
-      const minDelay = 500; // milliseconds
-  
-      setTimeout(() => {
-        setIsLoading(false);
-      }, Math.max(0, minDelay - elapsed)); // ensure at least 500ms visible
+    } else if (window.electron?.getSavedQueue) {
+      // ✅ Offline: load from local file
+      const offlineQueue = await window.electron.getSavedQueue();
+      data.SaveMovies = offlineQueue || [];
+    } else {
+      console.warn("⚠️ Offline and no preload getSavedQueue available");
     }
-  };
+    console.log("📽 Saved movies response:", data);
+
+    // ✅ Deduplicate
+    const uniqueMovies = [];
+    const seen = new Set();
+    
+    for (const movie of data.SaveMovies || []) {
+      const id = movie._id || movie.movieId;
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        uniqueMovies.push(movie);
+      }
+    }
+
+    setWatchLaterMovies(uniqueMovies);
+  } catch (err) {
+    console.error("❌ Failed to fetch watch later movies:", err);
+  } finally {
+    const elapsed = Date.now() - start;
+    setTimeout(() => {
+      setIsLoading(false);
+    }, Math.max(0, minDelay - elapsed));
+  }
+};
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
       fetchWatchLaterMovies(savedUser.userId);
+      fetchSubscription(savedUser.userId);
     }
   }, []);
 
@@ -95,52 +140,99 @@ const StWatchLaterPage = () => {
     }
   };
 
-  const handleRemove = async (movieId) => {
-
+  useEffect(() => {
+  const syncSavedQueue = async () => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!movieId || !savedUser?.userId) {
-      console.warn("Missing movieId or userId");
-      return;
+    if (!savedUser?.userId) return;
+
+    const saved = window.electron.getRawSavedQueue?.() || [];
+
+    for (const action of saved) {
+      try {
+        if (action.type === "delete") {
+          await fetch(`${API}/api/movies/save/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: savedUser.userId,
+              movieId: action.movieId,
+            }),
+          });
+        } else if (action.movie) {
+          await fetch(`${API}/api/movies/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: savedUser.userId,
+              movie: action.movie,
+            }),
+          });
+        }
+      } catch (err) {
+        console.warn("❌ Failed to sync saved movie:", err);
+      }
     }
-  
-    try {
-      const res = await fetch(`${API}/api/movies/watchLater/delete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: savedUser.userId,
-          movieId: movieId,
-        }),
-      });
-  
 
-      const data = await res.json();
-      console.log("🗑️ Remove response:", data);
-
-      console.log("Before removal:", watchLaterMovies.map(m => typeof m.movieId), typeof movieId);
-
-  
-      // ✅ Remove movie from frontend UI state
-      setWatchLaterMovies((prev) =>
-        prev.filter((m) => m.movieId.toString() !== movieId.toString())
-      );
-
-      setShowSuccess(true); // ✅ show popup
-      setTimeout(() => setShowSuccess(false), 2000); // auto-hide
-    } catch (err) {
-      console.error("❌ Error removing liked movie:", err);
-    }
+    window.electron.clearSavedQueue?.();
+    console.log("✅ Synced saved queue");
   };
-  
-  
+
+  if (isOnline) syncSavedQueue();
+}, [isOnline]);
+
+
+
+  const handleRemove = async (movieId) => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+  if (!movieId || !savedUser?.userId) {
+    console.warn("⚠️ Missing movieId or userId");
+    return;
+  }
+
+  // ✅ Remove from UI
+  setWatchLaterMovies((prev) =>
+    prev.filter((m) => m.movieId?.toString() !== movieId.toString())
+  );
+  setShowSuccess(true);
+  setTimeout(() => setShowSuccess(false), 2000);
+
+  if (!isOnline) {
+    console.log("📦 Offline — removing from saved queue");
+    window.electron?.removeFromSavedQueue?.(movieId);
+    return;
+  }
+
+  // ✅ Online API removal
+  try {
+    const res = await fetch(`${API}/api/movies/watchLater/delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: savedUser.userId,
+        movieId,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Server error ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    console.log("🗑️ Removed from Watch Later (online):", data);
+  } catch (err) {
+    console.error("❌ Failed to remove from watch later:", err.message || err);
+    alert("Could not remove movie. Try again later.");
+  }
+};
 
   
-
   return (
     <div className="p-4">
       <StNav />
+
       <StSideBar />
       <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
@@ -149,28 +241,32 @@ const StWatchLaterPage = () => {
               No saved movies found.
             </p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {watchLaterMovies.map((movie) => (
                 <div
                   key={movie._id || movie.movieId}
-                  className="bg-white rounded-lg shadow p-2"
+                  className="bg-white rounded-lg shadow p-2 flex flex-col justify-between h-[320px]"
                 >
                   <img
                     src={movie.poster_url || "https://via.placeholder.com/150"}
                     alt={movie.title || "No Title"}
                     className="rounded mb-2 w-full h-60 object-cover"
                   />
-                  <h3 className="text-sm font-semibold">{movie.title}</h3>
+                  <h3 className="text-sm font-semibold mb-2 line-clamp-2">{movie.title}</h3>
 
-                  <div className="flex justify-center gap-2 mt-2">
+                  <div className="flex justify-center gap-2 mt-auto">
                     {/* play btn */}
                     <button
                       onClick={() => {
                         console.log("▶️ Play clicked for:", movie.movieId);
                         handlePlay(movie.movieId, movie.trailer_url); // ✅ Pass trailerUrl here
                       }}
-                      className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200"
-                    >
+                     disabled={!isSubscribed}
+                      className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
+                      ${isSubscribed
+                        ? "bg-white text-black hover:bg-gray-200"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                  >
                       <Play className="w-3 h-3 mr-1 fill-black" />
                       Play
                     </button>
@@ -178,8 +274,12 @@ const StWatchLaterPage = () => {
                     {/* remove btn */}
                     <button
                       onClick={() => handleRemove(movie.movieId)}
-                      className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 mt-1"
-                    >
+                      disabled={!isSubscribed}
+                      className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
+                      ${isSubscribed
+                        ? "bg-white text-black hover:bg-gray-200"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                  >
                       <Trash2 className="w-3 h-3 mr-1 fill-black" />
                       Remove
                     </button>

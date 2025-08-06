@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 
+
 const StSideBar = () => {
   const StSidebarButton = ({ to, label, current, children }) => {
     return (
@@ -91,17 +92,12 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
              <StSidebarButton
               to="/home/subscription"
               label="Subscription"
               current={location.pathname === "/home/subscription"}
               Manage Subscriptions
             />
-            </a>
           </li>
         </ul>
       </div>

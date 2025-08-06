@@ -15,7 +15,6 @@
 # from server.routes.subscriptionRoute import router as subscription_router
 # from server.routes.stripeRoute import router as stripe_router
 
-
 # # Load .env
 # env_path = Path(__file__).resolve().parent / 'server' / '.env'
 # load_dotenv(dotenv_path=env_path)
@@ -61,8 +60,7 @@
 
 # # CORS
 # origins = [ 
-#     "http://localhost:3000",
-#     "http://localhost:5173",  
+#     "http://localhost:3000",  
 #     "https://cineit-frontend.onrender.com",
 #     "https://cineit.onrender.com",
 # ]
@@ -111,6 +109,7 @@
 #     feedback_items = list(app.state.support_db.feedback.find({}, {"_id": 0}))
 #     return feedback_items
 
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
@@ -129,6 +128,8 @@ from server.routes.feedbackRoute import router as feedback_router
 from server.routes.subscriptionRoute import router as subscription_router
 from server.routes.stripeRoute import router as stripe_router
 
+from dynamic_env import set_env
+set_env()
 # Load .env
 env_path = Path(__file__).resolve().parent / 'server' / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -215,7 +216,7 @@ app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
-app.include_router(feedback_router, prefix="/api")
+app.include_router(feedback_router, prefix="/api/feedback")
 app.include_router(subscription_router, prefix="/api")
 app.include_router(stripe_router, prefix="/api")
 

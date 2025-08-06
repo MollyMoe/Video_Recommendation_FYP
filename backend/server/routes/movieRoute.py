@@ -83,7 +83,7 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
         print("❌ Error:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
-
+# Liked Movies
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
     data = await request.json()
@@ -119,19 +119,33 @@ def get_liked_movies(userId: str, request: Request):
 
     # Get all matching movies
     movies_cursor = movies_collection.find(
-        {"movieId": {"$in": liked_ids}},
-        {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
-    )
+            {"movieId": {"$in": liked_ids}},
+            {
+                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+                "trailer_url": 1, "trailer_key": 1, "genres": 1,
+                "tmdb_id": 1, "overview": 1, "director": 1,
+                "producers": 1, "actors": 1
+            }
+        )
 
-    # Remove duplicates by movieId
+        # Convert genres string to array and deduplicate
     seen = set()
     unique_movies = []
     for movie in movies_cursor:
-        mid = movie.get("movieId")
-        if mid not in seen:
-            seen.add(mid)
-            movie["_id"] = str(movie["_id"])
-            unique_movies.append(movie)
+            # Convert genres string to list
+            genres_raw = movie.get("genres", "")
+            if isinstance(genres_raw, str):
+                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
+            elif isinstance(genres_raw, list):
+                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
+
+            # Deduplicate by movieId
+            mid = movie.get("movieId")
+            if mid not in seen:
+                seen.add(mid)
+                movie["_id"] = str(movie["_id"])
+                unique_movies.append(movie)
+
 
     return {"likedMovies": unique_movies}
 
@@ -188,19 +202,31 @@ def get_history_movies(userId: str, request: Request):
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": history_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
+            {
+                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+                "trailer_url": 1, "trailer_key": 1, "genres": 1,
+                "tmdb_id": 1, "overview": 1, "director": 1,
+                "producers": 1, "actors": 1
+            }
         )
 
-        # Remove duplicates by movieId
+        # Convert genres string to array and deduplicate
         seen = set()
         unique_movies = []
         for movie in movies_cursor:
+            # Convert genres string to list
+            genres_raw = movie.get("genres", "")
+            if isinstance(genres_raw, str):
+                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
+            elif isinstance(genres_raw, list):
+                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
+
+            # Deduplicate by movieId
             mid = movie.get("movieId")
             if mid not in seen:
                 seen.add(mid)
                 movie["_id"] = str(movie["_id"])
                 unique_movies.append(movie)
-
 
 
         return {"historyMovies": unique_movies}
@@ -249,18 +275,32 @@ def get_watchLater_movies(userId: str, request: Request):
 
         movies_cursor = movies_collection.find(
             {"movieId": {"$in": saveMovie_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1 }
+            {
+                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+                "trailer_url": 1, "trailer_key": 1, "genres": 1,
+                "tmdb_id": 1, "overview": 1, "director": 1,
+                "producers": 1, "actors": 1
+            }
         )
 
-        # Remove duplicates by movieId
+        # Convert genres string to array and deduplicate
         seen = set()
         unique_movies = []
         for movie in movies_cursor:
+            # Convert genres string to list
+            genres_raw = movie.get("genres", "")
+            if isinstance(genres_raw, str):
+                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
+            elif isinstance(genres_raw, list):
+                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
+
+            # Deduplicate by movieId
             mid = movie.get("movieId")
             if mid not in seen:
                 seen.add(mid)
                 movie["_id"] = str(movie["_id"])
                 unique_movies.append(movie)
+
 
         return {"SaveMovies": unique_movies}
 
@@ -354,7 +394,7 @@ async def remove_from_history(request: Request):
         return {"message": "Movie removed from history"}
     else:
         return {"message": "Movie not found or already removed"}
-
+    
 
 def _process_and_filter_movies(movie_list: List[Dict]) -> List[Dict]:
 
@@ -423,7 +463,7 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
         
         random.shuffle(movies_cursor)
         processed_recommendations = _process_and_filter_movies(movies_cursor)
-        final_recommendations = processed_recommendations[:99]
+        final_recommendations = processed_recommendations[:60]
 
         print(f"✅ Regenerated and filtered {len(final_recommendations)} movies. Saving to DB.")
         db.recommended.update_one(
@@ -681,6 +721,7 @@ def _als_filtered(userId: str, interaction_collection: str, request: Request, ex
         print(f"❌ _als_filtered function failed: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
 # GET /api/movies/counts/:userId
 @router.get("/counts/{userId}")
 def get_user_counts(userId: str, request: Request):
@@ -897,6 +938,7 @@ def get_recently_added_persistent_movies(request: Request, batch_id: Optional[st
     except Exception as e:
         print("❌ Error fetching recently added persistent movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recently added movies")
+
 
 @router.get("/all-genres")
 async def get_all_genres(request: Request):

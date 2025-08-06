@@ -1,4 +1,3 @@
-
 import userProfile from "../../images/User-profile.png";
 import { useUser } from "../../context/UserContext";
 import React, { useEffect, useState } from "react";
