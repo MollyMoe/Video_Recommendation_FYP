@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 console.log("API =", API); 
 const defaultImage = `${API}/uploads/profile.jpg`;

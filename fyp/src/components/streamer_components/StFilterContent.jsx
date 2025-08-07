@@ -5,7 +5,7 @@ import MovieModal from "../movie_components/MovieModal";
 import MovieCard from "../movie_components/MovieCard";
 import offlineFallback from "../../images/offlineFallback.jpg";
 
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const StFilterContent = ({ submittedQuery, movies, isLoading, isSearching, setMovies }) => {
   const [selectedMovie, setSelectedMovie] = useState(null);

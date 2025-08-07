@@ -3,7 +3,7 @@ import { useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import logoPic from "../images/Cine-It.png";
 import { useSearchParams } from "react-router-dom";
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const SetNewPasswordPage = () => {
   const [searchParams] = useSearchParams();

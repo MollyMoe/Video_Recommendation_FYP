@@ -5,7 +5,7 @@ import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 
 const StHistoryPage = () => {

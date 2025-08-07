@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios"; // Using axios for consistency
 import logoPic from "../images/Cine-It.png";
 
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const InputGenrePage = () => {
   const navigate = useNavigate();

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { RiVisaFill } from "react-icons/ri";
 import { FaCcMastercard, FaCcAmex, FaApplePay, FaGooglePay } from "react-icons/fa";
 
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const StBillingForm = ({ onSuccess, onBack }) => {
   const user = JSON.parse(localStorage.getItem("user"));

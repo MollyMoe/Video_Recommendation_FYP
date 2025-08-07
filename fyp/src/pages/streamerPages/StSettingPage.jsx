@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 

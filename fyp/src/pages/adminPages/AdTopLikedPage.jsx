@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const AdTopLikedPage = () => {
   const [topMovies, setTopMovies] = useState([]);

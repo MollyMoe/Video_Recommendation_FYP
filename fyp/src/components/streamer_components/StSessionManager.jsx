@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 
 const StSessionManager = () => {

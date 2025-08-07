@@ -8,7 +8,7 @@ import MovieCard from "../movie_components/MovieCard";
 import MovieModal from "../movie_components/MovieModal";
 import FilterButtons from "../movie_components/FilterButtons";
 
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 function StHomeContent({ searchQuery }) {
 

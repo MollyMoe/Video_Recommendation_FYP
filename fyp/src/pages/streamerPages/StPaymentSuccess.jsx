@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const StPaymentSuccessPage = () => {
   const [isProcessing, setIsProcessing] = useState(true);

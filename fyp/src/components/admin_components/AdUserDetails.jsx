@@ -1,7 +1,7 @@
 import { Link, useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const AdUserDetails = () => {
   const location = useLocation();

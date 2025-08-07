@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 function ResetPasswordPage() {
   const [email, setEmail] = useState("");

@@ -3,7 +3,7 @@
 // import StNav from "../../components/streamer_components/StNav";
 // import StSideBar from "../../components/streamer_components/StSideBar";
 
-// import { API } from "@/config/api";
+// import { getAPI } from "@/config/api";
 
 
 // const StSendFeedbackPage = () => {
@@ -142,7 +142,7 @@ import { useState, useRef, useEffect } from "react";
 import { BadgeCheck, Info } from "lucide-react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-import { API } from "@/config/api";
+import { getAPI } from "@/config/api";
 
 const StSendFeedbackPage = () => {
   const [feedback, setFeedback] = useState("");
