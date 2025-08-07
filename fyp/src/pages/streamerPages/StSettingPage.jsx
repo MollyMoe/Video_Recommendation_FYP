@@ -2,9 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
@@ -259,16 +257,22 @@ const handleSubmit = async (e) => {
   }
 };
 
- useEffect(() => {
+useEffect(() => {
   const refreshUser = async () => {
-    if (!isOnline || !savedUser?.userId) return;
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!isOnline || !savedUser?.userId) {
+      console.log("⚠️ Skipping refresh — offline or no user");
+      return;
+    }
 
     try {
       const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
-      localStorage.setItem("user", JSON.stringify(data)); // 🔄 Refresh localStorage
+      localStorage.setItem("user", JSON.stringify(data));
+      console.log("✅ Refreshed user data");
     } catch (err) {
-      console.warn("Failed to refresh user:", err);
+      console.warn("❌ Failed to refresh user:", err.message || err);
     }
   };
 
@@ -310,10 +314,7 @@ useEffect(() => {
       localStorage.setItem("user", JSON.stringify(updated));
       localStorage.setItem("refreshAfterSettings", "true");
 
-      if (window.electron?.clearProfileUpdate) {
-        window.electron.clearProfileUpdate();
-      }
-
+      window.electron?.clearProfileUpdate?.();
       console.log("✅ Successfully synced offline profile update.");
     } catch (err) {
       console.warn("❌ Failed to sync offline profile update:", err.message || err);
@@ -324,6 +325,7 @@ useEffect(() => {
     syncOfflineChanges();
   }
 }, [isOnline]);
+
 
 // const handleSubmit = async (e) => {
 //   e.preventDefault();

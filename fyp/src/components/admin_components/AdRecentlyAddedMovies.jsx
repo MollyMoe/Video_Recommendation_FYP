@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useOutletContext } from "react-router-dom";
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const AdRecentlyAddedMovies = () => {
   const [recentlyAddedPersistent, setRecentlyAddedPersistent] = useState([]);

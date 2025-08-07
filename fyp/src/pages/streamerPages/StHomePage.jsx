@@ -3,9 +3,7 @@ import StHomeContent from "../../components/streamer_components/StHomeContent";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const StHomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");

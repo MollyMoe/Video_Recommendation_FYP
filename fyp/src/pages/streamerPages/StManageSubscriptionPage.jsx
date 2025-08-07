@@ -3,9 +3,7 @@ import StPlans from "../../components/streamer_components/StPlans";
 import StBillingForm from "../../components/streamer_components/StBillingForm";
 import { FaChevronRight } from "react-icons/fa";
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const StManageSubscriptionPage = () => {
   const [subscription, setSubscription] = useState(null);

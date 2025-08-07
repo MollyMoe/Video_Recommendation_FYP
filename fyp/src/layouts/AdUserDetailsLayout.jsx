@@ -2,9 +2,7 @@ import { Outlet, useParams, useLocation, Link, NavLink } from "react-router-dom"
 import { useEffect, useState } from "react";
 import { House, ArrowLeft } from "lucide-react";
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const AdUserDetailsLayout = () => {
   const { id } = useParams();

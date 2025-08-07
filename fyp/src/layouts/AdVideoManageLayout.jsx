@@ -5,9 +5,7 @@ import axios from "axios";
 import AdSideButtons from "../components/admin_components/AdSideButtons";
 import { useState } from "react";
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const tabs = [
   { label: "All Movies", path: "/admin/video/videoHomePage" },

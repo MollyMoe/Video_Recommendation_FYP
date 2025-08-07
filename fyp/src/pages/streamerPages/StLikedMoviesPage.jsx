@@ -3,9 +3,7 @@ import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);

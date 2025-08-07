@@ -2,9 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlobal, currentRecentMoviesGlobal }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);

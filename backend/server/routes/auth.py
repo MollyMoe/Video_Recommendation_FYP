@@ -426,3 +426,7 @@ async def update_signout_time(request: Request):
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"message": "Sign-out time updated successfully"}
+
+@router.get("/ping")
+async def ping():
+    return {"status": "ok"}

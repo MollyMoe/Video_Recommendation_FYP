@@ -34,7 +34,7 @@ import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAdded
 import AdUserFeedback from "./components/admin_components/AdUserFeedback";
 import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
 import AdSuspensionDetailPage from "./pages/adminPages/AdSuspensionDetailPage";
-import { getAPI } from "./config/api";
+import { API } from "./config/api";
 import { useEffect } from "react";
 
 
@@ -45,7 +45,7 @@ function App() {
 
       if (queued.length > 0) {
         queued.forEach((item) => {
-          fetch(`${getAPI()}/api/feedback`, {
+          fetch(`${API()}/api/feedback`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(item),

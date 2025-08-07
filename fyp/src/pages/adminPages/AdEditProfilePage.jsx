@@ -3,9 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BadgeCheck } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const AdEditProfilePage = () => {
   const [formData, setFormData] = useState({

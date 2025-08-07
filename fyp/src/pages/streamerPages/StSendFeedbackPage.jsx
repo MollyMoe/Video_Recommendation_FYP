@@ -141,9 +141,7 @@ import { useState, useRef, useEffect } from "react";
 import { BadgeCheck, Info } from "lucide-react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const StSendFeedbackPage = () => {
   const [feedback, setFeedback] = useState("");

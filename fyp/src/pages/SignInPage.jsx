@@ -4,9 +4,7 @@ import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { syncOfflineCache } from "@/utils/syncOfflineCache";
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 
 function SignInPage() {

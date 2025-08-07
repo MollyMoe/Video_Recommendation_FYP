@@ -1,9 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);

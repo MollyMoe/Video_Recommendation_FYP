@@ -1,4 +1,4 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -150,7 +150,7 @@ contextBridge.exposeInMainWorld('electron', {
     window.dispatchEvent(new Event('offline'));
   },
   // until here
-  
+
   getSession: () => {
     try {
       return JSON.parse(fs.readFileSync(sessionFilePath, 'utf-8'));
@@ -245,6 +245,45 @@ contextBridge.exposeInMainWorld('electron', {
     });
   },
 
+    // ✅ Feedback
+  queueFeedback: (feedback) => {
+    try {
+      let list = [];
+      if (fs.existsSync(feedbackFilePath)) {
+        list = JSON.parse(fs.readFileSync(feedbackFilePath, 'utf-8'));
+      }
+      list.push(feedback);
+      fs.writeFileSync(feedbackFilePath, JSON.stringify(list, null, 2), 'utf-8');
+      console.log("📝 Feedback queued offline.");
+    } catch (err) {
+      console.error("❌ Failed to queue feedback:", err);
+    }
+  },
+  getFeedbackQueue: () => {
+    try {
+      if (fs.existsSync(feedbackFilePath)) {
+        return JSON.parse(fs.readFileSync(feedbackFilePath, 'utf-8'));
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+  clearFeedbackQueue: () => {
+    try {
+      if (fs.existsSync(feedbackFilePath)) {
+        fs.unlinkSync(feedbackFilePath);
+        console.log("🧹 Cleared feedback queue.");
+      }
+    } catch (err) {
+      console.error("❌ Failed to clear feedback queue:", err);
+    }
+  },
+
+  // ✅ Network status helpers
+  onOnline: () => window.dispatchEvent(new Event('online')),
+  onOffline: () => window.dispatchEvent(new Event('offline')),
+  
   //Theme 
   saveTheme: (data) => safeWrite(themePath, data),
   getTheme: () => safeRead(themePath, { darkMode: false }),
@@ -540,23 +579,4 @@ clearSavedQueue: () => {
   }
 },
 
-});
-
-// Send online/offline status to the renderer process
-contextBridge.exposeInMainWorld('electron', {
-  onOnline: () => {
-    window.dispatchEvent(new Event('online'));
-  },
-  onOffline: () => {
-    window.dispatchEvent(new Event('offline'));
-  },
-});
-
-// Detect when the system goes online or offline
-window.addEventListener('online', () => {
-  window.electron.onOnline();
-});
-
-window.addEventListener('offline', () => {
-  window.electron.onOffline();
 });

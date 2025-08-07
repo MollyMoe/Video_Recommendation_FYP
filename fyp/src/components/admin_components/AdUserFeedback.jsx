@@ -4,9 +4,7 @@ import AdNav from "../../components/admin_components/AdNav";
 import AdSearch from "../../components/admin_components/AdSearch";
 import { ArrowLeft } from "lucide-react";
 
-import { getAPI } from "@/config/api";
-
-const API = getAPI();
+import { API } from "@/config/api";
 
 const AdUserFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
