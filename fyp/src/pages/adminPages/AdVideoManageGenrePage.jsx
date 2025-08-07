@@ -4,7 +4,7 @@ import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
 
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const AdVideoManageGenrePage = () => {
   const [genres, setGenres] = useState([]);

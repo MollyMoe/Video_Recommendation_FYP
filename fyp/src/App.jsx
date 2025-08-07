@@ -22,7 +22,7 @@ import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription
 import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
 import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
-import AdVideoManagePage from "./pages/adminPages/AdVideoManagePage";
+import AdTopLikedPage from "./pages/adminPages/AdTopLikedPage";
 import AdVideoManageLayout from "./layouts/AdVideoManageLayout";
 import AdUserDetailsLayout from "./layouts/AdUserDetailsLayout";
 import AdUserOverview from "./pages/adminPages/AdUserOverview";
@@ -75,7 +75,7 @@ function App() {
               <Route path="video" element={<AdVideoManageLayout />}>
                 <Route index element={<Navigate to="videoHomePage" replace />} />
                 <Route path="videoHomePage" element={<AdVideoHomePage />} />
-                <Route path="manage" element={<AdVideoManagePage />} />
+                <Route path="manage" element={<AdTopLikedPage />} />
                 <Route path="genre" element={<AdVideoManageGenrePage />} />
                 <Route path="recently-added" element={<AdRecentlyAddedMovies />} />
               </Route>

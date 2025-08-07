@@ -6,7 +6,7 @@ const savedUser = JSON.parse(localStorage.getItem("user"));
 const userId = savedUser?.userId || "default";
 const [isFocused, setIsFocused] = useState(false);
 const wrapperRef = useRef(null);
-const storageKey = `searchHistory_${userId}`;
+const storageKey = `searchHistory_main_${userId}`;
 const [isOnline, setIsOnline] = useState(navigator.onLine);
 const isSearchDisabled = !isOnline || !isSubscribed;
 

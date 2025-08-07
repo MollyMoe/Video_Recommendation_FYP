@@ -10,7 +10,7 @@ import FilterButtons from "../movie_components/FilterButtons";
 
 import { API } from "@/config/api";
 
-function StHomeContent({ userId, searchQuery }) {
+function StHomeContent({ searchQuery }) {
 
   const [movies, setMovies] = useState([]);
   const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
@@ -56,6 +56,33 @@ function StHomeContent({ userId, searchQuery }) {
       window.removeEventListener("offline", handleOnlineStatus);
     };
   }, []);
+
+   const fetchSubscription = async (userId) => {
+  try {
+    let subscription;
+
+    if (isOnline) {
+      const res = await fetch(`${API}/api/subscription/${userId}`);
+      subscription = await res.json();
+      console.log("🔑 Online subscription data:", subscription);
+      window.electron?.saveSubscription(subscription);
+    } else {
+      const offlineSub = window.electron?.getSubscription();
+      subscription = offlineSub?.userId === userId ? offlineSub : null;
+      console.log("📦 Offline subscription data:", subscription);
+    }
+
+    console.log("🧪 Subscription before setting:", subscription);
+    setIsSubscribed(subscription?.isActive === true); // force exact boolean match
+  } catch (err) {
+    console.error("Failed to fetch subscription:", err);
+    setIsSubscribed(false); // fallback
+  }
+};
+
+useEffect(() => {
+  console.log("🎯 Updated isSubscribed:", isSubscribed);
+}, [isSubscribed]);
 
   
   const allAvailableGenres = useMemo(() => {
@@ -328,6 +355,7 @@ const handleAction = async (actionType, movieId) => {
     if (!movieId || !savedUser?.userId) return;
 
     const actions = {
+      history: { url: "history", message: null },
       like: { url: "like", message: "Movie Liked!" },
       save: { url: "watchLater", message: "Saved to Watch Later!" },
       delete: { url: "recommended/delete", message: "Removed from recommendations" }
@@ -372,13 +400,11 @@ const handleHistory = (movie) => {
     }
   }, [savedUser?.userId, username]);
 
-  useEffect(() => {
-    if (savedUser?.userId) {
-      axios.get(`${API}/api/subscription/${savedUser.userId}`)
-        .then(res => setIsSubscribed(res.data.isActive))
-        .catch(() => setIsSubscribed(false));
-    }
-  }, [savedUser?.userId]);
+useEffect(() => {
+  if (savedUser?.userId) {
+    fetchSubscription(savedUser.userId);
+  }
+}, [savedUser?.userId, isOnline]);
 
   
 
@@ -553,13 +579,13 @@ const fetchAllCarouselData = async () => {
               />
               
               {/* These carousels will NOT auto-scroll because the prop is not passed (it defaults to false) */}
-              {/* {interactionCounts.liked >= 5 && likedMovies.length > 0 && ( */}
+              {interactionCounts.liked >= 5 && likedMovies.length > 0 && (
                 <MovieCarousel 
                   title={<span className="dark:text-white">Because you liked <span className="italic text-purple-500">{likedTitles.join(", ")}</span></span>}
                   movies={likedMovies}
                   onMovieClick={setSelectedMovie}
                 />
-              {/* )} */}
+              )}
               
               {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
                 <MovieCarousel
@@ -582,11 +608,10 @@ const fetchAllCarouselData = async () => {
             <div>
               <div className="flex justify-between items-center mb-4 px-4">
                 <h2 className="text-2xl font-semibold text-black dark:text-white">Recommended for You</h2>
-                {/* change this button */}
                 <button
                   onClick={handleRegenerate}
                   disabled={!isSubscribed || isLoading}
-                  className="font-medium border border-gray-400 px-6 py-2 rounded-lg text-sm shadow-md disabled:opacity-50 disabled:bg-gray-300 bg-white text-black hover:bg-gray-200 transition-transform active:scale-95 group relative"
+                  className="font-medium border border-gray-400 px-6 py-2 rounded-lg text-sm shadow-md disabled:opacity-50 bg-white text-black hover:bg-gray-200 transition-transform active:scale-95"
                 >
                   Regenerate
                   {!isSubscribed && (
@@ -624,6 +649,7 @@ const fetchAllCarouselData = async () => {
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
         isSubscribed={isSubscribed}
+        isOnline={isOnline}
         onPlay={handleHistory}
         onLike={(movieId) => handleAction('like', movieId)}
         onSave={(movieId) => handleAction('save', movieId)}

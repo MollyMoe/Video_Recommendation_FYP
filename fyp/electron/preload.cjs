@@ -140,6 +140,14 @@ contextBridge.exposeInMainWorld('electron', {
       console.error("❌ Failed to save session offline:", err);
     }
   },
+  
+  // ✅ Handle online/offline status
+  onOnline: () => {
+    window.dispatchEvent(new Event('online'));
+  },
+  onOffline: () => {
+    window.dispatchEvent(new Event('offline'));
+  },
   getSession: () => {
     try {
       return JSON.parse(fs.readFileSync(sessionFilePath, 'utf-8'));
@@ -529,4 +537,23 @@ clearSavedQueue: () => {
   }
 },
 
+});
+
+// Send online/offline status to the renderer process
+contextBridge.exposeInMainWorld('electron', {
+  onOnline: () => {
+    window.dispatchEvent(new Event('online'));
+  },
+  onOffline: () => {
+    window.dispatchEvent(new Event('offline'));
+  },
+});
+
+// Detect when the system goes online or offline
+window.addEventListener('online', () => {
+  window.electron.onOnline();
+});
+
+window.addEventListener('offline', () => {
+  window.electron.onOffline();
 });

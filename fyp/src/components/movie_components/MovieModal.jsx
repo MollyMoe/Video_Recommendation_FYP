@@ -8,6 +8,7 @@ function MovieModal({
   isOpen, 
   onClose, 
   isSubscribed,
+  isOnline,
   onPlay,
   onLike,
   onSave,
@@ -30,44 +31,50 @@ function MovieModal({
             <div className="flex flex-col justify-center space-y-3 flex-grow">
               <h2 className="text-2xl font-semibold">{movie.title}</h2>
               <p className="text-sm text-gray-700">
-                <strong>Genres:</strong> {Array.isArray(movie.genres) ? movie.genres.join(", ") : movie.genres || "N/A"}
+                {Array.isArray(movie.genres) ? movie.genres.join(" | ") : movie.genres || "N/A"}
               </p>
               <p className="text-sm text-gray-700"><strong>Director:</strong> {movie.director || "N/A"}</p>
               <p className="text-sm text-gray-700"><strong>Actors:</strong> {Array.isArray(movie.actors) ? movie.actors.join(", ") : movie.actors || "N/A"}</p>
               <p className="text-sm text-gray-700"><strong>Overview:</strong> {movie.overview || "N/A"}</p>
-              <p className="font-semibold text-sm">тнР{movie.predicted_rating !== undefined ? Number(movie.predicted_rating).toFixed(1) : "N/A"}</p>
+              <p className="font-semibold text-sm">⭐ Rate:{movie.predicted_rating !== undefined ? Number(movie.predicted_rating).toFixed(1) : "N/A"}</p>
             </div>
           </div>
 
-          {/* newly added */}
-          {/* This banner shows up immediately if the user is not subscribed */}
-          {!isSubscribed && (
+              {/* newly added /}
+          {/ This banner shows up immediately if the user is not subscribed */}
+          {!isSubscribed ? (
             <div className="bg-purple-100 border-l-4 border-purple-500 text-purple-700 p-3 rounded-lg text-sm">
                 <p>
                     <strong className="font-semibold">Feature Locked:</strong> Please subscribe to enable Play, Like, Save, and Delete actions.
                 </p>
             </div>
-          )}     
-          
+          ) : !isOnline ? (
+            <div className="bg-purple-100 border-l-4 border-purple-500 text-purple-700 p-3 rounded-lg text-sm">
+                <p>
+                    Buttons disabled while offline.
+                </p>
+            </div>
+          ) : ("")}
+
           <div className="flex justify-between space-x-2 pt-4 border-t border-gray-200">
             {/* Action Buttons */}
-            <button onClick={() => onPlay(movie)} disabled={!isSubscribed}
+            <button onClick={() => onPlay(movie)} disabled={!isSubscribed || !isOnline}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"> 
                 <Play className="w-3 h-3 mr-1 fill-black" />
                 Play
             </button>
-            <button onClick={() => onLike(movie.movieId)} disabled={!isSubscribed}
+            <button onClick={() => onLike(movie.movieId)} disabled={!isSubscribed || !isOnline}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"> 
                 <Heart className="w-4 h-4 mr-1 fill-black" /> 
                 Like
             </button>
-            <button onClick={() => onSave(movie.movieId)} disabled={!isSubscribed} 
+            <button onClick={() => onSave(movie.movieId)} disabled={!isSubscribed || !isOnline} 
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 <Bookmark className="w-4 h-4 mr-1 fill-black" /> 
                 Save
             </button>
             {!isSearching && (
-            <button onClick={() => onDelete(movie.movieId)} disabled={!isSubscribed}
+            <button onClick={() => onDelete(movie.movieId)} disabled={!isSubscribed || !isOnline}
                 className="flex items-center justify-center w-20 bg-white text-black text-xs px-2 py-1 rounded-lg shadow-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"> 
                 <Trash2 className="w-4 h-4 mr-1 stroke-black" /> 
                 Delete
@@ -75,7 +82,7 @@ function MovieModal({
             )}
           </div>
           <div className="flex justify-end pt-4">
-            <button onClick={onClose} className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm">
+            <button onClick={onClose} className="border border-gray-400 text-gray-800 py-1 px-6 rounded-xl hover:bg-gray-100 text-sm ">
               Close
             </button>
           </div>

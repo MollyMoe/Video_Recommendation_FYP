@@ -4,7 +4,7 @@ import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import {Play, Trash2, CheckCircle} from "lucide-react";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const StWatchLaterPage = () => {
   const [watchLaterMovies, setWatchLaterMovies] = useState([]);

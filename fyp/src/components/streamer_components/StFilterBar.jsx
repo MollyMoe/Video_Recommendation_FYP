@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
-const StFilterBar = ({ searchQuery, setSearchQuery, onSearch, isOnline }) => {
+const StFilterBar = ({ searchQuery, setSearchQuery, setSubmittedQuery, onSearch, isOnline }) => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userId = savedUser?.userId || "default";
   const [isFocused, setIsFocused] = useState(false);
   const wrapperRef = useRef(null);
-  const storageKey = `searchHistory_${userId}`;
+  const storageKey = `searchHistory_filter_${userId}`;
 
   const [history, setHistory] = useState(() => {
     const stored = localStorage.getItem(storageKey);
@@ -27,9 +27,11 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch, isOnline }) => {
     localStorage.setItem(storageKey, JSON.stringify(history));
   }, [history, storageKey]);
 
+
   const addToHistory = (term) => {
     const normalizedTerm = term.toLowerCase();
-    if (!history.some((h) => h.toLowerCase() === normalizedTerm)) {
+   const exists = history.some((h) => h.toLowerCase() === normalizedTerm);
+    if (!exists) {
       setHistory([term, ...history.slice(0, 9)]);
     }
   };
@@ -55,30 +57,36 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch, isOnline }) => {
       genres: normalizeString(movie.genres),
       producers: normalizeString(movie.producers),
       actors: normalizeString(movie.actors),
+      director: normalizeString(movie.director),
     };
   };
 
   try {
     const recommended = await window.electron.getRecommendedMovies();
-    const filtered = recommended
-      .filter((movie) => {
-        const title = (movie.title || "").toLowerCase();
-        const director = (movie.director || "").toLowerCase();
-        const producers = normalizeString(movie.producers);
-        const genres = normalizeString(movie.genres);
-        const actors = normalizeString(movie.actors);
 
-        return (
-          title.includes(queryLower) ||
-          director.includes(queryLower) ||
-          producers.includes(queryLower) ||
-          genres.includes(queryLower) ||
-          actors.includes(queryLower)
-        );
-      })
-      .map(processMovie); // ✅ ensure all results are shaped correctly
+    // ✅ normalize ALL movies first
+    const processed = recommended
+      .filter((m) => m.poster_url && m.trailer_url)
+      .map(processMovie);
 
-    onSearch(filtered);
+    // ✅ then filter on normalized version
+    const filtered = processed.filter((movie) => {
+      const title = (movie.title || "").toLowerCase();
+      const director = movie.director || "";
+      const producers = movie.producers || "";
+      const genres = movie.genres || "";
+      const actors = movie.actors || "";
+
+      return (
+        title.includes(queryLower) ||
+        director.includes(queryLower) ||
+        producers.includes(queryLower) ||
+        genres.includes(queryLower) ||
+        actors.includes(queryLower)
+      );
+    });
+
+    onSearch(filtered); // pass back to FilterPage
   } catch (err) {
     console.error("❌ Offline search failed:", err);
     onSearch([]);
@@ -96,6 +104,7 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch, isOnline }) => {
     if (isOnline) {
       onSearch(trimmed); // online: send query string
     } else {
+      setSubmittedQuery(trimmed); 
       await filterOffline(trimmed); // offline: local filtering
     }
   };
@@ -109,7 +118,9 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch, isOnline }) => {
 
   const handleHistoryClick = async (term) => {
     setSearchQuery(term);
+     setSubmittedQuery(term);
     setIsFocused(false);
+   
     if (isOnline) {
       onSearch(term);
     } else {
@@ -119,7 +130,10 @@ const StFilterBar = ({ searchQuery, setSearchQuery, onSearch, isOnline }) => {
 
   const handleRemove = (item, e) => {
     e.stopPropagation();
-    setHistory(history.filter((term) => term !== item));
+    const updated = history.filter((term) => term !== item); // ✅ Declare updated
+    setHistory(updated); 
+    console.log("Current history key:", storageKey);
+    console.log("Current stored history:", localStorage.getItem(storageKey));
   };
 
   const handleClear = () => {

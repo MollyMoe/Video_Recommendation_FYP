@@ -10,5 +10,17 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <p id="status">Checking status...</p>
+    
+    <script>
+    // Listening for the online and offline events triggered by preload.js
+    window.addEventListener('online', () => {
+      document.getElementById('status').innerText = 'Online';
+    });
+
+    window.addEventListener('offline', () => {
+      document.getElementById('status').innerText = 'Offline';
+    });
+  </script>
   </body>
 </html>
