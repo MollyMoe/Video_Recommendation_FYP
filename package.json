@@ -2,6 +2,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "lodash": "^4.17.21",
+    "rollup": "^4.46.2",
     "stripe": "^18.3.0"
   }
 }
