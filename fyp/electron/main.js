@@ -126,12 +126,3 @@ app.on('before-quit', async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
-
-// This listens for changes in the network status
-window.addEventListener('online', () => {
-  document.getElementById('status').innerText = 'Online'; // Update UI element with ID 'status'
-});
-
-window.addEventListener('offline', () => {
-  document.getElementById('status').innerText = 'Offline'; // Update UI element with ID 'status'
-});
