@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const AdTopLikedPage = () => {
   const [topMovies, setTopMovies] = useState([]);

@@ -5,7 +5,7 @@ import axios from "axios";
 import AdSideButtons from "../components/admin_components/AdSideButtons";
 import { useState } from "react";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const tabs = [
   { label: "All Movies", path: "/admin/video/videoHomePage" },

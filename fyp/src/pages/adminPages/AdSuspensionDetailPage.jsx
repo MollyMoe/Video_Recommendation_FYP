@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const AdSuspensionDetailPage = () => {
   const { id } = useParams();  // Access the 'id' parameter from the URL
