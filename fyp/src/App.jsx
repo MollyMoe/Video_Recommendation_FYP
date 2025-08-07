@@ -34,8 +34,39 @@ import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAdded
 import AdUserFeedback from "./components/admin_components/AdUserFeedback";
 import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
 import AdSuspensionDetailPage from "./pages/adminPages/AdSuspensionDetailPage";
+import { getAPI } from "./config/api";
+import { useEffect } from "react";
+
 
 function App() {
+  useEffect(() => {
+    function handleOnline() {
+      const queued = window.electron?.getFeedbackQueue?.() || [];
+
+      if (queued.length > 0) {
+        queued.forEach((item) => {
+          fetch(`${getAPI()}/api/feedback`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item),
+          })
+            .then(res => res.json())
+            .then(data => {
+              console.log("✅ Sent queued feedback:", data);
+            })
+            .catch(err => {
+              console.error("❌ Failed to send queued feedback item:", err);
+            });
+        });
+
+        window.electron?.clearFeedbackQueue?.();
+      }
+    }
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
   return (
     <UserProvider>
       <HashRouter>
