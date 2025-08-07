@@ -32,8 +32,6 @@ const StLikedMoviesPage = () => {
       const res = await fetch(`${API}/api/subscription/${userId}`);
       subscription = await res.json();
       console.log("🔑 Online subscription data:", subscription);
-
-      // Save for offline use (entire object)
       window.electron?.saveSubscription(subscription);
     } else {
       const offlineSub = window.electron?.getSubscription();
@@ -41,14 +39,18 @@ const StLikedMoviesPage = () => {
       console.log("📦 Offline subscription data:", subscription);
     }
 
-    setIsSubscribed(Boolean(subscription?.isActive));
-    console.log("✅ isOnline:", isOnline);
-    console.log("✅ isSubscribed:", isSubscribed, typeof isSubscribed);
+    console.log("🧪 Subscription before setting:", subscription);
+    setIsSubscribed(subscription?.isActive === true); // force exact boolean match
   } catch (err) {
     console.error("Failed to fetch subscription:", err);
     setIsSubscribed(false); // fallback
   }
 };
+
+useEffect(() => {
+  console.log("🎯 Updated isSubscribed:", isSubscribed);
+}, [isSubscribed]);
+
 
   const fetchLikedMovies = async (userId) => {
   if (!userId) {
@@ -74,10 +76,10 @@ const StLikedMoviesPage = () => {
         window.electron.saveLikedQueue(data.likedMovies);
       }
     } else if (window.electron?.getLikedQueue) {
-// ✅ Offline: use raw liked queue
-      const rawQueue = await window.electron?.getRawLikedQueue?.();
-      console.log("📦 Offline raw liked movies:", rawQueue);
-      data.likedMovies = rawQueue || [];
+      // ✅ Offline: load from local file
+      const offlineQueue = await window.electron.getLikedQueue();
+      data.likedMovies = offlineQueue || [];
+      console.log("📦 Liked movies (offline):", data.likedMovies);
     } else {
       console.warn("⚠️ Offline and no preload getLikedQueue available");
     }
