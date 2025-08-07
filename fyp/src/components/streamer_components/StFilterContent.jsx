@@ -208,6 +208,7 @@ useEffect(() => {
         onSave={() => handleAction("save", selectedMovie?.movieId)}
         onDelete={() => handleAction("delete", selectedMovie?.movieId)}
         isSubscribed={true}
+        isOnline={isOnline}
       >
         {showPopup && popupMessage}
       </MovieModal>

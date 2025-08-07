@@ -1,16 +1,19 @@
-
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { API } from "@/config/api";
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchStreamers = async () => {
       try {
-        const res = await fetch(`${API}/api/auth/users/streamer`);
+        const res = await fetch(
+          `${API}/api/auth/users/streamer`
+        );
         const data = await res.json();
         console.log("Fetched streamers:", data);
         setUsers(data);
@@ -21,6 +24,16 @@ const AdUserTable = ({ searchQuery }) => {
 
     fetchStreamers();
   }, []);
+
+  useEffect(() => {
+  const fetchUser = async () => {
+    const res = await fetch(`${API}/api/auth/users/streamer/${user.userId}`);
+    const data = await res.json();
+    setUser(data);
+  };
+
+  fetchUser();
+}, []);
 
   // const handleToggleSuspend = async (userId) => {
   //   const updatedUsers = users.map((user) =>
@@ -42,8 +55,6 @@ const AdUserTable = ({ searchQuery }) => {
   //       headers: { "Content-Type": "application/json" },
   //       body: JSON.stringify({ status: newStatus }),
   //     });
-
-  //     // ✅ If unsuspending, also reset lastSignout to now
   //   } catch (err) {
   //     console.error("Failed to update status:", err);
   //   }
@@ -119,7 +130,6 @@ const AdUserTable = ({ searchQuery }) => {
   }
 };
 
-
   const handleView = (user) => {
     navigate(`/admin/view/${user.userId}`, {
       state: { searchQuery },
@@ -129,7 +139,9 @@ const AdUserTable = ({ searchQuery }) => {
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
     return users.filter((user) =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.userId.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, users]);
 
@@ -156,7 +168,7 @@ const AdUserTable = ({ searchQuery }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user) => (
+            {filteredUsers.map((user, index) => (
               <tr key={user._id}>
                 <td className="px-10 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
                   {user.userId}
@@ -177,13 +189,13 @@ const AdUserTable = ({ searchQuery }) => {
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={() => handleView(user)}
-                      className="bg-blue-500 text-white px-5 py-2 text-xs rounded hover:bg-blue-600"
+                      className="bg-white border border-gray-400 text-black px-5 py-2 text-xs rounded-lg shadow-sm hover:bg-gray-200"
                     >
                       View
                     </button>
                     <button
                       onClick={() => handleToggleSuspend(user.userId)}
-                      className={`min-w-[90px] px-3 py-1 text-xs rounded text-white ${
+                      className={`min-w-[90px] px-3 py-1 text-xs rounded-lg shadow-sm text-white ${
                         user.status === "Suspended"
                           ? "bg-green-500 hover:bg-green-600"
                           : "bg-red-500 hover:bg-red-600"
@@ -203,4 +215,3 @@ const AdUserTable = ({ searchQuery }) => {
 };
 
 export default AdUserTable;
-

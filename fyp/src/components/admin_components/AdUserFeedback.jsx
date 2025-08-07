@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AdNav from "../../components/admin_components/AdNav";
 import AdSearch from "../../components/admin_components/AdSearch";
+import { ArrowLeft } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -172,31 +173,20 @@ const AdUserFeedback = () => {
   return (
     <>
       <AdNav /> 
-      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-        <AdSearch
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onSearch={setSearchQuery} 
-        />
-      </div>
-      <aside
-        id="logo-sidebar"
-        className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
-        aria-label="Sidebar"
-      >
-        <div className="py-4 overflow-y-auto">
-          <ul className="space-y-2 font-medium">
-            <li>
-              <Link to="/admin/manageUser">
-                <button className="flex items-center p-2 text-black rounded-lg dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 group w-full text-left">
-                  <span className="ml-3">Back</span>
-                </button>
-              </Link>
-            </li>
-          </ul>
+      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white/70 dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
+        <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
+          {/* Back Link */}
+          <Link 
+              to="/admin/manageUser"
+              className="flex items-center gap-3 px-3 py-2 text-gray-800 hover:bg-fuchsia-200 dark:text-white dark:hover:bg-gray-700 rounded-lg"
+          >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+          </Link>
         </div>
       </aside>
-      <div className="min-h-screen pt-20 pl-60 dark:bg-gray-800">
+      {/* changed */}
+      <div className="min-h-screen pt-10 pl-60 pr-25 dark:bg-gray-800 mt-10">
         <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 shadow-lg rounded-lg p-6 mt-10">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">User Feedback</h1>
 

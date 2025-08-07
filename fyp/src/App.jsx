@@ -27,6 +27,8 @@ import AdUserOverviewPage from "./pages/adminPages/AdUserOverviewPage";
 import AdUserLikedMoviesPage from "./pages/adminPages/AdUserLikedMoviesPage";
 import AdUserWatchLaterPage from "./pages/adminPages/AdUserWatchLaterPage";
 import AdUserHistoryPage from "./pages/adminPages/AdUserHistoryPage";
+import AdUserFeedback from "./components/admin_components/AdUserFeedback";
+import AdSuspensionDetailPage from "./pages/adminPages/AdSuspensionDetailPage";
 
 
 import SetNewPasswordPage from "./pages/SetNewPasswordPage";
@@ -74,6 +76,7 @@ function App() {
             <Route path="editProfile" element={<AdEditProfilePage />} />
             <Route path="manageUser" element={<AdUserManagePage />} />
             <Route path="view/:id" element={<AdUserDetails />} />
+            <Route path="feedback" element={<AdUserFeedback />} />
             
             <Route path="video" element={<AdVideoManageLayout />}>
               <Route index element={<Navigate to="videoHomePage" replace />} />
@@ -87,6 +90,7 @@ function App() {
                 <Route index element={<Navigate to="overview" replace />} />
                 <Route path="overview" element={<AdUserOverviewPage />} />
                 <Route path="subscription" element={<AdUserDetails />} />
+                <Route path="suspension" element={<AdSuspensionDetailPage />} />
                 <Route path="history" element={<AdUserHistoryPage />} />
                 <Route path="liked" element={<AdUserLikedMoviesPage />} />
                 <Route path="watchLater" element={<AdUserWatchLaterPage/>} />

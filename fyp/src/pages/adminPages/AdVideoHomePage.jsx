@@ -10,7 +10,6 @@ const AdVideoHomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const context = useOutletContext();
   
-  // Safely destructure context with default values
   const {
     recentMoviesGlobal = [],
     setRecentMoviesGlobal = () => {},
@@ -19,9 +18,8 @@ const AdVideoHomePage = () => {
 
   return (
     <>
-      <AdNav />
-      <AdSideButtons />
-      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
+      {/* add ml-20 */}
+      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5 ml-20">
         <AdSearch
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}

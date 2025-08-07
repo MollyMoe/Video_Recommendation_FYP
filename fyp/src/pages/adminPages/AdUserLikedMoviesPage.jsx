@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Trash2, CheckCircle } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserLikedMoviesPage = () => {
   const { id: userId } = useParams();
@@ -73,11 +74,6 @@ const AdUserLikedMoviesPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-
-      {/* Page Header */}
-      <h2 className="text-2xl font-semibold text-center mb-6">
-        Liked Movies for <span className="font-bold">{user?.username || "User"}</span>
-      </h2>
 
       {/* Loading, Error, or Empty */}
       {isLoading && (

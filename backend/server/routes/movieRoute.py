@@ -71,7 +71,7 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
         }
 
     try:
-        cursor = db.hybridRecommendation2.find(query, {"_id": 1, "title": 1, "poster_url": 1, "director": 1})
+        cursor = db.hybridRecommendation2.find(query, {"_id": 1, "movieId": 1, "title": 1, "poster_url": 1, "director": 1})
         total = db.hybridRecommendation2.count_documents(query)
         movies = list(cursor.skip(skip).limit(limit))
 
@@ -626,6 +626,29 @@ async def remove_from_recommended(request: Request):
         return {"message": "Movie removed from recommendations"}
     else:
         return {"message": "Movie not found or already removed"}
+
+#new added for all the movies delete button
+@router.post("/delete")
+async def delete_video(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    movie_collection = db["hybridRecommendation2"]
+
+    movie_id = data.get("movieId")
+    print("🔍 Incoming movieId for deletion:", movie_id)
+
+    if not movie_id:
+        raise HTTPException(status_code=400, detail="Missing movieId")
+
+    # Double check data type
+    result = movie_collection.delete_one({"movieId": str(movie_id)})
+
+    print("🗑️ Video deleted:", result.deleted_count)
+
+    if result.deleted_count > 0:
+        return {"message": "Movie deleted!"}
+    else:
+        return {"message": "Movie not found!"}
 
 # new for the because you like/save/watch
 @router.post("/als-liked")

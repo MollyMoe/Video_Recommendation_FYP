@@ -355,6 +355,7 @@ const handleAction = async (actionType, movieId) => {
     if (!movieId || !savedUser?.userId) return;
 
     const actions = {
+      history: { url: "history", message: null },
       like: { url: "like", message: "Movie Liked!" },
       save: { url: "watchLater", message: "Saved to Watch Later!" },
       delete: { url: "recommended/delete", message: "Removed from recommendations" }
