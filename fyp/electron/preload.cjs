@@ -131,6 +131,7 @@ function queueAction(filePath, action) {
 
 
 contextBridge.exposeInMainWorld('electron', {
+  // start from session replaced
   // ✅ Session
   saveSession: (data) => {
     try {
@@ -148,6 +149,8 @@ contextBridge.exposeInMainWorld('electron', {
   onOffline: () => {
     window.dispatchEvent(new Event('offline'));
   },
+  // until here
+  
   getSession: () => {
     try {
       return JSON.parse(fs.readFileSync(sessionFilePath, 'utf-8'));

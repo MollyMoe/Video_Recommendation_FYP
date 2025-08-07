@@ -175,7 +175,7 @@ useEffect(() => {
 
   // ✅ Online API removal
   try {
-    const res = await fetch(`${API}/api/movies/history/delete`, {
+    const res = await fetch(`${API}/api/movies/historyMovies/delete`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
