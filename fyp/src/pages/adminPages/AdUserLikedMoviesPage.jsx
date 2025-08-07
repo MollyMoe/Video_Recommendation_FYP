@@ -4,7 +4,7 @@ import { Trash2, CheckCircle } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const AdUserLikedMovies = () => {
+const AdUserLikedMoviesPage = () => {
   const { id: userId } = useParams();
   const [user, setUser] = useState(null);
   const [likedMovies, setLikedMovies] = useState([]);
@@ -111,4 +111,4 @@ const AdUserLikedMovies = () => {
   );
 };
 
-export default AdUserLikedMovies;
+export default AdUserLikedMoviesPage;

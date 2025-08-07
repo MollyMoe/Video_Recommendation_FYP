@@ -1,28 +1,42 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StFilterContent from "../../components/streamer_components/StFilterContent";
 import StFilterBar from "../../components/streamer_components/StFilterBar";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const StFilterPage = () => {
-  // --- ERROR FIX 1: Add all missing state declarations ---
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
-  const [allMovies, setAllMovies] = useState([]); // Master list of all movies
-  const [movies, setMovies] = useState([]);       // List of movies to display
+  const [allMovies, setAllMovies] = useState([]);
+  const [movies, setMovies] = useState([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
   const [isSearching, setIsSearching] = useState(false);
-
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userId = savedUser?.userId;
 
+  // ✅ Safe normalizer
+  const normalizeString = (value) => {
+    if (Array.isArray(value)) return value.join(" ").toLowerCase();
+    if (typeof value === "string") return value.replace(/[|,]/g, " ").toLowerCase();
+    return "";
+  };
 
+  // ✅ Listen for online/offline changes
+  useEffect(() => {
+    const handleNetworkChange = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", handleNetworkChange);
+    window.addEventListener("offline", handleNetworkChange);
+    return () => {
+      window.removeEventListener("online", handleNetworkChange);
+      window.removeEventListener("offline", handleNetworkChange);
+    };
+  }, []);
+
+  // ✅ Fetch and prepare movies
   useEffect(() => {
     if (!userId) {
       setIsLoading(false);
@@ -31,47 +45,50 @@ const StFilterPage = () => {
 
     const fetchInitialData = async () => {
       try {
-        const [subRes, likedRes, recommendedRes] = await Promise.all([
-          fetch(`${API}/api/subscription/${userId}`),
-          axios.get(`${API}/api/movies/top-liked`),
-          axios.get(`${API}/api/movies/recommendations/${userId}`)
-        ]);
+        let subData, likedData, recommendedData;
 
-        const subData = await subRes.json();
-        setIsSubscribed(subData.isActive);
-        if (!subData.isActive) {
-          return;
+        if (isOnline) {
+          const [subRes, likedRes, recommendedRes] = await Promise.all([
+            fetch(`${API}/api/subscription/${userId}`),
+            fetch(`${API}/api/movies/top-liked`),
+            fetch(`${API}/api/movies/recommendations/${userId}`)
+          ]);
+          subData = await subRes.json();
+          likedData = await likedRes.json();
+          recommendedData = await recommendedRes.json();
+
+          if (window.electron?.saveSubscription) {
+            await window.electron.saveSubscription(subData);
+            await window.electron.saveLikedData(likedData);
+            await window.electron.saveRecommendedMovies(recommendedData);
+            console.log("✅ Online data cached");
+          }
+        } else {
+          subData = await window.electron.getSubscription(userId);
+          likedData = await window.electron.getLikedData();
+          recommendedData = await window.electron.getRecommendedMovies();
+          console.log("✅ Offline data loaded");
         }
 
-        const likedMovieIds = likedRes.data.map(item => String(item.movieId));
-        let recommendedMovies = recommendedRes.data;
-        if (!Array.isArray(recommendedMovies)) recommendedMovies = [];
+        const likedMovieIds = likedData.map(item => String(item.movieId));
+        if (!Array.isArray(recommendedData)) recommendedData = [];
 
-        // Process the data ONCE after fetching it.
-        const processedMovies = recommendedMovies.map(movie => {
-        const url = movie.trailer_url || "";
-        let trailer_key = null;
-        if (url.includes("v=")) {
-          trailer_key = url.split("v=")[1].split("&")[0];
-        } else if (url.includes("youtu.be/")) {
-          trailer_key = url.split("youtu.be/")[1].split("?")[0];
-        }
+        const processedMovies = recommendedData.map((movie) => {
+          const url = movie.trailer_url || "";
+          let trailer_key = null;
+          if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
+          else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
 
-        return {
-          ...movie,
-          trailer_key,
-          genres: Array.isArray(movie.genres)
-            ? movie.genres.join(", ")
-            : (movie.genres || "").replace(/\|/g, ", "),
-          producers: Array.isArray(movie.producers)
-            ? movie.producers.join(", ")
-            : (movie.producers || "").replace(/\|/g, ", "),
-          actors: movie.actors || "",
-        };
-      });
+          return {
+            ...movie,
+            trailer_key,
+            genres: normalizeString(movie.genres),
+            producers: normalizeString(movie.producers),
+            actors: normalizeString(movie.actors),
+          };
+        });
 
-        const inLiked = [];
-        const notInLiked = [];
+        const inLiked = [], notInLiked = [];
         for (const movie of processedMovies) {
           if (likedMovieIds.includes(String(movie.movieId))) {
             inLiked.push(movie);
@@ -79,61 +96,59 @@ const StFilterPage = () => {
             notInLiked.push(movie);
           }
         }
-        
+
         const sortedInLiked = inLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
         const sortedNotInLiked = notInLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
         const finalList = [...sortedInLiked, ...sortedNotInLiked];
-        
+
+        setIsSubscribed(subData?.isActive || false);
         setAllMovies(finalList);
         setMovies(finalList);
       } catch (err) {
-        console.error("❌ Failed to fetch initial data:", err);
+        console.error("❌ Failed to fetch data:", err);
+        setIsSubscribed(false);
         setMovies([]);
         setAllMovies([]);
-        setIsSubscribed(false);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchInitialData();
-  }, [userId]);
+  }, [userId, isOnline]);
 
+  // ✅ Shared search logic (used in fallback)
   const handleSearch = (query) => {
     setSearchQuery(query);
     setSubmittedQuery(query);
 
     if (!query.trim()) {
-      setMovies(allMovies); // Reset to show Top 10 view
+      setMovies(allMovies);
       setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
+    const queryLower = query.toLowerCase();
 
-    setTimeout(() => {
-      const queryLower = query.toLowerCase();
-      const normalizeString = (str) => (str || "").replace(/[|,]/g, " ").toLowerCase();
+    const filteredList = allMovies.filter((movie) => {
+      const title = (movie.title || "").toLowerCase();
+      const director = (movie.director || "").toLowerCase();
+      const producers = normalizeString(movie.producers);
+      const genres = normalizeString(movie.genres);
+      const actors = normalizeString(movie.actors);
 
-      const filteredList = allMovies.filter((movie) => {
-        const title = (movie.title || "").toLowerCase();
-        const director = (movie.director || "").toLowerCase();
-        const producers = normalizeString(movie.producers);
-        const genres = normalizeString(movie.genres);
-        const actors = normalizeString(movie.actors);
+      return (
+        title.includes(queryLower) ||
+        director.includes(queryLower) ||
+        producers.includes(queryLower) ||
+        genres.includes(queryLower) ||
+        actors.includes(queryLower)
+      );
+    });
 
-        return (
-          title.includes(queryLower) ||
-          director.includes(queryLower) ||
-          producers.includes(queryLower) ||
-          genres.includes(queryLower) ||
-          actors.includes(queryLower)
-        );
-      });
-
-      setMovies(filteredList);
-      setIsSearching(false);
-    }, 300);
+    setMovies(filteredList);
+    setIsSearching(false);
   };
 
   if (isLoading) {
@@ -143,7 +158,7 @@ const StFilterPage = () => {
         <StSideBar />
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <p className="text-lg font-semibold">Loading Movie</p>
+            <p className="text-lg font-semibold">Loading Movies...</p>
             <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
           </div>
         </div>
@@ -167,15 +182,27 @@ const StFilterPage = () => {
   }
 
   return (
-     <>
+    <>
       <StNav />
       <StSideBar />
+
       <div className="fixed top-[80px] left-20 w-full h-35 flex justify-center px-4 z-30 bg-white dark:bg-gray-800">
         <div className="w-full max-w-sm flex flex-col justify-center">
           <StFilterBar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            onSearch={handleSearch}
+            isOnline={isOnline}
+            onSearch={(result) => {
+              if (Array.isArray(result)) {
+                // Offline mode passed in filtered movies
+                setMovies(result);
+                setIsSearching(false);
+                setSubmittedQuery(searchQuery);
+              } else {
+                // Online mode fallback: filter client-side
+                handleSearch(result);
+              }
+            }}
           />
         </div>
       </div>

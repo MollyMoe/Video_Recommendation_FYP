@@ -138,7 +138,7 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
   }
 
   return (
-    <div className="sm:ml-0 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700 mr-10"> 
+    <div className="sm:ml-0 px-4 sm:px-8 dark:border-gray-700 mr-10"> 
     {/* change the mr */}
       {/* 🎬 All Movies Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-10">

@@ -4,7 +4,7 @@ import { Trash2, CheckCircle } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const AdUserHistory = () => {
+const AdUserHistoryPage = () => {
   const { id: userId } = useParams();
   const [user, setUser] = useState(null);
   const [historyMovies, setHistoryMovies] = useState([]);
@@ -80,4 +80,4 @@ const AdUserHistory = () => {
   );
 };
 
-export default AdUserHistory;
+export default AdUserHistoryPage;

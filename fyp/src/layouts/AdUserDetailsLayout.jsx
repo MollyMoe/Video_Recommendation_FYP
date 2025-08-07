@@ -70,10 +70,11 @@ const AdUserDetailsLayout = () => {
 
         {/* Tab Navigation */}
         <div className="mt-6 bg-white p-4 rounded shadow">
-          <div className="flex gap-6">
+          <div className="flex gap-8">
             {[
               { label: "Overview", to: "overview" },
               { label: "Subscription", to: "subscription" },
+              { label: "Suspension", to: "suspension" },
               { label: "Liked Videos", to: "liked" },
               { label: "Watch Later", to: "watchLater" },
               { label: "Watch History", to: "history" },

@@ -1,11 +1,9 @@
-// InputGenrePage.jsx
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios"; // Using axios for consistency
 import logoPic from "../images/Cine-It.png";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const InputGenrePage = () => {
   const navigate = useNavigate();

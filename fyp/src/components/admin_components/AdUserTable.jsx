@@ -189,13 +189,13 @@ const AdUserTable = ({ searchQuery }) => {
                   <div className="flex gap-2 mt-2">
                     <button
                       onClick={() => handleView(user)}
-                      className="bg-blue-500 text-white px-5 py-2 text-xs rounded hover:bg-blue-600"
+                      className="bg-white border border-gray-400 text-black px-5 py-2 text-xs rounded-lg shadow-sm hover:bg-gray-200"
                     >
                       View
                     </button>
                     <button
                       onClick={() => handleToggleSuspend(user.userId)}
-                      className={`min-w-[90px] px-3 py-1 text-xs rounded text-white ${
+                      className={`min-w-[90px] px-3 py-1 text-xs rounded-lg shadow-sm text-white ${
                         user.status === "Suspended"
                           ? "bg-green-500 hover:bg-green-600"
                           : "bg-red-500 hover:bg-red-600"

@@ -1,6 +1,6 @@
 import { useOutletContext } from "react-router-dom";
 
-const UserOverview = () => {
+const AdUserOverview = () => {
   const { user } = useOutletContext();
 
   return (
@@ -42,4 +42,4 @@ const UserOverview = () => {
   );
 };
 
-export default UserOverview;
+export default AdUserOverview;

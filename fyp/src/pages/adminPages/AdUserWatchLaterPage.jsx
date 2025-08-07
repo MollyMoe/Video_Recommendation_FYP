@@ -4,7 +4,7 @@ import { Trash2, CheckCircle } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
-const AdUserWatchLater = () => {
+const AdUserWatchLaterPage = () => {
   const { id: userId } = useParams();
   const [user, setUser] = useState(null);
   const [watchLaterMovies, setWatchLaterMovies] = useState([]);
@@ -114,4 +114,4 @@ const AdUserWatchLater = () => {
   );
 };
 
-export default AdUserWatchLater;
+export default AdUserWatchLaterPage;

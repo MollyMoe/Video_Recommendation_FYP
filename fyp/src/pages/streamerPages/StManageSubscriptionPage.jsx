@@ -3,7 +3,7 @@ import StPlans from "../../components/streamer_components/StPlans";
 import StBillingForm from "../../components/streamer_components/StBillingForm";
 import { FaChevronRight } from "react-icons/fa";
 
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const StManageSubscriptionPage = () => {
   const [subscription, setSubscription] = useState(null);
@@ -14,14 +14,29 @@ const StManageSubscriptionPage = () => {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const fetchSubscription = async () => {
-    try {
+  try {
+    let data;
+
+    if (navigator.onLine && window.electron?.saveSubscription) {
+      // Online: fetch from backend, then save locally
       const res = await fetch(`${API}/api/subscription/${user.userId}`);
-      const data = await res.json();
+      data = await res.json();
       setSubscription(data);
-    } catch (err) {
-      console.error("Failed to fetch subscription:", err);
+
+      // Save to local cache
+      await window.electron.saveSubscription(data);
+    } else if (window.electron?.getSubscription) {
+      // Offline: load from local cache
+      data = await window.electron.getSubscription();
+      setSubscription(data);
+    } else {
+      console.warn("No subscription data available offline.");
     }
-  };
+  } catch (err) {
+    console.error("Failed to fetch subscription:", err);
+  }
+};
+
 
   useEffect(() => {
     console.log("Fetched subscription:", subscription);
@@ -59,6 +74,10 @@ const StManageSubscriptionPage = () => {
 
   setIsRedirecting(false); // hide modal even if failed after max attempts
 };
+
+useEffect(() => {
+  fetchSubscription();
+}, []);
 
   return (
     <div className="min-h-screen pt-24 px-6 sm:px-12 sm:ml-64 max-w-5xl mx-auto dark:bg-gray-900">

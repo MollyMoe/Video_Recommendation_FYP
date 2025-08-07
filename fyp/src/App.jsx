@@ -18,21 +18,22 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import StLikedMoviesPage from "./pages/streamerPages/StLikedMoviesPage";
 import StWatchLaterPage from "./pages/streamerPages/StWatchLaterPage";
 import StHelpPage from "./pages/streamerPages/StHelpPage";
-import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscription";
+import StManageSubscriptionPage from "./pages/streamerPages/StManageSubscriptionPage";
 import StPaymentSuccess from "./pages/streamerPages/StPaymentSuccess";
 import StFilterPage from "./pages/streamerPages/StFilterPage";
 import StSendFeedbackPage from "./pages/streamerPages/StSendFeedbackPage";
 import AdVideoManagePage from "./pages/adminPages/AdVideoManagePage";
 import AdVideoManageLayout from "./layouts/AdVideoManageLayout";
 import AdUserDetailsLayout from "./layouts/AdUserDetailsLayout";
-import Overview from "./pages/adminPages/Overview";
+import AdUserOverview from "./pages/adminPages/AdUserOverview";
 import { Navigate } from "react-router-dom";
-import AdUserLikedMovies from "./pages/adminPages/AdUserLikedMovies";
-import AdUserWatchLater from "./pages/adminPages/AdUserWatchLater";
-import AdUserHistory from "./pages/adminPages/AdUserHistory";
+import AdUserLikedMoviesPage from "./pages/adminPages/AdUserLikedMoviesPage";
+import AdUserWatchLaterPage from "./pages/adminPages/AdUserWatchLaterPage";
+import AdUserHistoryPage from "./pages/adminPages/AdUserHistoryPage";
 import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAddedMovies";
 import AdUserFeedback from "./components/admin_components/AdUserFeedback";
 import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
+import AdSuspensionDetailPage from "./pages/adminPages/AdSuspensionDetailPage";
 
 
 function App() {
@@ -81,11 +82,12 @@ function App() {
 
               <Route path="/admin/view/:id" element={<AdUserDetailsLayout />}>
                 <Route index element={<Navigate to="overview" replace />} />
-                <Route path="overview" element={<Overview />} />
+                <Route path="overview" element={<AdUserOverview />} />
                 <Route path="subscription" element={<AdUserDetails />} />
-                <Route path="history" element={<AdUserHistory />} />
-                <Route path="liked" element={<AdUserLikedMovies />} />
-                <Route path="watchLater" element={<AdUserWatchLater/>} />
+                <Route path="suspension" element={<AdSuspensionDetailPage />} />
+                <Route path="history" element={<AdUserHistoryPage />} />
+                <Route path="liked" element={<AdUserLikedMoviesPage />} />
+                <Route path="watchLater" element={<AdUserWatchLaterPage/>} />
               </Route>
           </Route>
         </Routes>
