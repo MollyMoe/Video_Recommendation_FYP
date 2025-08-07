@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Trash2, CheckCircle } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserLikedMoviesPage = () => {
   const { id: userId } = useParams();

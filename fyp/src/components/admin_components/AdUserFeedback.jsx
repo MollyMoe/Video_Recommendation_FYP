@@ -4,7 +4,7 @@ import AdNav from "../../components/admin_components/AdNav";
 import AdSearch from "../../components/admin_components/AdSearch";
 import { ArrowLeft } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);

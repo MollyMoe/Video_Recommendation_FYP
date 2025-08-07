@@ -3,7 +3,8 @@ import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
 import { Link, useNavigate } from "react-router-dom";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
+
 const defaultImage =
   "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 

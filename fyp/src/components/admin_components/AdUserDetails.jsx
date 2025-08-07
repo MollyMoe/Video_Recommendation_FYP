@@ -1,7 +1,7 @@
 import { Link, useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserDetails = () => {
   const location = useLocation();

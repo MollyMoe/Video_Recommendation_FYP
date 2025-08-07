@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const isDev = process.env.NODE_ENV === 'development';
-const API = 'http://localhost:8000'; // or your deployed backend
+const API = 'https://cineit.onrender.com'; // or your deployed backend
 
 let mainWindow;
 
