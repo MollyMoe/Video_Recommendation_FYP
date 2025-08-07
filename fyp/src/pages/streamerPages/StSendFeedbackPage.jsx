@@ -5,9 +5,6 @@
 
 // import { getAPI } from "@/config/api";
 
-const API = getAPI();
-
-
 // const StSendFeedbackPage = () => {
 //   const [feedback, setFeedback] = useState("");
 //   const [file, setFile] = useState(null);
