@@ -5,6 +5,8 @@ import { FaChevronRight } from "react-icons/fa";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StManageSubscriptionPage = () => {
   const [subscription, setSubscription] = useState(null);
   const [step, setStep] = useState("overview");

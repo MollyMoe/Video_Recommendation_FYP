@@ -4,6 +4,8 @@ import { House, ArrowLeft } from "lucide-react";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdUserDetailsLayout = () => {
   const { id } = useParams();
   const location = useLocation();

@@ -1,6 +1,8 @@
 // src/utils/syncOfflineCache.js
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 export const syncOfflineCache = async (user) => {
   if (!navigator.onLine || !user?.userId) return;
 

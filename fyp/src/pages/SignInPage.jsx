@@ -6,6 +6,8 @@ import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { syncOfflineCache } from "@/utils/syncOfflineCache";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 
 function SignInPage() {
   const navigate = useNavigate();

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 
 const StSessionManager = () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));

@@ -5,6 +5,8 @@ import { useUser } from '../../context/UserContext';
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdEditProfilePage = () => {
   const [formData, setFormData] = useState({
     username: '',

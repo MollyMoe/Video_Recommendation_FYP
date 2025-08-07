@@ -5,6 +5,8 @@ import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StHomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(true);

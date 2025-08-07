@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StPaymentSuccessPage = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState(null);

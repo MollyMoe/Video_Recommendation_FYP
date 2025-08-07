@@ -5,6 +5,8 @@ import logoPic from "../images/Cine-It.png";
 import { useSearchParams } from "react-router-dom";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const SetNewPasswordPage = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");

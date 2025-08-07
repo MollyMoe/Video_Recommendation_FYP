@@ -6,6 +6,8 @@ import { ArrowLeft } from "lucide-react";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdUserFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(true);

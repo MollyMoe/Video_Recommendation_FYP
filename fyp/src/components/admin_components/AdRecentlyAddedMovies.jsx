@@ -4,6 +4,8 @@ import { useOutletContext } from "react-router-dom";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdRecentlyAddedMovies = () => {
   const [recentlyAddedPersistent, setRecentlyAddedPersistent] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

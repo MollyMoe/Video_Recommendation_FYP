@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();

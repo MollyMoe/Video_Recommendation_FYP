@@ -4,6 +4,8 @@ import { FaCcMastercard, FaCcAmex, FaApplePay, FaGooglePay } from "react-icons/f
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StBillingForm = ({ onSuccess, onBack }) => {
   const user = JSON.parse(localStorage.getItem("user"));
   const [form, setForm] = useState({

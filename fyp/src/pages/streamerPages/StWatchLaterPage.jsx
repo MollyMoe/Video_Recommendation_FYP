@@ -6,6 +6,8 @@ import {Play, Trash2, CheckCircle} from "lucide-react";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StWatchLaterPage = () => {
   const [watchLaterMovies, setWatchLaterMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

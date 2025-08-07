@@ -5,6 +5,8 @@
 
 // import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 
 // const StSendFeedbackPage = () => {
 //   const [feedback, setFeedback] = useState("");
@@ -143,6 +145,8 @@ import { BadgeCheck, Info } from "lucide-react";
 import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import { getAPI } from "@/config/api";
+
+const API = getAPI();
 
 const StSendFeedbackPage = () => {
   const [feedback, setFeedback] = useState("");

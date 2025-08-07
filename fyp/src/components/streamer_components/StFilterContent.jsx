@@ -7,6 +7,8 @@ import offlineFallback from "../../images/offlineFallback.jpg";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StFilterContent = ({ submittedQuery, movies, isLoading, isSearching, setMovies }) => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [popupMessage, setPopupMessage] = useState("");

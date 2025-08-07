@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState({});

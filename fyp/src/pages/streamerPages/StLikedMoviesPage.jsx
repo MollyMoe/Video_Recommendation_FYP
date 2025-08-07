@@ -5,6 +5,8 @@ import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

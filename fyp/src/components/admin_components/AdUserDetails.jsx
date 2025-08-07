@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdUserDetails = () => {
   const location = useLocation();
   const restoredSearch = location.state?.searchQuery || "";

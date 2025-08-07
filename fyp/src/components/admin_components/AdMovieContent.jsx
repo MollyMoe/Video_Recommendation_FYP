@@ -4,6 +4,8 @@ import axios from 'axios';
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlobal, currentRecentMoviesGlobal }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState(null);

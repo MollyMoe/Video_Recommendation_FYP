@@ -5,6 +5,8 @@ import logoPic from "../images/Cine-It.png";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const InputGenrePage = () => {
   const navigate = useNavigate();
   const [genreInput, setGenreInput] = useState("");

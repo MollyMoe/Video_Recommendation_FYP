@@ -5,6 +5,8 @@ import StFilterContent from "../../components/streamer_components/StFilterConten
 import StFilterBar from "../../components/streamer_components/StFilterBar";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const StFilterPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");

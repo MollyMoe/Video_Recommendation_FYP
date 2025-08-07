@@ -10,6 +10,8 @@ import FilterButtons from "../movie_components/FilterButtons";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 function StHomeContent({ searchQuery }) {
 
   const [movies, setMovies] = useState([]);

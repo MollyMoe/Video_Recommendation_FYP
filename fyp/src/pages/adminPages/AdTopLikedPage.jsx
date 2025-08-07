@@ -4,6 +4,8 @@ import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdTopLikedPage = () => {
   const [topMovies, setTopMovies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

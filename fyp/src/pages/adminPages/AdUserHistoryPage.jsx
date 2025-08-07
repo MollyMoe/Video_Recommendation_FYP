@@ -4,6 +4,8 @@ import { Trash2, CheckCircle } from "lucide-react";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdUserHistoryPage = () => {
   const { id: userId } = useParams();
   const [user, setUser] = useState(null);

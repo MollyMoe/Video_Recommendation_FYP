@@ -6,6 +6,8 @@ import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdVideoManageGenrePage = () => {
   const [genres, setGenres] = useState([]);
   const [selectedGenres, setSelectedGenres] = useState([]);

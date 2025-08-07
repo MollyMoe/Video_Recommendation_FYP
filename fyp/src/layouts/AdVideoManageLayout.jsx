@@ -7,6 +7,8 @@ import { useState } from "react";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const tabs = [
   { label: "All Movies", path: "/admin/video/videoHomePage" },
   { label: "Top Liked", path: "/admin/video/manage" },

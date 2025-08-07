@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 
 const StHistoryPage = () => {
   const [historyMovies, setHistoryMovies] = useState([]);

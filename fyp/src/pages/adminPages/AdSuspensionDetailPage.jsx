@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 
 import { getAPI } from "@/config/api";
 
+const API = getAPI();
+
 const AdSuspensionDetailPage = () => {
   const { id } = useParams();  // Access the 'id' parameter from the URL
   const [user, setUser] = useState(null);
