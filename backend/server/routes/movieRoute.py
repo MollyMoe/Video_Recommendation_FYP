@@ -540,6 +540,7 @@ def get_user_recommendations(userId: str, request: Request):
         print("❌ Error fetching recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
+# updated search
 @router.get("/search")
 def search_movies(request: Request, q: str = Query(..., min_length=1)):
     db = request.app.state.movie_db
@@ -550,15 +551,29 @@ def search_movies(request: Request, q: str = Query(..., min_length=1)):
             "trailer_url": { "$nin": ["", None, "nan", "NaN"] }
         })
 
-        movies = []
+        seen_movie_ids = set()
+        unique_movies = []
+
         for movie in results:
+            # Convert ObjectId to str
             movie["_id"] = str(movie["_id"])
+
+            if "createdAt" in movie and isinstance(movie["createdAt"], datetime):
+                movie["createdAt"] = movie["createdAt"].isoformat()
+
+            # Fix NaN floats
             for key, value in movie.items():
                 if isinstance(value, float) and math.isnan(value):
                     movie[key] = None
-            movies.append(movie)
+            
+            # Assume 'movieId' is the unique field to check duplicates
+            movie_id = movie.get("movieId")
+            if movie_id and movie_id not in seen_movie_ids:
+                seen_movie_ids.add(movie_id)
+                unique_movies.append(movie)
 
-        return JSONResponse(content=movies)
+        return JSONResponse(content=unique_movies)
+
     except Exception as e:
         print("❌ Search failed:", e)
         raise HTTPException(status_code=500, detail="Search failed")

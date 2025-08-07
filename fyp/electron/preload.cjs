@@ -12,10 +12,6 @@ const sessionFilePath = path.join(basePath, 'cineit-user-session.json');
 const profileFilePath = path.join(basePath, 'cineit-profile-update.json');
 const feedbackFilePath = path.join(basePath, 'cineit-feedback-queue.json');
 const userGenrePath = path.join(basePath, 'cineit-user-genres.json');
-const allMoviesPath = path.join(os.homedir(), 'cineit-all-movies.json');
-
-const backupScript = path.join(__dirname, "..", "scripts", "backup.sh");
-const restoreScript = path.join(__dirname, "..", "scripts", "restore.sh");
 const historyQueuePath = path.join(basePath, "cineit-history-queue.json");
 const savedQueuePath = path.join(basePath, "cineit-saved-queue.json");
 const likedQueuePath = path.join(basePath, "cineit-liked-queue.json");
@@ -23,7 +19,7 @@ const likedQueuePath = path.join(basePath, "cineit-liked-queue.json");
 const recommendedPath = path.join(basePath, 'recommended.json');
 const subscriptionPath = path.join(basePath, "subscription.json");
 const themePath = path.join(basePath, "theme.json");
-const likedDataPath = path.join(basePath, "likedData.json");
+const topRatedPath = path.join(basePath, "topRatedMovies.json");
 
 const paths = {
   topLiked: path.join(basePath, "topLiked.json"),
@@ -243,8 +239,8 @@ contextBridge.exposeInMainWorld('electron', {
   getSubscription: () => safeRead(subscriptionPath),
 
   //liked Data for filter page
-  saveLikedData: (data) => safeWrite(likedDataPath, data),
-  getLikedData: () => safeRead(likedDataPath),
+  saveTopRatedMovies: (data) => safeWrite(topRatedPath, data),
+  getTopRatedMovies: () => safeRead(topRatedPath),
 
   // ✅ Carousel offline cache (topLiked, likedMovies, etc.)
   saveCarouselData: async (type, data) => {
@@ -258,26 +254,6 @@ contextBridge.exposeInMainWorld('electron', {
   },
 
 
-  // // ✅ All Movies
-  // saveAllMovies: (movies) => {
-  //   try {
-  //     fs.writeFileSync(allMoviesPath, JSON.stringify(movies, null, 2), 'utf-8');
-  //     console.log("💾 Saved all movies.");
-  //   } catch (err) {
-  //     console.error("❌ Failed to save all movies:", err);
-  //   }
-  // },
-  // getAllMovies: () => {
-  //   return new Promise((resolve, reject) => {
-  //     try {
-  //       if (!fs.existsSync(allMoviesPath)) return resolve([]);
-  //       const raw = fs.readFileSync(allMoviesPath, 'utf-8');
-  //       resolve(JSON.parse(raw));
-  //     } catch (err) {
-  //       reject(err);
-  //     }
-  //   });
-  // },
 
   // ✅ Recommended Movies
   saveRecommendedMovies: async (movies) => {

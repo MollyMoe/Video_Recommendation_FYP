@@ -128,7 +128,7 @@ def signin(data: SigninRequest, request: Request):
         if status != "Active":
             raise HTTPException(status_code=403, detail="Account is suspended.")
 
-    # ⚠️ 1. Auto signout after 3 days of inactivity
+    # ⚠️ 1. Auto suspend after 3 months of inactivity
     if user_type == "streamer":
     # 1️⃣ Check for auto-suspension (after 2 minutes since lastSignout)
         if user.get("lastSignout") and user.get("status") == "Active":

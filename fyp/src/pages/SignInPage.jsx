@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { syncOfflineCache } from "@/utils/syncOfflineCache";
 import { API } from "@/config/api";
 
 
@@ -86,6 +87,16 @@ function SignInPage() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
 
+        // ✅ Sync offline cache for streamers only
+      if (
+        window.electron &&
+        navigator.onLine &&
+        data.user?.userType?.toLowerCase() === "streamer"
+      ) {
+        syncOfflineCache(data.user); // ✅ Only now!
+      }
+
+      // Save session offline
         if (window.electron && window.electron.saveSession) {
           window.electron.saveSession({
             userId: data.user.userId,

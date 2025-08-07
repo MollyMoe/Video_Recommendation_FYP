@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
+import { syncOfflineCache } from "./utils/syncOfflineCache";
 
 import StHomePage from "./pages/streamerPages/StHomePage";
 import InputGenrePage from "./pages/InputGenrePage";

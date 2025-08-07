@@ -10,6 +10,7 @@ const StFilterPage = () => {
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [allMovies, setAllMovies] = useState([]);
   const [movies, setMovies] = useState([]);
+  const [topRated, setTopRated] = useState([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
@@ -18,14 +19,14 @@ const StFilterPage = () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userId = savedUser?.userId;
 
-  // ✅ Safe normalizer
+  // ✅ Normalize helper
   const normalizeString = (value) => {
     if (Array.isArray(value)) return value.join(" ").toLowerCase();
     if (typeof value === "string") return value.replace(/[|,]/g, " ").toLowerCase();
     return "";
   };
 
-  // ✅ Listen for online/offline changes
+  // ✅ Handle online/offline state
   useEffect(() => {
     const handleNetworkChange = () => setIsOnline(navigator.onLine);
     window.addEventListener("online", handleNetworkChange);
@@ -36,88 +37,111 @@ const StFilterPage = () => {
     };
   }, []);
 
-  // ✅ Fetch and prepare movies
+  // ✅ Load everything (recommended + topRated)
+  const loadRecommendedMovies = async () => {
+    try {
+      let subData, recommendedData, topRatedData = [];
+
+      if (isOnline) {
+        const [subRes, recommendedRes] = await Promise.all([
+          fetch(`${API}/api/subscription/${userId}`),
+          fetch(`${API}/api/movies/recommendations/${userId}`)
+        ]);
+
+        subData = await subRes.json();
+        recommendedData = await recommendedRes.json();
+
+        if (!Array.isArray(recommendedData)) recommendedData = [];
+
+        // Save raw recommended data for offline
+        if (window.electron?.saveSubscription) {
+          await window.electron.saveSubscription(subData);
+          await window.electron.saveRecommendedMovies(recommendedData);
+        }
+
+        // Normalize and process recommended movies
+        const processed = recommendedData
+          .filter(m => m.poster_url && m.trailer_url)
+          .map((movie) => {
+            const url = movie.trailer_url || "";
+            let trailer_key = null;
+            if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
+            else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
+
+            return {
+              ...movie,
+              trailer_key,
+              genres: normalizeString(movie.genres),
+              producers: normalizeString(movie.producers),
+              actors: normalizeString(movie.actors),
+              director: normalizeString(movie.director),
+            };
+          });
+
+        const top10 = processed
+          .slice()
+          .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
+          .slice(0, 10);
+
+        setAllMovies(processed);
+        setMovies(processed);
+        setTopRated(top10);
+
+        // ✅ Save topRated to offline
+        if (window.electron?.saveTopRatedMovies) {
+          await window.electron.saveTopRatedMovies(top10);
+          console.log("Top Rated Movies saved ..");
+        }
+      } else {
+        subData = await window.electron.getSubscription(userId);
+        const cached = await window.electron.getRecommendedMovies();
+        const topCached = await window.electron.getTopRatedMovies();
+        console.log("Top Rated Movies offline fetched ..");
+
+        const processed = (cached || [])
+          .filter(m => m.poster_url && m.trailer_url)
+          .map((movie) => {
+            const url = movie.trailer_url || "";
+            let trailer_key = null;
+            if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
+            else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
+
+            return {
+              ...movie,
+              trailer_key,
+              genres: normalizeString(movie.genres),
+              producers: normalizeString(movie.producers),
+              actors: normalizeString(movie.actors),
+              director: normalizeString(movie.director),
+            };
+          });
+
+        setAllMovies(processed);
+        setMovies(processed);
+        setTopRated(topCached || []);
+      }
+
+      setIsSubscribed(subData?.isActive || false);
+    } catch (err) {
+      console.error("❌ Failed to load recommended data:", err);
+      setIsSubscribed(false);
+      setMovies([]);
+      setAllMovies([]);
+      setTopRated([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!userId) {
       setIsLoading(false);
       return;
     }
-
-    const fetchInitialData = async () => {
-      try {
-        let subData, likedData, recommendedData;
-
-        if (isOnline) {
-          const [subRes, likedRes, recommendedRes] = await Promise.all([
-            fetch(`${API}/api/subscription/${userId}`),
-            fetch(`${API}/api/movies/top-liked`),
-            fetch(`${API}/api/movies/recommendations/${userId}`)
-          ]);
-          subData = await subRes.json();
-          likedData = await likedRes.json();
-          recommendedData = await recommendedRes.json();
-
-          if (window.electron?.saveSubscription) {
-            await window.electron.saveSubscription(subData);
-            await window.electron.saveLikedData(likedData);
-            await window.electron.saveRecommendedMovies(recommendedData);
-            console.log("✅ Online data cached");
-          }
-        } else {
-          subData = await window.electron.getSubscription(userId);
-          likedData = await window.electron.getLikedData();
-          recommendedData = await window.electron.getRecommendedMovies();
-          console.log("✅ Offline data loaded");
-        }
-
-        const likedMovieIds = likedData.map(item => String(item.movieId));
-        if (!Array.isArray(recommendedData)) recommendedData = [];
-
-        const processedMovies = recommendedData.map((movie) => {
-          const url = movie.trailer_url || "";
-          let trailer_key = null;
-          if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
-          else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
-
-          return {
-            ...movie,
-            trailer_key,
-            genres: normalizeString(movie.genres),
-            producers: normalizeString(movie.producers),
-            actors: normalizeString(movie.actors),
-          };
-        });
-
-        const inLiked = [], notInLiked = [];
-        for (const movie of processedMovies) {
-          if (likedMovieIds.includes(String(movie.movieId))) {
-            inLiked.push(movie);
-          } else {
-            notInLiked.push(movie);
-          }
-        }
-
-        const sortedInLiked = inLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
-        const sortedNotInLiked = notInLiked.sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0));
-        const finalList = [...sortedInLiked, ...sortedNotInLiked];
-
-        setIsSubscribed(subData?.isActive || false);
-        setAllMovies(finalList);
-        setMovies(finalList);
-      } catch (err) {
-        console.error("❌ Failed to fetch data:", err);
-        setIsSubscribed(false);
-        setMovies([]);
-        setAllMovies([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchInitialData();
+    loadRecommendedMovies();
   }, [userId, isOnline]);
 
-  // ✅ Shared search logic (used in fallback)
+  // ✅ Search logic
   const handleSearch = (query) => {
     setSearchQuery(query);
     setSubmittedQuery(query);
@@ -133,7 +157,7 @@ const StFilterPage = () => {
 
     const filteredList = allMovies.filter((movie) => {
       const title = (movie.title || "").toLowerCase();
-      const director = (movie.director || "").toLowerCase();
+      const director = normalizeString(movie.director);
       const producers = normalizeString(movie.producers);
       const genres = normalizeString(movie.genres);
       const actors = normalizeString(movie.actors);
@@ -191,16 +215,15 @@ const StFilterPage = () => {
           <StFilterBar
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            setSubmittedQuery={setSubmittedQuery} 
             isOnline={isOnline}
             onSearch={(result) => {
               if (Array.isArray(result)) {
-                // Offline mode passed in filtered movies
                 setMovies(result);
                 setIsSearching(false);
-                setSubmittedQuery(searchQuery);
               } else {
-                // Online mode fallback: filter client-side
                 handleSearch(result);
+                setSubmittedQuery(result); 
               }
             }}
           />
@@ -214,6 +237,7 @@ const StFilterPage = () => {
           isLoading={isLoading}
           isSearching={isSearching}
           setMovies={setMovies}
+          topRated={topRated} // 🔥 Use this in StFilterContent if needed
         />
       </div>
     </>

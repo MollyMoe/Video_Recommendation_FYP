@@ -89,7 +89,7 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
             )}
           </div>
           <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
-            <div>{Array.isArray(movie.genres) ? movie.genres.join(', ') : movie.genres}</div>
+            <div>{Array.isArray(movie.genres) ? movie.genres.join(' | ') : movie.genres}</div>
             <div className="font-semibold text-sm">
               ⭐ {movie.predicted_rating?.toFixed(1) || 'N/A'}
             </div>
