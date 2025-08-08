@@ -41,7 +41,7 @@ def get_all_movies(request: Request):
     db = request.app.state.movie_db
     try:
         # Fetch from your actual collection
-        movies = list(db.hybridRecommendation2.find().limit(30000))
+        movies = list(db.hybridRecommendation2.find().limit(50000))
 
         for movie in movies:
             movie["_id"] = str(movie["_id"])
@@ -452,10 +452,8 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
             "poster_url": {"$ne": None, "$ne": ""},
             "trailer_url": {"$ne": None, "$ne": ""},
             "genres": {"$regex": genre_pattern, "$options": "i"}
-        }},
-        
-            {"$sample": {"size": 1000}}
-        ]
+        }}]
+
         movies_cursor = list(db.hybridRecommendation2.aggregate(pipeline))
         
         random.shuffle(movies_cursor)
@@ -739,31 +737,32 @@ def _als_filtered(userId: str, interaction_collection: str, request: Request, ex
             if not user_genre_set: return JSONResponse(content=[])
             print(f"User's taste profile (genres): {list(user_genre_set)}")
 
-            all_exclude_ids = set(interaction_ids) | (exclude_ids or set())
+            all_exclude_ids = set(interaction_ids) | exclude_ids
+            candidate_cursor = movies.find({
+                "movieId": {"$nin": list(all_exclude_ids)},
+                "poster_url": {"$ne": None, "$ne": ""},
+                "trailer_url": {"$ne": None, "$ne": ""}
+            }).limit(1000)
 
-            # 1. Create a regex pattern to match any of the user's favorite genres.
-            # This is extremely efficient for searching within the database.
-            genre_pattern = "|".join(re.escape(g) for g in user_genre_set)
-
-            # 2. Build a multi-stage aggregation pipeline.
-            pipeline = [
-                # Stage 1: Find all movies that match our criteria.
-                {
-                    "$match": {
-                        "movieId": {"$nin": list(all_exclude_ids)},
-                        "poster_url": {"$ne": None, "$ne": ""},
-                        "trailer_url": {"$ne": None, "$ne": ""},
-                        "genres": {"$regex": genre_pattern, "$options": "i"}
-                    }
-                },
-            ]
-
-            # 3. Execute the pipeline. The result is a small, safe list.
-            # The list 'final_movies' will have at most 200 items.
-            final_movies = list(movies.aggregate(pipeline))
-
-            print(f"Fallback found {len(final_movies)} relevant movies using an efficient pipeline.")
-
+            scored_candidates = []
+            for movie in candidate_cursor:
+                raw_movie_genres = movie.get("genres", [])
+                movie_genre_set = set()
+                if isinstance(raw_movie_genres, str):
+                    movie_genre_set = set(g.strip().lower() for g in raw_movie_genres.split("|"))
+                elif isinstance(raw_movie_genres, list):
+                    movie_genre_set = set(g.strip().lower() for g in raw_movie_genres)
+                
+                intersection = len(user_genre_set.intersection(movie_genre_set))
+                
+                if intersection > 0:
+                    # The score is now simply the number of shared genres.
+                    movie['similarity_score'] = intersection
+                    scored_candidates.append(movie)
+            
+            # Sort the candidates by the number of shared genres (most shared first).
+            final_movies = sorted(scored_candidates, key=lambda x: x['similarity_score'], reverse=True)
+            print(f"Fallback found {len(final_movies)} relevant movies with at least one shared genre.")
         
         # --- Final Processing ---
         if not final_movies:
