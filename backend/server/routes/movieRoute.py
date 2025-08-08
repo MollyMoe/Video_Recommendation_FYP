@@ -454,7 +454,7 @@ def regenerate_movies(request: Request, body: dict = Body(...)):
             "genres": {"$regex": genre_pattern, "$options": "i"}
         }},
         
-            {"$sample": {"size": 200}}
+            {"$sample": {"size": 1000}}
         ]
         movies_cursor = list(db.hybridRecommendation2.aggregate(pipeline))
         
@@ -756,11 +756,6 @@ def _als_filtered(userId: str, interaction_collection: str, request: Request, ex
                         "genres": {"$regex": genre_pattern, "$options": "i"}
                     }
                 },
-                # Stage 2: Randomly sample 200 of the matching movies.
-                # This is memory-safe and provides variety.
-                {
-                    "$sample": {"size": 200}
-                }
             ]
 
             # 3. Execute the pipeline. The result is a small, safe list.
