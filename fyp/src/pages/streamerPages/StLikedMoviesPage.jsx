@@ -153,45 +153,62 @@ const StLikedMoviesPage = () => {
   };
 
   useEffect(() => {
-    const syncLikedQueue = async () => {
-      if (!savedUser?.userId) return;
-
-      const liked = window.electron.getRawLikedQueue?.() || [];
-
-      for (const action of liked) {
-        try {
-          if (action.type === "delete") {
-            await fetch(`${API}/api/movies/like/delete`, {
+    const syncLikedDiff = async () => {
+      if (!isOnline || !savedUser?.userId) return;
+  
+      // ✅ Pick the endpoint your backend actually supports:
+      const DELETE_URL = `${API}/api/movies/likedMovies/delete`;
+      // If your backend only has /api/movies/like/delete, then use:
+      // const DELETE_URL = `${API}/api/movies/like/delete`;
+  
+      try {
+        // 1) Fetch server liked list
+        const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+        if (!res.ok) throw new Error(`Server liked fetch failed: ${res.status}`);
+        const payload = await res.json();
+        const serverLiked = Array.isArray(payload?.likedMovies) ? payload.likedMovies : [];
+  
+        // 2) Load local liked list (what the user wants after offline edits)
+        const localLiked = window.electron?.getLikedQueue?.() || [];
+  
+        // 3) Normalize IDs and build sets
+        const getId = (m) => (m?._id ?? m?.movieId ?? "").toString();
+        const serverSet = new Set(serverLiked.map(getId));
+        const localSet  = new Set(localLiked.map(getId));
+  
+        // 4) Anything on server but NOT locally = deleted offline → delete on server
+        const toDelete = [...serverSet].filter((id) => !localSet.has(id));
+  
+        for (const movieId of toDelete) {
+          try {
+            const delRes = await fetch(DELETE_URL, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 userId: savedUser.userId,
-                movieId: action.movieId,
+                movieId,
               }),
             });
+            if (!delRes.ok) {
+              const t = await delRes.text();
+              console.warn("❌ Delete failed for", movieId, delRes.status, t);
+            }
+          } catch (e) {
+            console.warn("❌ Delete error for", movieId, e);
           }
-
-          // else if (action.type === "add" && action.movie) {
-          //   await fetch(`${API}/api/movies/like`, {
-          //     method: "POST",
-          //     headers: { "Content-Type": "application/json" },
-          //     body: JSON.stringify({
-          //       userId: savedUser.userId,
-          //       movie: action.movieId, // ✅ send full object
-          //     }),
-          //   });
-          // }
-        } catch (err) {
-          console.warn("❌ Failed to sync liked movie:", err);
         }
+  
+        // 5) Refresh UI (and offline cache) from server truth
+        await fetchLikedMovies(savedUser.userId);
+        console.log("✅ Synced liked via diff");
+      } catch (e) {
+        console.error("❌ Liked diff sync failed:", e);
       }
-
-      window.electron.clearLikedQueue?.();
-      console.log("✅ Synced liked queue");
     };
-
-    if (isOnline) syncLikedQueue();
+  
+    syncLikedDiff();
   }, [isOnline]);
+  
 
   const handleRemove = async (movieId) => {
     const savedUser = JSON.parse(localStorage.getItem("user"));
@@ -202,9 +219,14 @@ const StLikedMoviesPage = () => {
     }
 
     // ✅ Always remove from UI first
+    // setLikedMovies((prev) =>
+    //   prev.filter((m) => m.movieId?.toString() !== movieId.toString())
+    // );
+
     setLikedMovies((prev) =>
-      prev.filter((m) => m.movieId?.toString() !== movieId.toString())
+      prev.filter((m) => ((m._id || m.movieId)?.toString() !== movieId.toString()))
     );
+    
 
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
