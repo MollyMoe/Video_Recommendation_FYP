@@ -6,6 +6,8 @@ import { Play, Trash2, CheckCircle } from "lucide-react";
 import CompactMovieCard from "../../components/movie_components/CompactMovieCard";
 
 import { API } from "@/config/api";
+const getId = (m) => (m?._id ?? m?.movieId ?? "").toString();
+
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
@@ -93,16 +95,15 @@ const StLikedMoviesPage = () => {
       // ✅ Deduplicate
       const seen = new Set();
       const uniqueMovies = [];
-
       for (const movie of data.likedMovies || []) {
-        const id = movie._id || movie.movieId;
+        const id = getId(movie);
         if (id && !seen.has(id)) {
           seen.add(id);
           uniqueMovies.push(movie);
         }
       }
-
       setLikedMovies(uniqueMovies);
+      
     } catch (err) {
       console.error("❌ Failed to fetch liked movies:", err);
     } finally {
@@ -156,29 +157,27 @@ const StLikedMoviesPage = () => {
     const syncLikedDiff = async () => {
       if (!isOnline || !savedUser?.userId) return;
   
-      // ✅ Pick the endpoint your backend actually supports:
+      // Choose the endpoint your backend supports:
       const DELETE_URL = `${API}/api/movies/likedMovies/delete`;
-      // If your backend only has /api/movies/like/delete, then use:
+      // If your server only has /api/movies/like/delete, use that instead:
       // const DELETE_URL = `${API}/api/movies/like/delete`;
   
       try {
-        // 1) Fetch server liked list
+        // 1) Server liked list
         const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
         if (!res.ok) throw new Error(`Server liked fetch failed: ${res.status}`);
         const payload = await res.json();
         const serverLiked = Array.isArray(payload?.likedMovies) ? payload.likedMovies : [];
   
-        // 2) Load local liked list (what the user wants after offline edits)
+        // 2) Local liked list (offline truth)
         const localLiked = window.electron?.getLikedQueue?.() || [];
   
-        // 3) Normalize IDs and build sets
-        const getId = (m) => (m?._id ?? m?.movieId ?? "").toString();
+        // 3) Diff by normalized id
         const serverSet = new Set(serverLiked.map(getId));
         const localSet  = new Set(localLiked.map(getId));
-  
-        // 4) Anything on server but NOT locally = deleted offline → delete on server
         const toDelete = [...serverSet].filter((id) => !localSet.has(id));
   
+        // 4) Send deletes for items removed offline
         for (const movieId of toDelete) {
           try {
             const delRes = await fetch(DELETE_URL, {
@@ -198,9 +197,8 @@ const StLikedMoviesPage = () => {
           }
         }
   
-        // 5) Refresh UI (and offline cache) from server truth
+        // 5) Refresh UI/cache to match server
         await fetchLikedMovies(savedUser.userId);
-        console.log("✅ Synced liked via diff");
       } catch (e) {
         console.error("❌ Liked diff sync failed:", e);
       }
@@ -209,61 +207,48 @@ const StLikedMoviesPage = () => {
     syncLikedDiff();
   }, [isOnline]);
   
-
-  const handleRemove = async (movieId) => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-
-    if (!movieId || !savedUser?.userId) {
-      console.warn("⚠️ Missing movieId or userId");
-      return;
-    }
-
-    // ✅ Always remove from UI first
-    // setLikedMovies((prev) =>
-    //   prev.filter((m) => m.movieId?.toString() !== movieId.toString())
-    // );
-
-    setLikedMovies((prev) =>
-      prev.filter((m) => ((m._id || m.movieId)?.toString() !== movieId.toString()))
-    );
-    
-
+  
+  const handleRemove = async (id) => {
+    if (!id || !savedUser?.userId) return;
+  
+    // ✅ Optimistic UI + write-through to disk when offline
+    setLikedMovies((prev) => {
+      const next = prev.filter((m) => getId(m) !== id);
+      if (!isOnline) {
+        // persist the filtered list to the offline file immediately
+        window.electron?.saveLikedQueue?.(next);
+      }
+      return next;
+    });
+  
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 2000);
-
-    // ✅ OFFLINE mode: remove from local queue only
-    if (!isOnline) {
-      console.log("🛠 Offline — removing from local liked queue only");
-      window.electron?.removeFromLikedQueue?.(movieId);
-      return;
-    }
-
-    // ✅ ONLINE mode: remove from backend
+  
+    // ✅ OFFLINE: we're done (already persisted locally)
+    if (!isOnline) return;
+  
+    // ✅ ONLINE: delete on backend
     try {
       const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: savedUser.userId,
-          movieId,
+          movieId: id,
         }),
       });
-
+  
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`Server error ${res.status}: ${errText}`);
       }
-
-      const data = await res.json();
-      console.log("🗑️ Removed from backend:", data);
+      // (Optional) await fetchLikedMovies(savedUser.userId);
     } catch (err) {
-      console.error("❌ Error removing liked movie:", err.message || err);
-      alert("Failed to remove from server. Please try again later.");
+      console.error("❌ Error removing liked movie:", err);
+      // (Optional) rollback: await fetchLikedMovies(savedUser.userId);
     }
   };
-
+  
   return (
     <div className="p-4">
       <StNav />
@@ -278,12 +263,12 @@ const StLikedMoviesPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {likedMovies.map((movie) => (
                 <CompactMovieCard
-                  key={movie._id || movie.movieId}
+                  key={getId(movie)}
                   movie={movie}
                   isSubscribed={isSubscribed}
                   isOnline={isOnline}
                   onPlay={handlePlay}
-                  onRemove={handleRemove}
+                  onRemove={() => handleRemove(getId(movie))}
                 />
               ))}
             </div>
