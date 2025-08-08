@@ -739,9 +739,6 @@ def _als_filtered(userId: str, interaction_collection: str, request: Request, ex
             if not user_genre_set: return JSONResponse(content=[])
             print(f"User's taste profile (genres): {list(user_genre_set)}")
 
-             if not user_genre_set: return JSONResponse(content=[])
-            print(f"User's taste profile (genres): {list(user_genre_set)}")
-
             all_exclude_ids = set(interaction_ids) | (exclude_ids or set())
 
             # 1. Create a regex pattern to match any of the user's favorite genres.
