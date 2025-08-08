@@ -34,11 +34,15 @@ import AdRecentlyAddedMovies from "./components/admin_components/AdRecentlyAdded
 import AdUserFeedback from "./components/admin_components/AdUserFeedback";
 import AdVideoManageGenrePage from "./pages/adminPages/AdVideoManageGenrePage";
 import AdSuspensionDetailPage from "./pages/adminPages/AdSuspensionDetailPage";
+
+// added for render deplyment
 import { API } from "./config/api";
 import { useEffect } from "react";
 
 
 function App() {
+
+  // added for render deplyment
   useEffect(() => {
     function handleOnline() {
       const queued = window.electron?.getFeedbackQueue?.() || [];

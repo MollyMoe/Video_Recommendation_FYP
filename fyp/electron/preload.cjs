@@ -129,7 +129,7 @@ function queueAction(filePath, action) {
 //   }
 // }
 
-
+// start from this
 contextBridge.exposeInMainWorld('electron', {
   // start from session replaced
   // ✅ Session
@@ -158,6 +158,8 @@ contextBridge.exposeInMainWorld('electron', {
       return null;
     }
   },
+
+  // until here
 
   // ✅ Profile
   saveProfileUpdate: (data) => {
