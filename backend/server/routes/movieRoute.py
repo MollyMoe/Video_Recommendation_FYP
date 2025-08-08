@@ -97,6 +97,8 @@ async def add_to_liked_movies(request: Request):
     user_id = data.get("userId")
     movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
 
+    if not movie_id and isinstance(data.get("movie"), dict):
+        movie_id = data["movie"].get("movieId")
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 

@@ -12,6 +12,7 @@ const StLikedMoviesPage = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const savedUser = JSON.parse(localStorage.getItem("user"));
   
 
   useEffect(() => {
@@ -74,10 +75,16 @@ const StLikedMoviesPage = () => {
         window.electron.saveLikedQueue(data.likedMovies);
       }
     } else if (window.electron?.getLikedQueue) {
-// ✅ Offline: use raw liked queue
-      const rawQueue = await window.electron?.getRawLikedQueue?.();
-      console.log("📦 Offline raw liked movies:", rawQueue);
-      data.likedMovies = rawQueue || [];
+      // ✅ Offline: use normalized liked queue (movies array)
+      const offlineMovies = window.electron.getLikedQueue();
+      console.log("📦 Offline liked movies (normalized):", offlineMovies);
+      data.likedMovies = offlineMovies || [];
+    
+      // (Optional debug) If nothing found, peek at raw shape:
+      if (!data.likedMovies?.length && window.electron?.getRawLikedQueue) {
+        const rawQueue = window.electron.getRawLikedQueue();
+        console.log("🧪 Raw liked queue (fallback view):", rawQueue);
+      }
     } else {
       console.warn("⚠️ Offline and no preload getLikedQueue available");
     }
@@ -106,7 +113,7 @@ const StLikedMoviesPage = () => {
 };
 
   useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
+
     if (savedUser?.userId) {
       fetchLikedMovies(savedUser.userId);
       fetchSubscription(savedUser.userId);
@@ -114,7 +121,7 @@ const StLikedMoviesPage = () => {
   }, []);
 
   const handlePlay = async (movieId, trailerUrl) => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
+  
     if (!movieId || !savedUser?.userId) return;
 
     console.log("▶️ Trailer URL:", trailerUrl);
@@ -148,7 +155,7 @@ const StLikedMoviesPage = () => {
 
   useEffect(() => {
   const syncLikedQueue = async () => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
+ 
     if (!savedUser?.userId) return;
 
     const liked = window.electron.getRawLikedQueue?.() || [];
@@ -164,16 +171,19 @@ const StLikedMoviesPage = () => {
               movieId: action.movieId,
             }),
           });
-        } else if (action.movie) {
-          await fetch(`${API}/api/movies/like`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: savedUser.userId,
-              movie: action.movie,
-            }),
-          });
-        }
+        } 
+
+        // else if (action.type === "add" && action.movie) {
+        //   await fetch(`${API}/api/movies/like`, {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify({
+        //       userId: savedUser.userId,
+        //       movie: action.movieId, // ✅ send full object
+        //     }),
+        //   });
+        // }
+        
       } catch (err) {
         console.warn("❌ Failed to sync liked movie:", err);
       }
@@ -185,6 +195,10 @@ const StLikedMoviesPage = () => {
 
   if (isOnline) syncLikedQueue();
 }, [isOnline]);
+
+
+
+
 
   const handleRemove = async (movieId) => {
   const savedUser = JSON.parse(localStorage.getItem("user"));

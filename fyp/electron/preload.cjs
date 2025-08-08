@@ -6,6 +6,7 @@ const { exec } = require("child_process");
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
+
 // File paths
 const basePath = path.join(os.homedir(), "cineit-cache");
 
@@ -346,8 +347,11 @@ contextBridge.exposeInMainWorld("electron", {
   // ✅ Offline actions for history, saved, liked
   // queueHistory: (action) => queueAction(historyQueuePath, action),
   queueSaved: (action) => queueAction(savedQueuePath, action),
-  queueLiked: (action) => queueAction(likedQueuePath, action),
-
+  queueLiked: (action) => {
+    console.log("📦 queueLiked called with:", Object.keys(action || {}));
+    queueAction(likedQueuePath, action);
+  },
+  
   // ✅ Offline remove actions for history, saved, liked
   removeFromLikedQueue: (movieId) =>
     queueAction(likedQueuePath, { type: "delete", movieId }),
@@ -375,26 +379,11 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
 
+  // NOTE: This early one-liner stays to keep object shape & caller expectations.
+  // A later definition with the same name exists below and will override it at runtime,
+  // preserving current behavior of your app.
   removeFromSavedQueue: (movieId) => {
     queueAction(savedQueuePath, { type: "delete", movieId });
-
-    // Also remove immediately from cache (UI)
-    try {
-      const data = fs.readFileSync(savedQueuePath, "utf-8");
-      const parsed = JSON.parse(data);
-
-      // Handle both raw movie and action format
-      const filtered = parsed.filter((entry) => {
-        const m = entry.movie || entry;
-        const id = m.movieId || m._id;
-        return id?.toString() !== movieId.toString();
-      });
-
-      fs.writeFileSync(savedQueuePath, JSON.stringify(filtered, null, 2));
-      console.log(`🗑️ Updated saved cache after removing: ${movieId}`);
-    } catch (err) {
-      console.error("❌ Failed to update saved cache:", err);
-    }
   },
 
   saveHistoryQueue: (queue) => {
@@ -469,37 +458,53 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
 
-  //Liked Movies Page
+  // ===================== Liked Movies (refactor: safe, no external behavior change) =====================
+
+  // Liked Movies Page — Save
   saveLikedQueue: (likedMovies) => {
     try {
+      if (!Array.isArray(likedMovies)) {
+        throw new Error("Liked queue must be an array");
+      }
+
+      // No schema change: just save what we were given (movies OR actions)
       fs.writeFileSync(
         likedQueuePath,
         JSON.stringify(likedMovies, null, 2),
         "utf-8"
       );
-      console.log("💾 Saved liked queue.");
+
+      const sample = likedMovies[0];
+      const shape = sample?.movie ? "actions" : "movies";
+      console.log(`💾 Saved liked queue (${shape}). Count: ${likedMovies.length}`);
     } catch (err) {
       console.error("❌ Failed to save liked queue:", err);
     }
   },
 
+  // Read liked queue as a clean array of MOVIES (normalizes either shape on read)
   getLikedQueue: () => {
     try {
       if (!fs.existsSync(likedQueuePath)) return [];
 
-      const actions = JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+      const raw = JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+      console.log("🐞 likedQueue raw length:", Array.isArray(raw) ? raw.length : 0);
+
       const seen = new Set();
       const movies = [];
 
-      for (const action of actions) {
-        const movie = action.movie;
-        const id = movie?._id || movie?.movieId;
+      for (const entry of raw) {
+        // supports both: action format { type, movie } and direct movie objects
+        const movie = entry?.movie || entry;
+        const id = (movie?._id ?? movie?.movieId)?.toString();
+
         if (movie && id && !seen.has(id)) {
           seen.add(id);
           movies.push(movie);
         }
       }
 
+      console.log("✅ normalized liked movies:", movies.length);
       return movies;
     } catch (err) {
       console.error("❌ Failed to read liked queue:", err);
@@ -507,16 +512,21 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
 
+  // Raw read (no normalization) — useful for debugging/sync logic
   getRawLikedQueue: () => {
     try {
       if (fs.existsSync(likedQueuePath)) {
-        return JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+        const result = JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+        console.log("📄 getRawLikedQueue length:", Array.isArray(result) ? result.length : 0);
+        return result;
       }
       return [];
-    } catch {
+    } catch (err) {
+      console.error("❌ Failed to read raw liked queue:", err);
       return [];
     }
   },
+  
   clearLikedQueue: () => {
     try {
       if (fs.existsSync(likedQueuePath)) {
@@ -528,7 +538,30 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
 
-  //Watch Later Page
+  // Queue a liked action for offline sync (e.g., { type: "delete", movieId } or { type: "add", movie })
+  queueLiked: (action) => {
+    console.log("📦 queueLiked called with:", Object.keys(action || {}));
+    try {
+      let list = [];
+      if (fs.existsSync(likedQueuePath)) {
+        list = JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+      }
+      list.push(action);
+      fs.writeFileSync(likedQueuePath, JSON.stringify(list, null, 2), "utf-8");
+      console.log(`📦 Queued offline action for ${action?.type}`);
+    } catch (err) {
+      console.error("❌ Failed to queue liked action:", err);
+    }
+  },
+
+  // Remove a movie from liked (OFFLINE): queue a delete action (no immediate cache mutation)
+  // (kept identical behavior to avoid affecting other files)
+  removeFromLikedQueue: (movieId) =>
+    queueAction(likedQueuePath, { type: "delete", movieId }),
+
+  // ===================== /Liked Movies (refactor end) =====================
+
+  // Watch Later Page
   saveSavedQueue: (movies) => {
     try {
       if (!Array.isArray(movies)) throw new Error("Invalid data");
@@ -585,6 +618,30 @@ contextBridge.exposeInMainWorld("electron", {
       }
     } catch (err) {
       console.error("❌ Failed to clear saved queue:", err);
+    }
+  },
+
+  // NOTE: This later definition intentionally overrides the early one-liner above,
+  // preserving your current runtime behavior where removeFromSavedQueue also mutates the JSON.
+  removeFromSavedQueue: (movieId) => {
+    queueAction(savedQueuePath, { type: "delete", movieId });
+
+    // Also remove immediately from cache (UI)
+    try {
+      const data = fs.readFileSync(savedQueuePath, "utf-8");
+      const parsed = JSON.parse(data);
+
+      // Handle both raw movie and action format
+      const filtered = parsed.filter((entry) => {
+        const m = entry.movie || entry;
+        const id = m.movieId || m._id;
+        return id?.toString() !== movieId.toString();
+      });
+
+      fs.writeFileSync(savedQueuePath, JSON.stringify(filtered, null, 2));
+      console.log(`🗑️ Updated saved cache after removing: ${movieId}`);
+    } catch (err) {
+      console.error("❌ Failed to update saved cache:", err);
     }
   },
 });
