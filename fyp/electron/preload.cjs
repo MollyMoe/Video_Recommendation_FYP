@@ -127,6 +127,7 @@ function queueAction(filePath, action) {
 
 
 contextBridge.exposeInMainWorld('electron', {
+   // start from session replaced
   // ✅ Session
   saveSession: (data) => {
     try {
@@ -136,6 +137,16 @@ contextBridge.exposeInMainWorld('electron', {
       console.error("❌ Failed to save session offline:", err);
     }
   },
+  
+  // ✅ Handle online/offline status
+  onOnline: () => {
+    window.dispatchEvent(new Event('online'));
+  },
+  onOffline: () => {
+    window.dispatchEvent(new Event('offline'));
+  },
+  // until here
+  
   getSession: () => {
     try {
       return JSON.parse(fs.readFileSync(sessionFilePath, 'utf-8'));

@@ -1,7 +1,7 @@
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
-import { syncOfflineCache } from "./utils/syncOfflineCache";
+import { useEffect } from "react";
 
 import StHomePage from "./pages/streamerPages/StHomePage";
 import InputGenrePage from "./pages/InputGenrePage";
@@ -43,6 +43,34 @@ import StPaymentSuccessPage from "./pages/streamerPages/StPaymentSuccessPage";
 
 
 function App() {
+
+   useEffect(() => {
+    function handleOnline() {
+      const queued = window.electron?.getFeedbackQueue?.() || [];
+
+      if (queued.length > 0) {
+        queued.forEach((item) => {
+          fetch(`${API()}/api/feedback`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(item),
+          })
+            .then(res => res.json())
+            .then(data => {
+              console.log("✅ Sent queued feedback:", data);
+            })
+            .catch(err => {
+              console.error("❌ Failed to send queued feedback item:", err);
+            });
+        });
+
+        window.electron?.clearFeedbackQueue?.();
+      }
+    }
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
 
   return (
     <UserProvider>
