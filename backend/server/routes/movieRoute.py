@@ -85,31 +85,7 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
 
-# Liked Movies
 
-@router.post("/like")
-async def add_to_liked_movies(request: Request):
-    print("✅ Backend received like request:", request)
-    data = await request.json()
-    db = request.app.state.movie_db
-    liked_collection = db["liked"]
-
-    user_id = data.get("userId")
-    movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
-
-    if not movie_id and isinstance(data.get("movie"), dict):
-        movie_id = data["movie"].get("movieId")
-    if not user_id or not movie_id:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-    # Use $addToSet to avoid duplicates
-    liked_collection.update_one(
-        {"userId": user_id},
-        {"$addToSet": {"likedMovies": movie_id}},
-        upsert=True
-    )
-
-    return {"message": "Movie added to liked list"}
 
 # @router.get("/likedMovies/{userId}")
 # def get_liked_movies(userId: str, request: Request):
@@ -196,6 +172,33 @@ async def add_to_liked_movies(request: Request):
 
 #     return {"likedMovies": unique_movies}
 
+# Liked Movies
+
+@router.post("/like")
+async def add_to_liked_movies(request: Request):
+    print("✅ Backend received like request:", request)
+    data = await request.json()
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
+
+    if not movie_id and isinstance(data.get("movie"), dict):
+        movie_id = data["movie"].get("movieId")
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    # Use $addToSet to avoid duplicates
+    liked_collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"likedMovies": movie_id}},
+        upsert=True
+    )
+
+    return {"message": "Movie added to liked list"}
+
+
 @router.get("/likedMovies/{userId}")
 def get_liked_movies(userId: str, request: Request):
     db = request.app.state.movie_db
@@ -208,6 +211,51 @@ def get_liked_movies(userId: str, request: Request):
 
     # The likedMovies are full movie objects already (your screenshot shows that)
     return {"likedMovies": liked_doc["likedMovies"]}
+
+@router.post("/likedMovies/delete")
+async def remove_from_liked_movies(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    liked_collection = db["liked"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    mid = str(movie_id)  # normalize to string
+    int_mid = None
+    try:
+        int_mid = int(movie_id)
+    except (ValueError, TypeError):
+        pass
+
+    # remove scalar match
+    r1 = liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": {"$in": [mid] + ([int_mid] if int_mid is not None else [])}}}
+    )
+    # remove object match: { movieId: "<id>" }
+    r2 = liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": {"movieId": mid}}}
+    )
+    # remove object match: { _id: "<id>" }
+    r3 = liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": {"_id": mid}}}
+    )
+
+    modified = (r1.modified_count or 0) + (r2.modified_count or 0) + (r3.modified_count or 0)
+    print(f"💥 MongoDB modified counts: {r1.modified_count}, {r2.modified_count}, {r3.modified_count}")
+
+    if modified > 0:
+        return {"message": "Movie removed from liked list"}
+    else:
+        return {"message": "Movie not found or already removed"}
+
+
 
 @router.post("/history")
 async def add_to_history(request: Request):
@@ -435,39 +483,6 @@ async def remove_from_watchLater(request: Request):
         return {"message": "Movie not found or already removed"}
     
 
-
-@router.post("/likedMovies/delete")
-async def remove_from_liked_movies(request: Request):
-    data = await request.json()
-    db = request.app.state.movie_db
-    liked_collection = db["liked"]
-
-    user_id = data.get("userId")
-    movie_id = data.get("movieId")
-
-
-    if not user_id or movie_id is None:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-    try:
-        movie_id = int(movie_id)
-    except (ValueError, TypeError):
-        pass
-
-    movie_id = str(data.get("movieId"))
-
-    result = liked_collection.update_one(
-        {"userId": user_id},
-        {"$pull": {"likedMovies": movie_id}}
-    )
-
-    print("💥 MongoDB modified count:", result.modified_count)
-
-
-    if result.modified_count > 0:
-        return {"message": "Movie removed from liked list"}
-    else:
-        return {"message": "Movie not found or already removed"}
 
 
 
