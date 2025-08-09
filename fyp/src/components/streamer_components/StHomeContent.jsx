@@ -59,6 +59,27 @@ function StHomeContent({ userId, searchQuery }) {
     };
   }, []);
 
+  // Normalize + enrich a movie object for offline snapshot
+function normalizeAndEnrich(movie) {
+  if (!movie) return null;
+
+  const m = { ...movie };
+
+  // genres: string -> array
+  if (typeof m.genres === "string") {
+    m.genres = m.genres.split(/[,|]/).map((g) => g.trim());
+  }
+
+  // trailer_key from trailer_url
+  if (!m.trailer_key && m.trailer_url) {
+    const match = m.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+    if (match) m.trailer_key = match[1];
+  }
+
+  return m;
+}
+
+
   const allAvailableGenres = useMemo(() => {
     const genres = new Set();
     lastRecommendedMovies.forEach((movie) => {
@@ -343,82 +364,102 @@ function StHomeContent({ userId, searchQuery }) {
 
   const handleAction = async (actionType, movieId) => {
     if (!movieId || !savedUser?.userId) return;
-
+  
     const actions = {
-      like: { url: "like", message: "Movie Liked!" },
-      save: { url: "watchLater", message: "Saved to Watch Later!" },
-      delete: {
-        url: "recommended/delete",
-        message: "Removed from recommendations",
-      },
-      history: { url: "history", message: "Movie added to history!" }, // ✅ ADD THIS LINE
+      like:   { url: "like",               message: "Movie Liked!" },
+      save:   { url: "watchLater",         message: "Saved to Watch Later!" },
+      delete: { url: "recommended/delete", message: "Removed from recommendations" },
+      history:{ url: "history",            message: "Movie added to history!" },
     };
-
+  
     const action = actions[actionType];
     if (!action) return;
-
-    // 📴 Offline-first: Save (Watch Later) queues ID + updates snapshot
+  
+    // ---------- OFFLINE SAVE (early return) ----------
     if (!isOnline && actionType === "save") {
       try {
-        // 1) queue the ID to sync later
+        // 1) queue for later sync
         window.electron?.queueSavedAction?.({ type: "add", movieId });
-
-        // 2) add full object into Saved snapshot so Saved page shows it right away
-        const full = lastRecommendedMovies.find(
-          (m) => String(m.movieId) === String(movieId)
-        ) ||
-          movies.find((m) => String(m.movieId) === String(movieId)) || {
-            movieId: String(movieId),
-            title: `Movie #${movieId}`,
-          };
-
-        const snap = window.electron?.getSavedSnapshot?.() || [];
-        const seen = new Set(snap.map((m) => String(m.movieId ?? m._id)));
-        if (!seen.has(String(movieId))) {
-          window.electron?.saveSavedSnapshot?.([full, ...snap]);
+  
+        // 2) build a rich object for the offline snapshot
+        let full =
+          lastRecommendedMovies.find(m => String(m.movieId) === String(movieId)) ||
+          movies.find(m => String(m.movieId) === String(movieId)) ||
+          null;
+  
+        // enrich from preload if missing poster/trailer
+        if (!full || !full.poster_url || !full.trailer_url) {
+          try {
+            const pool = (await window.electron?.getRecommendedMovies?.()) || [];
+            const found = pool.find(m => String(m.movieId) === String(movieId));
+            if (found) full = { ...found, ...full };
+          } catch {}
         }
-
-        setPopupMessage(actions.save.message + " (offline)");
+  
+        if (!full) {
+          full = { movieId: String(movieId), title: `Movie #${movieId}`, poster_url: "" };
+        }
+  
+        full = normalizeAndEnrich(full);
+  
+        // 3) write to offline snapshot if not already present
+        if (window.electron?.getSavedSnapshot && window.electron?.saveSavedSnapshot) {
+          const snap = window.electron.getSavedSnapshot() || [];
+          const seen = new Set(snap.map(m => String(m.movieId ?? m._id)));
+          if (!seen.has(String(movieId))) {
+            window.electron.saveSavedSnapshot([full, ...snap]);
+          }
+        }
+  
+        // 4) toast
+        setPopupMessage("Saved to Watch Later! (offline)");
         setShowPopup(true);
         setTimeout(() => setShowPopup(false), 2000);
       } catch (e) {
         console.warn("❌ Offline save failed:", e);
       }
-      return; // stop here — no API call while offline
+      return; // IMPORTANT: stop here in offline save
     }
-
+  
+    // ---------- Immediate UI update for delete ----------
     if (actionType === "delete") {
-      setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
-      setLastRecommendedMovies((prev) =>
-        prev.filter((m) => m.movieId !== movieId)
-      );
+      setMovies(prev => prev.filter(m => m.movieId !== movieId));
+      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
     }
+  
+    // ---------- ONLINE / other actions ----------
     try {
       await axios.post(`${API}/api/movies/${action.url}`, {
         userId: savedUser.userId,
         movieId,
       });
-
-      // 🆕 If this was a Save online, also reflect in the snapshot for instant UI
+  
+      // mirror successful ONLINE save into snapshot for instant Watch Later UI
       if (actionType === "save") {
-        const full =
-          lastRecommendedMovies.find(
-            (m) => String(m.movieId) === String(movieId)
-          ) || movies.find((m) => String(m.movieId) === String(movieId));
-        if (
-          full &&
-          window.electron?.getSavedSnapshot &&
-          window.electron?.saveSavedSnapshot
-        ) {
+        let full =
+          lastRecommendedMovies.find(m => String(m.movieId) === String(movieId)) ||
+          movies.find(m => String(m.movieId) === String(movieId)) ||
+          null;
+  
+        if (!full || !full.poster_url || !full.trailer_url) {
+          try {
+            const pool = (await window.electron?.getRecommendedMovies?.()) || [];
+            const found = pool.find(m => String(m.movieId) === String(movieId));
+            if (found) full = { ...found, ...full };
+          } catch {}
+        }
+  
+        if (full && window.electron?.getSavedSnapshot && window.electron?.saveSavedSnapshot) {
+          full = normalizeAndEnrich(full);
           const snap = window.electron.getSavedSnapshot() || [];
-          const seen = new Set(snap.map((m) => String(m.movieId ?? m._id)));
+          const seen = new Set(snap.map(m => String(m.movieId ?? m._id)));
           if (!seen.has(String(movieId))) {
             window.electron.saveSavedSnapshot([full, ...snap]);
           }
         }
       }
-
-      // ✅ Existing popup logic...
+  
+      // toast (online)
       setPopupMessage(action.message);
       setShowPopup(true);
       setTimeout(() => setShowPopup(false), 2000);
@@ -426,7 +467,7 @@ function StHomeContent({ userId, searchQuery }) {
       console.error(`❌ Error with action ${actionType}:`, err);
     }
   };
-
+  
   const handleLike = async (movie) => {
     if (!movie || !savedUser?.userId) return;
 
