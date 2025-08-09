@@ -159,84 +159,143 @@ const StLikedMoviesPage = () => {
   //   }
   // };
 
+  // const fetchLikedMovies = async (userId) => {
+  //   if (!userId) {
+  //     console.warn("❗ No userId provided");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   const start = Date.now();
+  //   const minDelay = 500;
+
+  //   try {
+  //     let data = { likedMovies: [] };
+
+  //     if (isOnline) {
+  //       const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
+  //       data = await res.json();
+  //       console.log("🎬 Liked movies (online):", data);
+
+  //       // 1) server list
+  //       const server = Array.isArray(data?.likedMovies) ? data.likedMovies : [];
+
+  //       // 2) local snapshot (old likes + any offline-added)
+  //       const snap = window.electron?.getLikedList?.() ?? [];
+
+  //       // 3) any queued ADD actions not yet synced
+  //       const queuedAddMovies = (window.electron?.getRawLikedQueue?.() ?? [])
+  //         .filter((e) => e?.type === "add")
+  //         .map((e) => e?.movie || e);
+
+  //       // merge & dedupe by id
+  //       const idOf = (m) => (m?._id ?? m?.movieId ?? "").toString();
+  //       const seen = new Set();
+  //       const merged = [...server, ...snap, ...queuedAddMovies].filter((m) => {
+  //         const id = idOf(m);
+  //         if (!id || seen.has(id)) return false;
+  //         seen.add(id);
+  //         return true;
+  //       });
+
+  //       // set UI and persist snapshot (NOT the queue)
+  //       data.likedMovies = merged;
+  //       window.electron?.saveLikedList?.(merged);
+  //     } else if (window.electron?.getLikedList) {
+  //       // ✅ Offline: use snapshot (cineit-liked.json) for instant UI
+  //       const offlineMovies = window.electron.getLikedList() ?? [];
+  //       console.log("📦 Offline liked movies (snapshot):", offlineMovies);
+  //       data.likedMovies = offlineMovies;
+  //     } else if (window.electron?.getLikedQueue) {
+  //       // Fallback: old queue reader (still works if snapshot isn’t available)
+  //       const offlineMovies = window.electron.getLikedQueue() || [];
+  //       console.log("📦 Offline liked movies (queue fallback):", offlineMovies);
+  //       data.likedMovies = offlineMovies;
+  //     } else {
+  //       console.warn(
+  //         "⚠️ Offline and no preload getLikedList/getLikedQueue available"
+  //       );
+  //     }
+
+  //     // ✅ Deduplicate (keep your existing dedupe)
+  //     const dedupeSet = new Set();
+  //     const uniqueMovies = [];
+  //     for (const movie of data.likedMovies || []) {
+  //       const id = getId(movie);
+  //       if (id && !dedupeSet.has(id)) {
+  //         dedupeSet.add(id);
+  //         uniqueMovies.push(movie);
+  //       }
+  //     }
+  //     setLikedMovies(uniqueMovies);
+  //   } catch (err) {
+  //     console.error("❌ Failed to fetch liked movies:", err);
+  //   } finally {
+  //     const elapsed = Date.now() - start;
+  //     setTimeout(() => {
+  //       setIsLoading(false);
+  //     }, Math.max(0, minDelay - elapsed));
+  //   }
+  // };
+
   const fetchLikedMovies = async (userId) => {
     if (!userId) {
       console.warn("❗ No userId provided");
       return;
     }
-
+  
     setIsLoading(true);
     const start = Date.now();
     const minDelay = 500;
-
+  
     try {
-      let data = { likedMovies: [] };
-
+      let rows = [];
+  
       if (isOnline) {
-        const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
-        data = await res.json();
-        console.log("🎬 Liked movies (online):", data);
-
-        // 1) server list
-        const server = Array.isArray(data?.likedMovies) ? data.likedMovies : [];
-
-        // 2) local snapshot (old likes + any offline-added)
-        const snap = window.electron?.getLikedList?.() ?? [];
-
-        // 3) any queued ADD actions not yet synced
-        const queuedAddMovies = (window.electron?.getRawLikedQueue?.() ?? [])
-          .filter((e) => e?.type === "add")
-          .map((e) => e?.movie || e);
-
-        // merge & dedupe by id
-        const idOf = (m) => (m?._id ?? m?.movieId ?? "").toString();
-        const seen = new Set();
-        const merged = [...server, ...snap, ...queuedAddMovies].filter((m) => {
-          const id = idOf(m);
-          if (!id || seen.has(id)) return false;
-          seen.add(id);
-          return true;
+        // 🌐 ONLINE: server is the truth. Do NOT merge with cache/queue here.
+        const res = await fetch(`${API}/api/movies/likedMovies/${userId}`, {
+          headers: { "Cache-Control": "no-store" }
         });
-
-        // set UI and persist snapshot (NOT the queue)
-        data.likedMovies = merged;
-        window.electron?.saveLikedList?.(merged);
-      } else if (window.electron?.getLikedList) {
-        // ✅ Offline: use snapshot (cineit-liked.json) for instant UI
-        const offlineMovies = window.electron.getLikedList() ?? [];
-        console.log("📦 Offline liked movies (snapshot):", offlineMovies);
-        data.likedMovies = offlineMovies;
-      } else if (window.electron?.getLikedQueue) {
-        // Fallback: old queue reader (still works if snapshot isn’t available)
-        const offlineMovies = window.electron.getLikedQueue() || [];
-        console.log("📦 Offline liked movies (queue fallback):", offlineMovies);
-        data.likedMovies = offlineMovies;
+        const data = await res.json();
+        console.log("🎬 Liked movies (online raw):", data);
+  
+        rows = Array.isArray(data?.likedMovies) ? data.likedMovies : [];
+  
+        // 🔒 Overwrite snapshot with server list so cache matches latest DB
+        window.electron?.saveLikedList?.(rows);
       } else {
-        console.warn(
-          "⚠️ Offline and no preload getLikedList/getLikedQueue available"
-        );
-      }
-
-      // ✅ Deduplicate (keep your existing dedupe)
-      const dedupeSet = new Set();
-      const uniqueMovies = [];
-      for (const movie of data.likedMovies || []) {
-        const id = getId(movie);
-        if (id && !dedupeSet.has(id)) {
-          dedupeSet.add(id);
-          uniqueMovies.push(movie);
+        // 📴 OFFLINE: use snapshot (or fallback queue)
+        const snap = window.electron?.getLikedList?.() ?? [];
+        if (snap.length) {
+          console.log("📦 Offline liked (snapshot):", snap.length);
+          rows = snap;
+        } else if (window.electron?.getLikedQueue) {
+          const q = window.electron.getLikedQueue() || [];
+          console.log("📦 Offline liked (queue fallback):", q.length);
+          rows = q;
+        } else {
+          console.warn("⚠️ Offline and no preload getters available");
         }
       }
-      setLikedMovies(uniqueMovies);
+  
+      // ✅ de-dupe by id
+      const seen = new Set();
+      const unique = [];
+      for (const m of rows) {
+        const id = getId(m);
+        if (id && !seen.has(id)) { seen.add(id); unique.push(m); }
+      }
+      console.log("🧮 Final liked list set:", unique.length, "| online:", isOnline);
+      setLikedMovies(unique);
+  
     } catch (err) {
       console.error("❌ Failed to fetch liked movies:", err);
     } finally {
       const elapsed = Date.now() - start;
-      setTimeout(() => {
-        setIsLoading(false);
-      }, Math.max(0, minDelay - elapsed));
+      setTimeout(() => setIsLoading(false), Math.max(0, minDelay - elapsed));
     }
   };
+  
 
   useEffect(() => {
     if (savedUser?.userId) {
@@ -370,67 +429,67 @@ const StLikedMoviesPage = () => {
     }
   };
 
-  useEffect(() => {
-    const syncLikedDiff = async () => {
-      if (!isOnline || !savedUser?.userId) return;
+  // useEffect(() => {
+  //   const syncLikedDiff = async () => {
+  //     if (!isOnline || !savedUser?.userId) return;
 
-      await syncQueuedLikes();
+  //     await syncQueuedLikes();
 
-      // Choose the endpoint your backend supports:
-      const DELETE_URL = `${API}/api/movies/likedMovies/delete`;
-      // If your server only has /api/movies/like/delete, use that instead:
-      // const DELETE_URL = `${API}/api/movies/like/delete`;
+  //     // Choose the endpoint your backend supports:
+  //     const DELETE_URL = `${API}/api/movies/likedMovies/delete`;
+  //     // If your server only has /api/movies/like/delete, use that instead:
+  //     // const DELETE_URL = `${API}/api/movies/like/delete`;
 
-      try {
-        // 1) Server liked list
-        const res = await fetch(
-          `${API}/api/movies/likedMovies/${savedUser.userId}`
-        );
-        if (!res.ok)
-          throw new Error(`Server liked fetch failed: ${res.status}`);
-        const payload = await res.json();
-        const serverLiked = Array.isArray(payload?.likedMovies)
-          ? payload.likedMovies
-          : [];
+  //     try {
+  //       // 1) Server liked list
+  //       const res = await fetch(
+  //         `${API}/api/movies/likedMovies/${savedUser.userId}`
+  //       );
+  //       if (!res.ok)
+  //         throw new Error(`Server liked fetch failed: ${res.status}`);
+  //       const payload = await res.json();
+  //       const serverLiked = Array.isArray(payload?.likedMovies)
+  //         ? payload.likedMovies
+  //         : [];
 
-        // 2) Local liked list (offline truth)
-        // 2) Local liked list (offline truth = snapshot)
-        const localLiked = window.electron?.getLikedList?.() || [];
+  //       // 2) Local liked list (offline truth)
+  //       // 2) Local liked list (offline truth = snapshot)
+  //       const localLiked = window.electron?.getLikedList?.() || [];
 
-        // 3) Diff by normalized id
-        const serverSet = new Set(serverLiked.map(getId));
-        const localSet = new Set(localLiked.map(getId));
-        const toDelete = [...serverSet].filter((id) => !localSet.has(id));
+  //       // 3) Diff by normalized id
+  //       const serverSet = new Set(serverLiked.map(getId));
+  //       const localSet = new Set(localLiked.map(getId));
+  //       const toDelete = [...serverSet].filter((id) => !localSet.has(id));
 
-        // 4) Send deletes for items removed offline
-        for (const movieId of toDelete) {
-          try {
-            const delRes = await fetch(DELETE_URL, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                userId: savedUser.userId,
-                movieId,
-              }),
-            });
-            if (!delRes.ok) {
-              const t = await delRes.text();
-              console.warn("❌ Delete failed for", movieId, delRes.status, t);
-            }
-          } catch (e) {
-            console.warn("❌ Delete error for", movieId, e);
-          }
-        }
+  //       // 4) Send deletes for items removed offline
+  //       for (const movieId of toDelete) {
+  //         try {
+  //           const delRes = await fetch(DELETE_URL, {
+  //             method: "POST",
+  //             headers: { "Content-Type": "application/json" },
+  //             body: JSON.stringify({
+  //               userId: savedUser.userId,
+  //               movieId,
+  //             }),
+  //           });
+  //           if (!delRes.ok) {
+  //             const t = await delRes.text();
+  //             console.warn("❌ Delete failed for", movieId, delRes.status, t);
+  //           }
+  //         } catch (e) {
+  //           console.warn("❌ Delete error for", movieId, e);
+  //         }
+  //       }
 
-        // 5) Refresh UI/cache to match server
-        await fetchLikedMovies(savedUser.userId);
-      } catch (e) {
-        console.error("❌ Liked diff sync failed:", e);
-      }
-    };
+  //       // 5) Refresh UI/cache to match server
+  //       await fetchLikedMovies(savedUser.userId);
+  //     } catch (e) {
+  //       console.error("❌ Liked diff sync failed:", e);
+  //     }
+  //   };
 
-    syncLikedDiff();
-  }, [isOnline]);
+  //   syncLikedDiff();
+  // }, [isOnline]);
 
   // const handleRemove = async (id) => {
   //   if (!id || !savedUser?.userId) return;
@@ -485,6 +544,26 @@ const StLikedMoviesPage = () => {
   //   }
   // };
 
+  useEffect(() => {
+    const run = async () => {
+      if (!savedUser?.userId) return;
+  
+      if (isOnline) {
+        // 1) Apply any offline queued actions (no-op if none)
+        await syncQueuedLikes();
+  
+        // 2) Load latest from DB and overwrite state + snapshot
+        await fetchLikedMovies(savedUser.userId);
+      } else {
+        // Offline: show snapshot/queue via fetchLikedMovies' offline path
+        await fetchLikedMovies(savedUser.userId);
+      }
+    };
+  
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline, savedUser?.userId]);
+  
   const handleRemove = async (id) => {
     if (!id || !savedUser?.userId) return;
   
