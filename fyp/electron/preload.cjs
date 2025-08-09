@@ -349,9 +349,27 @@ contextBridge.exposeInMainWorld("electron", {
   queueLiked: (action) => queueAction(likedQueuePath, action),
 
   // ✅ Offline remove actions for history, saved, liked
-  removeFromLikedQueue: (movieId) =>
-    queueAction(likedQueuePath, { type: "delete", movieId }),
-
+  removeFromLikedQueue: (movieId) => {
+    try {
+      const data = fs.existsSync(likedQueuePath)
+        ? fs.readFileSync(likedQueuePath, "utf-8")
+        : "[]";
+      const parsed = JSON.parse(data);
+  
+      // tolerate { movie } or raw movie objects
+      const filtered = parsed.filter((entry) => {
+        const m = entry?.movie || entry;
+        const id = m?.movieId || m?._id;
+        return id?.toString() !== movieId.toString();
+      });
+  
+      fs.writeFileSync(likedQueuePath, JSON.stringify(filtered, null, 2), "utf-8");
+      console.log(`🗑️ Updated liked cache after removing: ${movieId}`);
+    } catch (err) {
+      console.error("❌ Failed to update liked cache:", err);
+    }
+  },
+  
   removeFromSavedQueue: (movieId) =>
     queueAction(savedQueuePath, { type: "delete", movieId }),
 
@@ -486,26 +504,27 @@ contextBridge.exposeInMainWorld("electron", {
   getLikedQueue: () => {
     try {
       if (!fs.existsSync(likedQueuePath)) return [];
-
-      const actions = JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+  
+      const raw = JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
       const seen = new Set();
       const movies = [];
-
-      for (const action of actions) {
-        const movie = action.movie;
-        const id = movie?._id || movie?.movieId;
-        if (movie && id && !seen.has(id)) {
+  
+      for (const entry of raw) {
+        const m = entry?.movie || entry; // tolerate {movie} or raw movie
+        const id = m?.movieId || m?._id;
+        if (m && id && !seen.has(id)) {
           seen.add(id);
-          movies.push(movie);
+          movies.push(m);
         }
       }
-
+  
       return movies;
     } catch (err) {
       console.error("❌ Failed to read liked queue:", err);
       return [];
     }
   },
+  
 
   getRawLikedQueue: () => {
     try {
