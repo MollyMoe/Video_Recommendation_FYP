@@ -32,6 +32,7 @@ const savedQueuePath = path.join(basePath, "cineit-saved-queue.json");
 const savedSnapshotPath = path.join(basePath, "cineit-saved.json");
 
 const likedListPath = path.join(basePath, "cineit-liked.json");
+const recommendedQueuePath = path.join(basePath, "cineit-recommended-queue.json");
 
 const paths = {
   topLiked: path.join(basePath, "topLiked.json"),
@@ -401,6 +402,50 @@ contextBridge.exposeInMainWorld("electron", {
 
   queueHistoryAction: (action) => queueAction(historyQueuePath, action),
   queueSavedAction: (action) => queueAction(savedQueuePath, action),
+
+
+  // --- Recommended offline queue + helpers ---
+queueRecommendedAction: (action) => queueAction(recommendedQueuePath, action),
+
+getRawRecommendedQueue: () => {
+  try {
+    if (fs.existsSync(recommendedQueuePath)) {
+      return JSON.parse(fs.readFileSync(recommendedQueuePath, "utf-8"));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+},
+
+clearRecommendedQueue: () => {
+  try {
+    if (fs.existsSync(recommendedQueuePath)) {
+      fs.unlinkSync(recommendedQueuePath);
+      console.log("🧹 Cleared recommended queue.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to clear recommended queue:", err);
+  }
+},
+
+removeFromRecommended: (movieId) => {
+  try {
+    if (!fs.existsSync(recommendedPath)) return;
+    const raw = fs.readFileSync(recommendedPath, "utf-8");
+    const arr = JSON.parse(raw);
+    const out = arr.filter((m) => {
+      const id = String(m?.movieId ?? m?._id ?? m?.title ?? "");
+      return id !== String(movieId);
+    });
+    fs.writeFileSync(recommendedPath, JSON.stringify(out, null, 2), "utf-8");
+    console.log(`🗑️ Removed ${movieId} from recommended.json`);
+  } catch (err) {
+    console.error("❌ Failed to remove from recommended:", err);
+  }
+},
+
+
 
   removeMovieFromHistoryCache: (movieId) => {
     try {

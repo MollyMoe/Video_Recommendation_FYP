@@ -374,6 +374,30 @@ function normalizeAndEnrich(movie) {
   
     const action = actions[actionType];
     if (!action) return;
+
+    // 📴 Offline delete from recommendations: update UI + local cache + queue for sync
+if (!isOnline && actionType === "delete") {
+  try {
+    // 1) update UI immediately
+    setMovies((prev) => prev.filter((m) => String(m.movieId) !== String(movieId)));
+    setLastRecommendedMovies((prev) => prev.filter((m) => String(m.movieId) !== String(movieId)));
+
+    // 2) update local recommended.json
+    window.electron?.removeFromRecommended?.(movieId);
+
+    // 3) queue for backend sync
+    window.electron?.queueRecommendedAction?.({ type: "delete", movieId });
+
+    // 4) toast
+    setPopupMessage("Removed from recommendations (offline)");
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 2000);
+  } catch (e) {
+    console.warn("❌ Offline recommended delete failed:", e);
+  }
+  return; // stop here—no API call while offline
+}
+
   
     // ---------- OFFLINE SAVE (early return) ----------
     if (!isOnline && actionType === "save") {
@@ -516,6 +540,35 @@ function normalizeAndEnrich(movie) {
       console.error("❌ Error with action like:", err);
     }
   };
+
+
+  useEffect(() => {
+    const syncRecommendedQueue = async () => {
+      const queued = window.electron?.getRawRecommendedQueue?.() || [];
+      if (!queued.length) return;
+  
+      for (const action of queued) {
+        try {
+          if (action?.type === "delete" && action.movieId) {
+            await axios.post(`${API}/api/movies/recommended/delete`, {
+              userId: savedUser.userId,
+              movieId: action.movieId,
+            });
+          }
+        } catch (err) {
+          console.warn("❌ Failed to sync recommended delete:", err);
+        }
+      }
+  
+      window.electron?.clearRecommendedQueue?.();
+      console.log("✅ Synced recommended queue");
+    };
+  
+    if (isOnline && savedUser?.userId) {
+      syncRecommendedQueue();
+    }
+  }, [isOnline, savedUser?.userId]);
+  
 
   const handleHistory = (movie) => {
     if (!isSubscribed || !movie) return;
