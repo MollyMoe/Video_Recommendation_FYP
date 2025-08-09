@@ -383,28 +383,155 @@ async def remove_from_history(request: Request):
     else:
         return {"message": "Movie not found or already removed"}
     
+# @router.post("/watchLater")
+# async def add_to_watchLater(request: Request):
+#     data = await request.json()
+#     db = request.app.state.movie_db
+#     watchLater_collection = db["saved"]
+
+#     user_id = data.get("userId")
+#     movie_id = data.get("movieId")
+
+#     if not user_id or not movie_id:
+#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+#     movie_id = str(movie_id) 
+
+#     # Use $addToSet to avoid duplicate entries in history
+#     watchLater_collection.update_one(
+#         {"userId": user_id},
+#         {"$addToSet": {"SaveMovies": movie_id}},
+#         upsert=True
+#     )
+
+#     return {"message": "Movie saved to watch later"}
+
+# @router.get("/watchLater/{userId}")
+# def get_watchLater_movies(userId: str, request: Request):
+#     try:
+#         db = request.app.state.movie_db
+#         watchLater_collection = db["saved"]
+#         movies_collection = db["hybridRecommendation2"]
+
+#         save = watchLater_collection.find_one({"userId": userId})
+#         if not save or not save.get("SaveMovies"):
+#             return {"SaveMovies": []}
+
+#         saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
+
+#         movies_cursor = movies_collection.find(
+#             {"movieId": {"$in": saveMovie_ids}},
+
+#             {
+#                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+#                 "trailer_url": 1, "trailer_key": 1, "genres": 1,
+#                 "tmdb_id": 1, "overview": 1, "director": 1,
+#                 "producers": 1, "actors": 1
+#             }
+
+#         )
+
+#         # Convert genres string to array and deduplicate
+#         seen = set()
+#         unique_movies = []
+#         for movie in movies_cursor:
+#             # Convert genres string to list
+#             genres_raw = movie.get("genres", "")
+#             if isinstance(genres_raw, str):
+#                 movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
+#             elif isinstance(genres_raw, list):
+#                 movie["genres"] = [g.strip() for g in genres_raw]  # already an array
+
+#             # Deduplicate by movieId
+#             mid = movie.get("movieId")
+#             if mid not in seen:
+#                 seen.add(mid)
+#                 movie["_id"] = str(movie["_id"])
+#                 unique_movies.append(movie)
+
+
+#         return {"SaveMovies": unique_movies}
+
+#     except Exception as e:
+#         print("❌ Error fetching saved movies:", e)
+#         raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
+    
+# @router.post("/watchLater/delete")
+# async def remove_from_watchLater(request: Request):
+#     data = await request.json()
+#     db = request.app.state.movie_db
+#     watchLater_collection = db["saved"]
+
+#     user_id = data.get("userId")
+#     movie_id = data.get("movieId")
+
+#     if not user_id or movie_id is None:
+#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+#     movie_id = str(movie_id)
+
+#     result = watchLater_collection.update_one(
+#         {"userId": user_id},
+#         {"$pull": {"SaveMovies": movie_id}}
+#     )
+
+#     print("💥 WatchLater delete modified count:", result.modified_count)
+
+#     if result.modified_count > 0:
+#         return {"message": "Movie removed from watch later list"}
+#     else:
+#         return {"message": "Movie not found or already removed"}
+    
 @router.post("/watchLater")
 async def add_to_watchLater(request: Request):
     data = await request.json()
     db = request.app.state.movie_db
     watchLater_collection = db["saved"]
+    movies_collection = db["hybridRecommendation2"]
 
     user_id = data.get("userId")
-    movie_id = data.get("movieId")
+    movie_id = str(data.get("movieId") or data.get("movie", {}).get("movieId") or "")
 
     if not user_id or not movie_id:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    movie_id = str(movie_id) 
+    # inline projection (only fields the UI needs)
+    proj = {
+        "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+        "trailer_url": 1, "trailer_key": 1, "genres": 1,
+        "tmdb_id": 1, "overview": 1, "director": 1,
+        "producers": 1, "actors": 1
+    }
 
-    # Use $addToSet to avoid duplicate entries in history
+    movie = movies_collection.find_one({"movieId": movie_id}, proj)
+    if not movie:
+        movie = {"movieId": movie_id, "title": f"Movie #{movie_id}", "poster_url": ""}
+
+    # light normalize inline
+    movie = dict(movie)
+    if "_id" in movie:
+        movie["_id"] = str(movie["_id"])
+    if "movieId" in movie and movie["movieId"] is not None:
+        movie["movieId"] = str(movie["movieId"])
+    # (optional) normalize genres only if you need it:
+    g = movie.get("genres")
+    if isinstance(g, str):
+        movie["genres"] = [x.strip() for x in g.split("|") if x.strip()]
+
+    # avoid dupes by movieId: pull then add
     watchLater_collection.update_one(
         {"userId": user_id},
-        {"$addToSet": {"SaveMovies": movie_id}},
-        upsert=True
+        {"$pull": {"SaveMovies": {"movieId": movie_id}}},
+        upsert=True,
+    )
+    watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"SaveMovies": movie}},
+        upsert=True,
     )
 
     return {"message": "Movie saved to watch later"}
+
 
 @router.get("/watchLater/{userId}")
 def get_watchLater_movies(userId: str, request: Request):
@@ -413,49 +540,84 @@ def get_watchLater_movies(userId: str, request: Request):
         watchLater_collection = db["saved"]
         movies_collection = db["hybridRecommendation2"]
 
-        save = watchLater_collection.find_one({"userId": userId})
-        if not save or not save.get("SaveMovies"):
+        doc = watchLater_collection.find_one({"userId": userId}) or {}
+        saved = doc.get("SaveMovies") or []
+        if not saved:
             return {"SaveMovies": []}
 
-        saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
+        full_objects = []
+        legacy_ids = []
 
-        movies_cursor = movies_collection.find(
-            {"movieId": {"$in": saveMovie_ids}},
+        for item in saved:
+            if isinstance(item, (str, int)):
+                legacy_ids.append(str(item))
+            elif isinstance(item, dict):
+                m = dict(item)
+                if "_id" in m:
+                    m["_id"] = str(m["_id"])
+                if "movieId" in m and m["movieId"] is not None:
+                    m["movieId"] = str(m["movieId"])
+                g = m.get("genres")
+                if isinstance(g, str):
+                    m["genres"] = [x.strip() for x in g.split("|") if x.strip()]
+                full_objects.append(m)
 
-            {
+        if legacy_ids:
+            proj = {
                 "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
                 "trailer_url": 1, "trailer_key": 1, "genres": 1,
                 "tmdb_id": 1, "overview": 1, "director": 1,
                 "producers": 1, "actors": 1
             }
+            cursor = movies_collection.find({"movieId": {"$in": legacy_ids}}, proj)
+            found = []
+            for movie in cursor:
+                m = dict(movie)
+                if "_id" in m:
+                    m["_id"] = str(m["_id"])
+                if "movieId" in m and m["movieId"] is not None:
+                    m["movieId"] = str(m["movieId"])
+                g = m.get("genres")
+                if isinstance(g, str):
+                    m["genres"] = [x.strip() for x in g.split("|") if x.strip()]
+                found.append(m)
+            full_objects.extend(found)
 
-        )
+            # optional migration: replace scalar IDs with full docs
+            if found:
+                watchLater_collection.update_one(
+                    {"userId": userId},
+                    {"$pull": {"SaveMovies": {"$in": legacy_ids}}}
+                )
+                for m in found:
+                    mid = m.get("movieId")
+                    if not mid:
+                        continue
+                    watchLater_collection.update_one(
+                        {"userId": userId},
+                        {"$pull": {"SaveMovies": {"movieId": mid}}}
+                    )
+                    watchLater_collection.update_one(
+                        {"userId": userId},
+                        {"$addToSet": {"SaveMovies": m}},
+                        upsert=True
+                    )
 
-        # Convert genres string to array and deduplicate
+        # de-dupe by movieId
         seen = set()
-        unique_movies = []
-        for movie in movies_cursor:
-            # Convert genres string to list
-            genres_raw = movie.get("genres", "")
-            if isinstance(genres_raw, str):
-                movie["genres"] = [g.strip() for g in genres_raw.split("|") if g.strip()]
-            elif isinstance(genres_raw, list):
-                movie["genres"] = [g.strip() for g in genres_raw]  # already an array
-
-            # Deduplicate by movieId
-            mid = movie.get("movieId")
-            if mid not in seen:
+        unique = []
+        for m in full_objects:
+            mid = m.get("movieId")
+            if mid and mid not in seen:
                 seen.add(mid)
-                movie["_id"] = str(movie["_id"])
-                unique_movies.append(movie)
+                unique.append(m)
 
-
-        return {"SaveMovies": unique_movies}
+        return {"SaveMovies": unique}
 
     except Exception as e:
         print("❌ Error fetching saved movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
-    
+
 @router.post("/watchLater/delete")
 async def remove_from_watchLater(request: Request):
     data = await request.json()
@@ -468,23 +630,28 @@ async def remove_from_watchLater(request: Request):
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    movie_id = str(movie_id)
+    mid = str(movie_id)
+    int_mid = None
+    try:
+        int_mid = int(movie_id)
+    except (ValueError, TypeError):
+        pass
 
-    result = watchLater_collection.update_one(
+    r1 = watchLater_collection.update_one(
         {"userId": user_id},
-        {"$pull": {"SaveMovies": movie_id}}
+        {"$pull": {"SaveMovies": {"$in": [mid] + ([int_mid] if int_mid is not None else [])}}}
+    )
+    r2 = watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"SaveMovies": {"movieId": mid}}}
     )
 
-    print("💥 WatchLater delete modified count:", result.modified_count)
+    print("💥 WatchLater delete modified counts:", r1.modified_count, r2.modified_count)
 
-    if result.modified_count > 0:
+    if (r1.modified_count or 0) + (r2.modified_count or 0) > 0:
         return {"message": "Movie removed from watch later list"}
     else:
         return {"message": "Movie not found or already removed"}
-    
-
-
-
 
 
     
