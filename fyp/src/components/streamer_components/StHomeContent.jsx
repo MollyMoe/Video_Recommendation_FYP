@@ -358,6 +358,39 @@ const handleAction = async (actionType, movieId) => {
     }
   };
 
+  const handleLike = async (movie) => {
+    if (!movie || !savedUser?.userId) return;
+  
+    // ✅ normalize to keep genres/trailer_key/etc. consistent offline and online
+    const normalized = normalizeMovie({ ...movie });
+  
+    if (!isOnline) {
+      // 📴 Store the entire movie object locally for the Liked page
+      window.electron?.addMovieToLikedCache?.(normalized);
+  
+      setPopupMessage("Movie Liked! (offline)");
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 2000);
+      return; // no API call when offline
+    }
+  
+    // 🌐 Online — send only IDs to API (backend will already store full movie object)
+    try {
+      await axios.post(`${API}/api/movies/like`, {
+        userId: savedUser.userId,
+        movieId: normalized
+      });
+  
+      setPopupMessage("Movie Liked!");
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 2000);
+    } catch (err) {
+      console.error("❌ Error with action like:", err);
+    }
+  };
+  
+  
+
 const handleHistory = (movie) => {
     if (!isSubscribed || !movie) return;
     handleAction('history', movie.movieId);
@@ -618,7 +651,7 @@ const fetchAllCarouselData = async () => {
         onClose={() => setSelectedMovie(null)}
         isSubscribed={isSubscribed}
         onPlay={handleHistory}
-        onLike={(movieId) => handleAction('like', movieId)}
+        onLike={(movie) => handleLike(movie)}
         onSave={(movieId) => handleAction('save', movieId)}
         onDelete={(movieId) => handleAction('delete', movieId)}
         isSearching={isSearching}
