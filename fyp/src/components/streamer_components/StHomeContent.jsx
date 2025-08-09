@@ -617,6 +617,7 @@ const fetchAllCarouselData = async () => {
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
         isSubscribed={isSubscribed}
+        isOnline={isOnline}  
         onPlay={handleHistory}
         onLike={(movieId) => handleAction('like', movieId)}
         onSave={(movieId) => handleAction('save', movieId)}
