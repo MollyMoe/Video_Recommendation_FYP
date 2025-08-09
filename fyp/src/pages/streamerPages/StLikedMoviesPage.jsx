@@ -54,10 +54,18 @@ const StLikedMoviesPage = () => {
     }
   };
 
+
+useEffect(() => {
+  console.log("🎯 Updated isSubscribed:", isSubscribed);
+}, [isSubscribed]);
+
+
   const fetchLikedMovies = async (userId) => {
+
     if (!userId) {
       console.warn("❗ No userId provided");
       return;
+
     }
 
     setIsLoading(true);
