@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { API } from "@/config/api";
 
-
 function SignInPage() {
   const navigate = useNavigate();
 
@@ -20,7 +19,6 @@ function SignInPage() {
   const [message, setMessage] = useState(null);
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,8 +32,7 @@ function SignInPage() {
     const newErrors = {};
     if (!formData.userType) newErrors.userType = "Please select user type";
     if (!formData.username.trim()) newErrors.username = "Username required";
-    if (!/^\S+@\S+\.\S+$/.test(formData.email))
-      newErrors.email = "Invalid email";
+    if (!/^\S+@\S+\.\S+$/.test(formData.email)) newErrors.email = "Invalid email";
     if (formData.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
 
@@ -55,153 +52,155 @@ function SignInPage() {
     };
   }, []);
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setMessage(null);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage(null);
 
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  const isOnline = navigator.onLine;
+    const isOnline = navigator.onLine;
 
-  setIsLoading(true);
+    setIsLoading(true);
 
-  try {
-    if (isOnline) {
-      // ✅ ONLINE LOGIN FLOW
-      const res = await fetch(`${API}/api/auth/signin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          userType: formData.userType.toLowerCase(),
-        }),
-      });
-
-      const data = await res.json();
-      console.log("Login API response data:", data);
-
-      if (res.ok) {
-        // Save to localStorage
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        if (window.electron && window.electron.saveSession) {
-          window.electron.saveSession({
-            userId: data.user.userId,
-            username: data.user.username,
-            userType: data.user.userType,
+    try {
+      if (isOnline) {
+        // ✅ ONLINE LOGIN FLOW
+        const res = await fetch(`${API}/api/auth/signin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: formData.username,
             password: formData.password,
+            userType: formData.userType.toLowerCase(),
+          }),
+        });
 
-            lastSignin: new Date().toISOString(),
+        const data = await res.json();
+        console.log("Login API response data:", data);
 
-          });
-        } else {
-          console.warn("⚠️ Electron API not available. Skipping offline session save.");
-        }
-        // Clear old profile images
-        localStorage.removeItem("streamer_profileImage");
-        localStorage.removeItem("admin_profileImage");
+        if (res.ok) {
+          // ✅ Verify email matches the account
+          const enteredEmail = (formData.email || "").trim().toLowerCase();
+          let serverEmail = (data.user?.email || "").trim().toLowerCase();
 
-        // ✅ Fetch profile image
-        if (data.user?.userId && formData.userType) {
-          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
-          try {
-            const imageRes = await fetch(endpoint);
-            const userInfo = await imageRes.json();
-
-            if (userInfo.profileImage) {
-              const key = `${formData.userType.toLowerCase()}_profileImage`;
-              localStorage.setItem(key, userInfo.profileImage);
+          // (Optional) If signin doesn't return email, fetch user profile once
+          if (!serverEmail && data.user?.userId && formData.userType) {
+            try {
+              const infoRes = await fetch(
+                `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`
+              );
+              const info = await infoRes.json();
+              serverEmail = (info?.email || "").trim().toLowerCase();
+            } catch {
+              // ignore; will fall back to enteredEmail if needed
             }
-          } catch (error) {
-            console.warn("⚠️ Could not fetch profile image:", error);
           }
-        }
 
-        // ✅ Navigate
-        if (formData.userType === "admin") {
-          navigate("/admin");
+          if (serverEmail && enteredEmail && serverEmail !== enteredEmail) {
+            setMessage({ type: "error", text: "Email does not match this account." });
+            setIsLoading(false);
+            return;
+          }
+
+          // Save to localStorage (store email too)
+          const finalEmail = serverEmail || enteredEmail;
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify({ ...data.user, email: finalEmail }));
+
+          // Save offline session (store email too)
+          if (window.electron?.saveSession) {
+            window.electron.saveSession({
+              userId: data.user.userId,
+              username: data.user.username,
+              userType: data.user.userType,
+              password: formData.password,
+              email: finalEmail, // ✅ important for offline check
+              lastSignin: new Date().toISOString(),
+            });
+          } else {
+            console.warn("⚠️ Electron API not available. Skipping offline session save.");
+          }
+
+          // Clear old profile images
+          localStorage.removeItem("streamer_profileImage");
+          localStorage.removeItem("admin_profileImage");
+
+          // ✅ Fetch profile image (optional)
+          if (data.user?.userId && formData.userType) {
+            const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
+            try {
+              const imageRes = await fetch(endpoint);
+              const userInfo = await imageRes.json();
+              if (userInfo.profileImage) {
+                const key = `${formData.userType.toLowerCase()}_profileImage`;
+                localStorage.setItem(key, userInfo.profileImage);
+              }
+            } catch (error) {
+              console.warn("⚠️ Could not fetch profile image:", error);
+            }
+          }
+
+          // ✅ Navigate
+          if (formData.userType === "admin") {
+            navigate("/admin");
+          } else {
+            navigate("/home");
+          }
+
+          setMessage({ type: "success", text: "Login successful!" });
+        } else if (res.status === 403 && (data.error || "").toLowerCase().includes("suspended")) {
+          setMessage({
+            type: "error",
+            text:
+              "Your account has been suspended due to prolonged inactivity. Contact cineit.helpdesk@gmail.com.",
+          });
+        } else if (res.status === 400 && (data.detail || "").toLowerCase().includes("invalid")) {
+          setMessage({ type: "error", text: "Invalid username or password." });
         } else {
-          navigate("/home");
+          setMessage({ type: "error", text: data.detail || "Login failed. Please try again." });
         }
-
-        setMessage({ type: "success", text: "Login successful!" });
-      } else if (
-        res.status === 403 &&
-
-        data.error?.toLowerCase().includes("Suspended")
-
-
-      ) {
-        setMessage({
-          type: "error",
-          text:
-            "Your account has been suspended due to prolonged inactivity. Contact cineit.helpdesk@gmail.com.",
-        });
-      } else if (
-        res.status === 400 &&
-        data.detail?.toLowerCase().includes("invalid")
-      ) {
-        setMessage({
-          type: "error",
-          text: "Invalid username or password.",
-        });
       } else {
-        setMessage({
-          type: "error",
-          text: data.detail || "Login failed. Please try again.",
-        });
-      }
-    } else {
-      // ⚡ OFFLINE LOGIN FLOW
-      const offlineData = window.electron.getSession();
+        // ⚡ OFFLINE LOGIN FLOW
+        const offlineData = window.electron?.getSession?.();
 
-      if (
-        offlineData &&
-        offlineData.username === formData.username &&
-        offlineData.password === formData.password &&
-        offlineData.userType === formData.userType
-      ) {
-        localStorage.setItem("user", JSON.stringify(offlineData));
+        if (
+          offlineData &&
+          offlineData.username === formData.username &&
+          offlineData.password === formData.password &&
+          offlineData.userType === formData.userType &&
+          (offlineData.email || "").toLowerCase() === (formData.email || "").toLowerCase() // ✅ email must match
+        ) {
+          localStorage.setItem("user", JSON.stringify(offlineData));
 
-        const key = `${formData.userType.toLowerCase()}_profileImage`;
-        if (offlineData.profileImage) {
-          localStorage.setItem(key, offlineData.profileImage);
+          const key = `${formData.userType.toLowerCase()}_profileImage`;
+          if (offlineData.profileImage) {
+            localStorage.setItem(key, offlineData.profileImage);
+          }
+
+          navigate(formData.userType === "admin" ? "/admin" : "/home");
+          setMessage({ type: "success", text: "Logged in offline." });
+        } else {
+          setMessage({
+            type: "error",
+            text: "Offline login failed. No matching saved session.",
+          });
         }
-
-        navigate(formData.userType === "admin" ? "/admin" : "/home");
-
-        setMessage({ type: "success", text: "Logged in offline." });
-      } else {
-        setMessage({
-          type: "error",
-          text: "Offline login failed. No matching saved session.",
-        });
       }
+    } catch (error) {
+      console.error("❌ Login error:", error);
+      setMessage({ type: "error", text: "Unexpected error. Try again." });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("❌ Login error:", error);
-    setMessage({ type: "error", text: "Unexpected error. Try again." });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
-  // FIXED: Return needs to be inside the component
   return (
     <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto flex flex-col">
         {/* Header */}
         <div className="text-center py-4">
-          <img
-            src={logoPic}
-            alt="Cine It"
-            className="mx-auto h-12 mb-1 rounded-full"
-          />
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-            Sign In
-          </h2>
+          <img src={logoPic} alt="Cine It" className="mx-auto h-12 mb-1 rounded-full" />
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Sign In</h2>
         </div>
 
         {/* Form Box */}
@@ -221,10 +220,7 @@ function SignInPage() {
           <form onSubmit={handleSubmit} className="space-y-3 w-full">
             {/* User Type */}
             <div className="relative" ref={dropdownRef}>
-              <label
-                htmlFor="userType"
-                className="block text-sm font-medium text-gray-700 mb-1 dark:text-white"
-              >
+              <label htmlFor="userType" className="block text-sm font-medium text-gray-700 mb-1 dark:text-white">
                 User Type
               </label>
 
@@ -251,9 +247,7 @@ function SignInPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        handleChange({
-                          target: { name: "userType", value: "admin" },
-                        });
+                        handleChange({ target: { name: "userType", value: "admin" } });
                         setDropdownOpen(false);
                       }}
                       className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -265,9 +259,7 @@ function SignInPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        handleChange({
-                          target: { name: "userType", value: "streamer" },
-                        });
+                        handleChange({ target: { name: "userType", value: "streamer" } });
                         setDropdownOpen(false);
                       }}
                       className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -278,17 +270,12 @@ function SignInPage() {
                 </ul>
               )}
 
-              {errors.userType && (
-                <p className="mt-1 text-sm text-red-600">{errors.userType}</p>
-              )}
+              {errors.userType && <p className="mt-1 text-sm text-red-600">{errors.userType}</p>}
             </div>
 
             {/* Username */}
             <div>
-              <label
-                htmlFor="username"
-                className="block text-md font-medium text-gray-700 mb-1 dark:text-white"
-              >
+              <label htmlFor="username" className="block text-md font-medium text-gray-700 mb-1 dark:text-white">
                 Username
               </label>
               <input
@@ -305,17 +292,12 @@ function SignInPage() {
                 placeholder="Choose a username"
                 required
               />
-              {errors.username && (
-                <p className="text-red-500 text-sm mt-1 ">{errors.username}</p>
-              )}
+              {errors.username && <p className="text-red-500 text-sm mt-1 ">{errors.username}</p>}
             </div>
 
             {/* Email */}
             <div>
-              <label
-                htmlFor="email"
-                className="block text-md font-medium text-gray-700 mb-1 dark:text-white"
-              >
+              <label htmlFor="email" className="block text-md font-medium text-gray-700 mb-1 dark:text-white">
                 Email
               </label>
               <input
@@ -332,17 +314,12 @@ function SignInPage() {
                 placeholder="Enter your email"
                 required
               />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
             {/* Password */}
             <div>
-              <label
-                htmlFor="password"
-                className="block text-md font-medium text-gray-700 mb-1 dark:text-white"
-              >
+              <label htmlFor="password" className="block text-md font-medium text-gray-700 mb-1 dark:text-white">
                 Password
               </label>
               <input
@@ -359,18 +336,13 @@ function SignInPage() {
                 placeholder="Enter your password"
                 required
               />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-              )}
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
 
             {/* Forgot Password */}
             <div className="text-sm text-gray-900 ml-2 block dark:text-white">
               Forgot Password?{" "}
-              <Link
-                to="/reset-password"
-                className="text-purple-600 hover:underline dark:text-violet-200"
-              >
+              <Link to="/reset-password" className="text-purple-600 hover:underline dark:text-violet-200">
                 click here
               </Link>
             </div>
@@ -389,10 +361,7 @@ function SignInPage() {
             {/* Sign Up */}
             <div className="text-sm text-center text-gray-900 ml-2 block dark:text-white">
               Don't have an account?{" "}
-              <Link
-                to="/signup"
-                className="text-purple-600 hover:underline dark:text-violet-200"
-              >
+              <Link to="/signup" className="text-purple-600 hover:underline dark:text-violet-200">
                 <strong>Sign Up</strong>
               </Link>
             </div>
