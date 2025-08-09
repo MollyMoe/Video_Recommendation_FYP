@@ -21,13 +21,15 @@ const allMoviesPath = path.join(os.homedir(), "cineit-all-movies.json");
 const backupScript = path.join(__dirname, "..", "scripts", "backup.sh");
 const restoreScript = path.join(__dirname, "..", "scripts", "restore.sh");
 const historyQueuePath = path.join(basePath, "cineit-history-queue.json");
-const savedQueuePath = path.join(basePath, "cineit-saved-queue.json");
+
 const likedQueuePath = path.join(basePath, "cineit-liked-queue.json");
 
 const recommendedPath = path.join(basePath, "recommended.json");
 const subscriptionPath = path.join(basePath, "subscription.json");
 const themePath = path.join(basePath, "theme.json");
 
+const savedQueuePath = path.join(basePath, "cineit-saved-queue.json");
+const savedSnapshotPath = path.join(basePath, "cineit-saved.json");
 
 const likedListPath = path.join(basePath, "cineit-liked.json");
 
@@ -414,28 +416,27 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
 
-  removeFromSavedQueue: (movieId) => {
+  removeFromSavedQueue: async (movieId) => {
+    // 1) queue delete action (IDs only)
     queueAction(savedQueuePath, { type: "delete", movieId });
-
-    // Also remove immediately from cache (UI)
+  
+    // 2) prune the UI snapshot so page updates immediately
     try {
-      const data = fs.readFileSync(savedQueuePath, "utf-8");
-      const parsed = JSON.parse(data);
-
-      // Handle both raw movie and action format
-      const filtered = parsed.filter((entry) => {
-        const m = entry.movie || entry;
-        const id = m.movieId || m._id;
-        return id?.toString() !== movieId.toString();
-      });
-
-      fs.writeFileSync(savedQueuePath, JSON.stringify(filtered, null, 2));
-      console.log(`🗑️ Updated saved cache after removing: ${movieId}`);
+      const snap = fs.existsSync(savedSnapshotPath)
+        ? JSON.parse(fs.readFileSync(savedSnapshotPath, "utf-8"))
+        : [];
+  
+      const updated = snap.filter(
+        (m) => String(m?.movieId ?? m?._id) !== String(movieId)
+      );
+  
+      fs.writeFileSync(savedSnapshotPath, JSON.stringify(updated, null, 2), "utf-8");
+      console.log(`🗑️ Updated Watch Later snapshot after removing: ${movieId}`);
     } catch (err) {
-      console.error("❌ Failed to update saved cache:", err);
+      console.error("❌ Failed to update Watch Later snapshot:", err);
     }
   },
-
+  
   saveHistoryQueue: (queue) => {
     try {
       if (!Array.isArray(queue)) throw new Error("Queue is not array");
@@ -631,6 +632,49 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
 
+  // Snapshot for Watch Later (full movie objects for UI)
+saveSavedSnapshot: (movies) => {
+  try {
+    const arr = Array.isArray(movies) ? movies : [];
+    fs.writeFileSync(savedSnapshotPath, JSON.stringify(arr, null, 2), "utf-8");
+    console.log("💾 Saved Watch Later snapshot (objects).");
+  } catch (err) {
+    console.error("❌ Failed to save Watch Later snapshot:", err);
+  }
+},
+
+getSavedSnapshot: () => {
+  try {
+    if (!fs.existsSync(savedSnapshotPath)) return [];
+    const raw = JSON.parse(fs.readFileSync(savedSnapshotPath, "utf-8"));
+    const seen = new Set();
+    const out = [];
+    for (const m of raw) {
+      const id = (m?.movieId ?? m?._id ?? m?.tmdb_id ?? m?.title)?.toString();
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        out.push(m);
+      }
+    }
+    return out;
+  } catch (err) {
+    console.error("❌ Failed to read Watch Later snapshot:", err);
+    return [];
+  }
+},
+
+clearSavedSnapshot: () => {
+  try {
+    if (fs.existsSync(savedSnapshotPath)) {
+      fs.unlinkSync(savedSnapshotPath);
+      console.log("🧹 Cleared Watch Later snapshot.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to clear Watch Later snapshot:", err);
+  }
+},
+
+
 
   // --- Liked snapshot (cineit-liked.json) ---
 // A clean, UI-facing snapshot separate from the action queue.
@@ -675,6 +719,10 @@ addMovieToLikedList: (movie) => {
     console.error("❌ Failed to append to liked snapshot:", err);
   }
 },
+
+
+//Watch Later
+
 
 
 
