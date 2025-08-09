@@ -8,6 +8,9 @@ const fetch = (...args) =>
 
 // File paths
 const basePath = path.join(os.homedir(), "cineit-cache");
+// Ensure base cache directory always exists (fixes first-run offline writes)
+try { fs.mkdirSync(basePath, { recursive: true }); } catch {}
+
 
 const sessionFilePath = path.join(basePath, "cineit-user-session.json");
 const profileFilePath = path.join(basePath, "cineit-profile-update.json");
@@ -24,6 +27,9 @@ const likedQueuePath = path.join(basePath, "cineit-liked-queue.json");
 const recommendedPath = path.join(basePath, "recommended.json");
 const subscriptionPath = path.join(basePath, "subscription.json");
 const themePath = path.join(basePath, "theme.json");
+
+
+const likedListPath = path.join(basePath, "cineit-liked.json");
 
 const paths = {
   topLiked: path.join(basePath, "topLiked.json"),
@@ -56,20 +62,38 @@ function safeWrite(filePath, data) {
   }
 }
 
-// ✅ Helper to queue actions
+// // ✅ Helper to queue actions //old
+// function queueAction(filePath, action) {
+//   try {
+//     let list = [];
+//     if (fs.existsSync(filePath)) {
+//       list = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+//     }
+//     list.push(action);
+//     fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
+//     console.log(`📦 Queued offline action for ${action.type}`);
+//   } catch (err) {
+//     console.error("❌ Failed to queue action:", err);
+//   }
+// }
+
 function queueAction(filePath, action) {
   try {
+    // Make sure folder exists before any read/write
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
     let list = [];
     if (fs.existsSync(filePath)) {
       list = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     }
     list.push(action);
     fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
-    console.log(`📦 Queued offline action for ${action.type}`);
+    console.log(`📦 Queued offline action for ${action.type} -> ${filePath}`);
   } catch (err) {
     console.error("❌ Failed to queue action:", err);
   }
 }
+
 
 // Download image and save to given path
 // async function downloadImage(url, filePath) {
@@ -351,12 +375,12 @@ contextBridge.exposeInMainWorld("electron", {
   // ✅ Offline remove actions for history, saved, liked
   removeFromLikedQueue: (movieId) => {
     try {
+      fs.mkdirSync(path.dirname(likedQueuePath), { recursive: true });
       const data = fs.existsSync(likedQueuePath)
         ? fs.readFileSync(likedQueuePath, "utf-8")
         : "[]";
       const parsed = JSON.parse(data);
   
-      // tolerate { movie } or raw movie objects
       const filtered = parsed.filter((entry) => {
         const m = entry?.movie || entry;
         const id = m?.movieId || m?._id;
@@ -370,9 +394,6 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
   
-  removeFromSavedQueue: (movieId) =>
-    queueAction(savedQueuePath, { type: "delete", movieId }),
-
   removeFromHistoryQueue: (movieId) =>
     queueAction(historyQueuePath, { type: "delete", movieId }),
 
@@ -490,16 +511,19 @@ contextBridge.exposeInMainWorld("electron", {
   //Liked Movies Page
   saveLikedQueue: (likedMovies) => {
     try {
-      fs.writeFileSync(
-        likedQueuePath,
-        JSON.stringify(likedMovies, null, 2),
-        "utf-8"
-      );
-      console.log("💾 Saved liked queue.");
+      const items = Array.isArray(likedMovies) ? likedMovies : [];
+      // normalize to action entries so the file has one consistent format
+      const normalized = items.map((x) => {
+        const m = x?.movie || x; // tolerate either shape
+        return { type: "add", movie: m };
+      });
+      fs.writeFileSync(likedQueuePath, JSON.stringify(normalized, null, 2), "utf-8");
+      console.log("💾 Saved liked queue (normalized).");
     } catch (err) {
       console.error("❌ Failed to save liked queue:", err);
     }
   },
+  
 
   getLikedQueue: () => {
     try {
@@ -606,4 +630,54 @@ contextBridge.exposeInMainWorld("electron", {
       console.error("❌ Failed to clear saved queue:", err);
     }
   },
+
+
+  // --- Liked snapshot (cineit-liked.json) ---
+// A clean, UI-facing snapshot separate from the action queue.
+// Used by StLikedMoviesPage and HomeContent for instant display.
+
+saveLikedList: (movies) => {
+  try {
+    fs.mkdirSync(path.dirname(likedListPath), { recursive: true });
+    fs.writeFileSync(likedListPath, JSON.stringify(movies ?? [], null, 2), "utf-8");
+    console.log("💾 Saved liked snapshot (cineit-liked.json).");
+  } catch (err) {
+    console.error("❌ Failed to save liked snapshot:", err);
+  }
+},
+
+getLikedList: () => {
+  try {
+    if (!fs.existsSync(likedListPath)) return [];
+    return JSON.parse(fs.readFileSync(likedListPath, "utf-8"));
+  } catch (err) {
+    console.error("❌ Failed to read liked snapshot:", err);
+    return [];
+  }
+},
+
+addMovieToLikedList: (movie) => {
+  try {
+    const list = fs.existsSync(likedListPath)
+      ? JSON.parse(fs.readFileSync(likedListPath, "utf-8"))
+      : [];
+    const idOf = (m) => (m?._id ?? m?.movieId ?? "").toString();
+    const id = idOf(movie);
+    if (!id) return;
+
+    const seen = new Set(list.map(idOf));
+    if (!seen.has(id)) {
+      list.unshift(movie);
+      fs.writeFileSync(likedListPath, JSON.stringify(list, null, 2), "utf-8");
+      console.log("➕ Added movie to liked snapshot:", id);
+    }
+  } catch (err) {
+    console.error("❌ Failed to append to liked snapshot:", err);
+  }
+},
+
+
+
+
+
 });

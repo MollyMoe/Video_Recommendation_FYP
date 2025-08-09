@@ -347,6 +347,7 @@ const handleAction = async (actionType, movieId) => {
         userId: savedUser.userId,
         movieId
       });
+      // window.electron?.addMovieToLikedList?.(normalized);
 
       if (action.message) {
         setPopupMessage(action.message);
@@ -366,8 +367,17 @@ const handleAction = async (actionType, movieId) => {
   
     if (!isOnline) {
       // 📴 Store the entire movie object locally for the Liked page
-      window.electron?.addMovieToLikedCache?.(normalized);
-  
+      // window.electron?.addMovieToLikedCache?.(normalized);
+
+      // window.electron?.queueLiked?.({ type: "add", movie: normalized });
+
+      // queue for future sync
+      window.electron?.queueLiked?.({ type: "add", movie: normalized });
+      console.log("bridge:", !!window.electron, "addMovieToLikedList:", !!window.electron?.addMovieToLikedList, "queueLiked:", !!window.electron?.queueLiked);
+
+      // snapshot so Liked page shows it immediately when offline/online
+      window.electron?.addMovieToLikedList?.(normalized);
+
       setPopupMessage("Movie Liked! (offline)");
       setShowPopup(true);
       setTimeout(() => setShowPopup(false), 2000);
@@ -380,6 +390,8 @@ const handleAction = async (actionType, movieId) => {
         userId: savedUser.userId,
         movieId: normalized
       });
+
+      window.electron?.addMovieToLikedList?.(normalized);
   
       setPopupMessage("Movie Liked!");
       setShowPopup(true);
@@ -406,14 +418,42 @@ const handleHistory = (movie) => {
     }
   }, [savedUser?.userId, username]);
 
-  useEffect(() => {
-    if (savedUser?.userId) {
-      axios.get(`${API}/api/subscription/${savedUser.userId}`)
-        .then(res => setIsSubscribed(res.data.isActive))
-        .catch(() => setIsSubscribed(false));
-    }
-  }, [savedUser?.userId]);
+  // useEffect(() => {
+  //   if (savedUser?.userId) {
+  //     axios.get(`${API}/api/subscription/${savedUser.userId}`)
+  //       .then(res => setIsSubscribed(res.data.isActive))
+  //       .catch(() => setIsSubscribed(false));
+  //   }
+  // }, [savedUser?.userId]);
 
+
+  useEffect(() => {
+    if (!savedUser?.userId) return;
+  
+    if (isOnline) {
+      axios
+        .get(`${API}/api/subscription/${savedUser.userId}`)
+        .then(res => {
+          const isActive = Boolean(res.data?.isActive);
+          setIsSubscribed(isActive);
+          // cache for offline
+          window.electron?.saveSubscription?.({
+            ...res.data,
+            userId: savedUser.userId,
+          });
+        })
+        .catch(() => {
+          // fallback to cache if online call fails
+          const sub = window.electron?.getSubscription?.();
+          setIsSubscribed(Boolean(sub?.isActive));
+        });
+    } else {
+      // offline: read cached subscription
+      const sub = window.electron?.getSubscription?.();
+      setIsSubscribed(Boolean(sub?.isActive));
+    }
+  }, [savedUser?.userId, isOnline]);
+  
   
 
    useEffect(() => {
