@@ -68,20 +68,6 @@ function safeWrite(filePath, data) {
   }
 }
 
-// // ✅ Helper to queue actions //old
-// function queueAction(filePath, action) {
-//   try {
-//     let list = [];
-//     if (fs.existsSync(filePath)) {
-//       list = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-//     }
-//     list.push(action);
-//     fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
-//     console.log(`📦 Queued offline action for ${action.type}`);
-//   } catch (err) {
-//     console.error("❌ Failed to queue action:", err);
-//   }
-// }
 
 function queueAction(filePath, action) {
   try {
@@ -133,63 +119,6 @@ function dedupeDeleteActions(q) {
   return out.reverse();
 }
 
-
-
-// Download image and save to given path
-// async function downloadImage(url, filePath) {
-//   const res = await fetch(url);
-//   const buffer = await res.arrayBuffer();
-//   fs.writeFileSync(filePath, Buffer.from(buffer));
-// }
-
-// async function cacheRecommendedPosters(movies) {
-//   const folderPath = path.join(basePath, "posters", "recommended");
-//   fs.mkdirSync(folderPath, { recursive: true });
-
-//   for (const movie of movies) {
-//     if (movie.poster_url && movie.poster_url.startsWith("http")) {
-//       const id = movie.movieId || movie._id || movie.title?.replace(/\s/g, "_");
-//       const ext = path.extname(new URL(movie.poster_url).pathname) || ".jpg";
-//       const posterFile = path.join(folderPath, `${id}${ext}`);
-
-//       try {
-//         await downloadImage(movie.poster_url, posterFile);
-//         movie.poster_url = `file://${posterFile}`;
-//       } catch (err) {
-//         console.warn(`⚠️ Failed to cache poster for ${id}:`, err);
-//       }
-//     }
-//   }
-// }
-
-// function clearRecommendedPosterCache() {
-//   const folderPath = path.join(basePath, "posters", "recommended");
-
-//   if (fs.existsSync(folderPath)) {
-//     const files = fs.readdirSync(folderPath);
-//     for (const file of files) {
-//       const filePath = path.join(folderPath, file);
-//       if (fs.statSync(filePath).isFile()) {
-//         fs.unlinkSync(filePath);
-//       }
-//     }
-//     console.log("🧹 Cleared old recommended poster cache");
-//   }
-// }
-
-// function removeFromQueue(path, movieId) {
-//   try {
-//     if (!fs.existsSync(path)) return;
-//     const actions = JSON.parse(fs.readFileSync(path, "utf-8"));
-//     const filtered = actions.filter(
-//       (action) => action.movie.movieId !== movieId && action.movie._id !== movieId
-//     );
-//     fs.writeFileSync(path, JSON.stringify(filtered, null, 2), "utf-8");
-//     console.log(`🗑 Removed ${movieId} from queue`);
-//   } catch (err) {
-//     console.error("❌ Failed to remove from queue:", err);
-//   }
-// }
 
 contextBridge.exposeInMainWorld("electron", {
   // ✅ Session
@@ -387,28 +316,7 @@ contextBridge.exposeInMainWorld("electron", {
     });
   },
 
-  // // ✅ Shell backup & restore
-  // backupData: () => {
-  //   exec(`bash ${backupScript}`, (err, stdout, stderr) => {
-  //     if (err) {
-  //       console.error("❌ Backup error:", err);
-  //     } else {
-  //       console.log("✅ Backup successful:", stdout);
-  //     }
-  //   });
-  // },
-  // restoreData: (cb) => {
-  //   exec(`bash ${restoreScript}`, (err, stdout, stderr) => {
-  //     if (err) {
-  //       cb({ success: false, message: stderr || err.message });
-  //     } else {
-  //       cb({ success: true, message: stdout });
-  //     }
-  //   });
-  // },
 
-  // ✅ Offline actions for history, saved, liked
-  // queueHistory: (action) => queueAction(historyQueuePath, action),
   queueSaved: (action) => queueAction(savedQueuePath, action),
   queueLiked: (action) => queueAction(likedQueuePath, action),
 
@@ -500,8 +408,6 @@ removeFromRecommended: (movieId) => {
 },
 
 
-
-// --- History snapshot (used by History page when offline) ---
 saveHistorySnapshot: (movies) => writeJSON(historySnapshotPath, Array.isArray(movies) ? movies : []),
 
 getHistorySnapshot: () => {
@@ -911,7 +817,7 @@ addMovieToLikedList: (movie) => {
 
     const seen = new Set(list.map(idOf));
     if (!seen.has(id)) {
-      list.unshift(movie);
+       list.push(movie);
       fs.writeFileSync(likedListPath, JSON.stringify(list, null, 2), "utf-8");
       console.log("➕ Added movie to liked snapshot:", id);
     }
@@ -919,12 +825,6 @@ addMovieToLikedList: (movie) => {
     console.error("❌ Failed to append to liked snapshot:", err);
   }
 },
-
-
-//Watch Later
-
-
-
 
 
 

@@ -431,7 +431,7 @@ if (!isOnline && actionType === "delete") {
           const snap = window.electron.getSavedSnapshot() || [];
           const seen = new Set(snap.map(m => String(m.movieId ?? m._id)));
           if (!seen.has(String(movieId))) {
-            window.electron.saveSavedSnapshot([full, ...snap]);
+            window.electron.saveSavedSnapshot([...snap, full]);
           }
         }
   

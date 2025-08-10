@@ -6,7 +6,7 @@ import CompactMovieCard from "../../components/movie_components/CompactMovieCard
 import { Play, Trash2, CheckCircle } from "lucide-react";
 import { API } from "@/config/api";
 
-// ✅ Define once globally
+//  Define once globally
 const savedUser = JSON.parse(localStorage.getItem("user"));
 
 const StWatchLaterPage = () => {
@@ -16,7 +16,7 @@ const StWatchLaterPage = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // ✅ Watch network change
+  //  Watch network change
   useEffect(() => {
     const handleNetworkChange = () => setIsOnline(navigator.onLine);
     window.addEventListener("online", handleNetworkChange);
@@ -27,7 +27,7 @@ const StWatchLaterPage = () => {
     };
   }, []);
 
-  // ✅ Fetch subscription
+  // Fetch subscription
   const fetchSubscription = async (userId) => {
     try {
       let subscription;
@@ -50,7 +50,7 @@ const StWatchLaterPage = () => {
     }
   };
 
-  // ✅ Fetch saved movies (watch later)
+  // Fetch saved movies (watch later)
   const fetchWatchLaterMovies = async (userId) => {
     if (!userId) return;
   
