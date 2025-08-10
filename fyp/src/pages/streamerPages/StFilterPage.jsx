@@ -18,6 +18,7 @@ const StFilterPage = () => {
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userId = savedUser?.userId;
+  
 
   // ✅ Normalize helper
   const normalizeString = (value) => {
@@ -37,29 +38,37 @@ const StFilterPage = () => {
     };
   }, []);
 
-  // ✅ Load everything (recommended + topRated)
-  const loadRecommendedMovies = async () => {
+    // ✅ Load everything (recommended + topRated)
+    const loadRecommendedMovies = async () => {
     try {
-      let subData, recommendedData, topRatedData = [];
-
       if (isOnline) {
+        // ✅ ONLINE MODE: fetch truth from API
         const [subRes, recommendedRes] = await Promise.all([
           fetch(`${API}/api/subscription/${userId}`),
           fetch(`${API}/api/movies/recommendations/${userId}`)
         ]);
 
-        subData = await subRes.json();
-        recommendedData = await recommendedRes.json();
-
+        const subData = await subRes.json();
+        let recommendedData = await recommendedRes.json();
         if (!Array.isArray(recommendedData)) recommendedData = [];
 
-        // Save raw recommended data for offline
+        // Cache subscription in localStorage for offline use
+        localStorage.setItem(
+          "sub-cache",
+          JSON.stringify({
+            userId,
+            isActive: !!subData?.isActive,
+            cachedAt: Date.now()
+          })
+        );
+
+        // Save subscription & movies in Electron cache
         if (window.electron?.saveSubscription) {
           await window.electron.saveSubscription(subData);
           await window.electron.saveRecommendedMovies(recommendedData);
         }
 
-        // Normalize and process recommended movies
+        // Process & set movie lists
         const processed = recommendedData
           .filter(m => m.poster_url && m.trailer_url)
           .map((movie) => {
@@ -67,7 +76,6 @@ const StFilterPage = () => {
             let trailer_key = null;
             if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
             else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
-
             return {
               ...movie,
               trailer_key,
@@ -87,25 +95,46 @@ const StFilterPage = () => {
         setMovies(processed);
         setTopRated(top10);
 
-        // ✅ Save topRated to offline
         if (window.electron?.saveTopRatedMovies) {
           await window.electron.saveTopRatedMovies(top10);
-          console.log("Top Rated Movies saved ..");
         }
-      } else {
-        subData = await window.electron.getSubscription(userId);
-        const cached = await window.electron.getRecommendedMovies();
-        const topCached = await window.electron.getTopRatedMovies();
-        console.log("Top Rated Movies offline fetched ..");
 
-        const processed = (cached || [])
+        // ✅ Set subscription from online truth
+        setIsSubscribed(!!subData?.isActive);
+
+      } else {
+        // 📴 OFFLINE MODE: use only cached subscription status
+        const subCacheRaw = localStorage.getItem("sub-cache");
+        const subCache = subCacheRaw ? JSON.parse(subCacheRaw) : null;
+
+        const within7Days =
+          subCache?.cachedAt &&
+          (Date.now() - subCache.cachedAt) < 7 * 24 * 60 * 60 * 1000;
+
+        const lsActive =
+          !!subCache?.isActive &&
+          subCache?.userId === userId &&
+          within7Days;
+
+        let electronActive = false;
+        try {
+          const subFromElectron = await window.electron?.getSubscription?.(userId);
+          electronActive = !!subFromElectron?.isActive;
+        } catch {}
+
+        setIsSubscribed(lsActive || electronActive);
+
+        // Load offline movie lists
+        const cachedRecs = await window.electron?.getRecommendedMovies?.();
+        const topCached = await window.electron?.getTopRatedMovies?.();
+
+        const processed = (cachedRecs || [])
           .filter(m => m.poster_url && m.trailer_url)
           .map((movie) => {
             const url = movie.trailer_url || "";
             let trailer_key = null;
             if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
             else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
-
             return {
               ...movie,
               trailer_key,
@@ -120,8 +149,6 @@ const StFilterPage = () => {
         setMovies(processed);
         setTopRated(topCached || []);
       }
-
-      setIsSubscribed(subData?.isActive || false);
     } catch (err) {
       console.error("❌ Failed to load recommended data:", err);
       setIsSubscribed(false);
@@ -132,6 +159,8 @@ const StFilterPage = () => {
       setIsLoading(false);
     }
   };
+
+
 
   useEffect(() => {
     if (!userId) {
@@ -235,6 +264,7 @@ const StFilterPage = () => {
           submittedQuery={submittedQuery}
           movies={movies}
           isLoading={isLoading}
+          isOnline= {isOnline}
           isSearching={isSearching}
           setMovies={setMovies}
           topRated={topRated} // 🔥 Use this in StFilterContent if needed

@@ -1,10 +1,7 @@
-// AdVideoManageLayout.jsx
-import React from "react";
-import { Link, useLocation, Outlet } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import axios from "axios";
 import AdSideButtons from "../components/admin_components/AdSideButtons";
-import { useState } from "react";
-
 import { API } from "@/config/api";
 
 const tabs = [
@@ -16,6 +13,7 @@ const tabs = [
 
 const AdVideoManageLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.pathname;
   
   const [recentMoviesGlobal, setRecentMoviesGlobal] = useState([]);
@@ -57,6 +55,15 @@ const AdVideoManageLayout = () => {
     setSyncStatus({ stage: 'idle', message: '' });
   };
 
+  // Function to handle tab click and reload
+  const handleTabClick = (path) => {
+    if (currentPath === path) {
+      window.location.reload();  // This reloads the entire page, resetting everything
+    } else {
+      navigate(path);  // This switches to the new tab (new route)
+    }
+  };
+
   return (
     <>
       <AdSideButtons onUpdateClick={handleUpdateClick} isSyncing={syncStatus.stage === 'syncing'} />
@@ -67,6 +74,7 @@ const AdVideoManageLayout = () => {
             <Link
               key={tab.path}
               to={tab.path}
+              onClick={() => handleTabClick(tab.path)}  // Handle tab click
               className={`px-4 py-2 rounded-full text-sm font-medium border transition-all duration-200 ${
                 currentPath === tab.path
                   ? "bg-purple-600 text-white border-purple-600"
@@ -83,7 +91,6 @@ const AdVideoManageLayout = () => {
       {syncStatus.stage !== 'idle' && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center w-70">
-            
             <p className="text-lg font-semibold text-gray-800">
               {syncStatus.stage === 'syncing' ? 'Syncing new movies...' : 'Sync Complete'}
             </p>
