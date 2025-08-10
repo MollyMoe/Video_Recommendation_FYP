@@ -34,6 +34,9 @@ const savedSnapshotPath = path.join(basePath, "cineit-saved.json");
 const likedListPath = path.join(basePath, "cineit-liked.json");
 const recommendedQueuePath = path.join(basePath, "cineit-recommended-queue.json");
 
+const historySnapshotPath = path.join(basePath, "cineit-history-snapshot.json");
+
+
 const paths = {
   topLiked: path.join(basePath, "topLiked.json"),
   alsLiked: path.join(basePath, "alsLiked.json"),
@@ -96,6 +99,40 @@ function queueAction(filePath, action) {
     console.error("❌ Failed to queue action:", err);
   }
 }
+
+function readJSON(p, fallback) {
+  try { return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf-8")) : fallback; }
+  catch { return fallback; }
+}
+function writeJSON(p, data) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
+}
+
+// Keep only actions after the last clearAll (the last clear wins)
+function compactAfterClearAll(q) {
+  const idxFromEnd = [...q].reverse().findIndex(a => a?.type === "clearAll");
+  if (idxFromEnd < 0) return q;
+  const cut = q.length - 1 - idxFromEnd;
+  return q.slice(cut); // includes that clearAll and everything after it
+}
+
+// Keep at most one "delete" per movieId; last one wins
+function dedupeDeleteActions(q) {
+  const seen = new Set();
+  const out = [];
+  for (let i = q.length - 1; i >= 0; i--) {
+    const a = q[i];
+    if (a?.type === "delete") {
+      const key = `d:${String(a.movieId)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+    out.push(a);
+  }
+  return out.reverse();
+}
+
 
 
 // Download image and save to given path
@@ -397,11 +434,28 @@ contextBridge.exposeInMainWorld("electron", {
     }
   },
   
-  removeFromHistoryQueue: (movieId) =>
-    queueAction(historyQueuePath, { type: "delete", movieId }),
+  removeFromHistoryQueue: (movieId) => {
+    const q = readJSON(historyQueuePath, []);
+    q.push({ type: "delete", movieId });
+    const compacted = compactAfterClearAll(q);
+    writeJSON(historyQueuePath, dedupeDeleteActions(compacted));
+  },
+  
+  queueHistoryAction: (action) => {
+    const q = readJSON(historyQueuePath, []);
+    q.push(action); // e.g., { type:"movie", movie } or { type:"delete", movieId }
+    const compacted = compactAfterClearAll(q);
+    writeJSON(historyQueuePath, dedupeDeleteActions(compacted));
+  },
+  
 
-  queueHistoryAction: (action) => queueAction(historyQueuePath, action),
-  queueSavedAction: (action) => queueAction(savedQueuePath, action),
+  enqueueHistoryClearAll: () => {
+    const q = readJSON(historyQueuePath, []);
+    q.push({ type: "clearAll" });
+    writeJSON(historyQueuePath, compactAfterClearAll(q));
+  },
+  replaceHistoryQueue: (next) => writeJSON(historyQueuePath, Array.isArray(next) ? next : []),
+    queueSavedAction: (action) => queueAction(savedQueuePath, action),
 
 
   // --- Recommended offline queue + helpers ---
@@ -447,19 +501,120 @@ removeFromRecommended: (movieId) => {
 
 
 
-  removeMovieFromHistoryCache: (movieId) => {
-    try {
-      const data = fs.readFileSync(historyQueuePath, "utf-8");
-      const parsed = JSON.parse(data);
-      const filtered = parsed.filter(
-        (m) => m.movieId?.toString() !== movieId.toString()
-      );
-      fs.writeFileSync(historyQueuePath, JSON.stringify(filtered, null, 2));
-      console.log(`🗑️ Updated history cache after removing: ${movieId}`);
-    } catch (err) {
-      console.error("❌ Failed to update local history cache:", err);
+// --- History snapshot (used by History page when offline) ---
+saveHistorySnapshot: (movies) => writeJSON(historySnapshotPath, Array.isArray(movies) ? movies : []),
+
+getHistorySnapshot: () => {
+  const arr = readJSON(historySnapshotPath, []);
+  // de-dup by ID while preserving order
+  const seen = new Set(); const out = [];
+  for (const m of arr) {
+    const id = String(m?.movieId ?? m?._id ?? m?.tmdb_id ?? m?.title ?? "");
+    if (id && !seen.has(id)) { seen.add(id); out.push(m); }
+  }
+  return out;
+},
+
+clearHistorySnapshot: () => {
+  try {
+    if (fs.existsSync(historySnapshotPath)) {
+      fs.unlinkSync(historySnapshotPath);
+      console.log("🧹 Cleared History snapshot.");
     }
-  },
+  } catch (err) {
+    console.error("❌ Failed to clear History snapshot:", err);
+  }
+},
+
+// Put newest at top; also de-dup by id
+prependHistorySnapshot: (movie) => {
+  try {
+    const list = readJSON(historySnapshotPath, []);
+    const mid = String(movie?.movieId ?? movie?._id ?? "");
+    const filtered = list.filter((m) => String(m?.movieId ?? m?._id ?? "") !== mid);
+    filtered.unshift(movie);
+    writeJSON(historySnapshotPath, filtered);
+  } catch (err) {
+    console.error("❌ Failed to append to History snapshot:", err);
+  }
+},
+
+
+removeMovieFromHistoryCache: (movieId) => {
+  try {
+    const toStr = (v) => (v == null ? "" : String(v));
+    const target = toStr(movieId);
+
+    const snap = readJSON(historySnapshotPath, []);
+    const filtered = snap.filter((m) => {
+      const mid = toStr(m?.movieId);
+      const oid = toStr(m?._id);
+      const tmd = toStr(m?.tmdb_id);
+      // drop if ANY match
+      return !(mid === target || oid === target || tmd === target);
+    });
+
+    writeJSON(historySnapshotPath, filtered);
+    console.log(`🗑️ Updated history snapshot after removing: ${movieId}`);
+  } catch (err) {
+    console.error("❌ Failed to update History snapshot:", err);
+  }
+},
+
+syncQueuedHistory: async (apiBase, userId) => {
+  if (!apiBase || !userId) return { ok: false, reason: "Missing apiBase or userId" };
+  try {
+    let queue = readJSON(historyQueuePath, []);
+
+    // 1) If there is a clearAll, send the LAST one first
+    const idxFromEnd = [...queue].reverse().findIndex(a => a?.type === "clearAll");
+    if (idxFromEnd >= 0) {
+      const clearIdx = queue.length - 1 - idxFromEnd;
+      const res = await fetch(`${apiBase}/api/movies/historyMovies/removeAllHistory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      if (!res.ok) throw new Error(`clearAll failed: ${res.status}`);
+      // drop everything up to and including the clearAll
+      queue = queue.slice(clearIdx + 1);
+      writeJSON(historyQueuePath, queue);
+    }
+
+    // 2) Replay remaining actions best-effort
+    for (const action of queue) {
+      try {
+        if (action?.type === "delete" && action.movieId) {
+          const r = await fetch(`${apiBase}/api/movies/historyMovies/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, movieId: action.movieId }),
+          });
+          if (!r.ok) console.warn("⚠️ delete sync failed:", r.status);
+        } else if (action?.type === "movie" && action.movie) {
+          const r = await fetch(`${apiBase}/api/movies/history`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, movie: action.movie }),
+          });
+          if (!r.ok) console.warn("⚠️ movie sync failed:", r.status);
+        }
+      } catch (err) {
+        console.warn("⚠️ Failed to sync a history action; continuing:", err);
+      }
+    }
+
+    // 3) Clear queue after replay
+    writeJSON(historyQueuePath, []);
+    console.log("✅ History queue synced and cleared.");
+    return { ok: true };
+  } catch (err) {
+    console.error("❌ syncQueuedHistory failed:", err);
+    return { ok: false, reason: String(err?.message || err) };
+  }
+},
+
+
 
   removeFromSavedQueue: async (movieId) => {
     // 1) queue delete action (IDs only)

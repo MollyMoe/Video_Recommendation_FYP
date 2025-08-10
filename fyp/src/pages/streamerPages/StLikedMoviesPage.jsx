@@ -544,6 +544,27 @@ const StLikedMoviesPage = () => {
   //   }
   // };
 
+
+    // When coming back online, sync queued history actions with server
+useEffect(() => {
+  if (isOnline) {
+    (async () => {
+      try {
+        const savedUser = JSON.parse(localStorage.getItem("user"));
+        if (!savedUser?.userId) return;
+
+        console.log("🌐 Back online — syncing offline history queue...");
+        await window.electron?.syncQueuedHistory?.(API, savedUser.userId);
+
+        // After syncing, fetch from server and update local snapshot
+        await fetchHistoryMovies(savedUser.userId);
+      } catch (err) {
+        console.error("❌ Failed to sync queued history:", err);
+      }
+    })();
+  }
+}, [isOnline]);
+
   useEffect(() => {
     const run = async () => {
       if (!savedUser?.userId) return;
