@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException, Request
 from bson import ObjectId
 from pymongo import ReturnDocument
@@ -219,8 +219,15 @@ def request_password_reset(request: Request, body: dict):
         user = collection.find_one({"email": email})
         if user:
             token = secrets.token_hex(16)
-            collection.update_one({"_id": user["_id"]}, {"$set": {"resetToken": token, "tokenExpiry": int(os.times()[4]*1000) + 3600000}})
-
+            
+            # Use a standard epoch timestamp for token expiry
+            # Get the current UTC time and add a one-hour timedelta
+            expiry_time = datetime.now(timezone.utc) + timedelta(hours=1)
+            
+            collection.update_one(
+                {"_id": user["_id"]}, 
+                {"$set": {"resetToken": token, "tokenExpiry": expiry_time}}
+            )
             reset_url = f"https://cineit-frontend.onrender.com/#/reset-password-form?token={quote(token)}"
             message = EmailMessage()
             message.set_content(f"Click the link to reset password: {reset_url}")
@@ -241,12 +248,20 @@ def reset_password(request: Request, body: dict):
     token = body.get("token")
     password = body.get("password")
     db = request.app.state.user_db
+    
+    # Get the current UTC time for comparison
+    now = datetime.now(timezone.utc)
 
     for collection in [db.admin, db.streamer]:
-        user = collection.find_one({"resetToken": token, "tokenExpiry": {"$gt": int(os.times()[4]*1000)}})
+        # Check if the token exists AND is not expired
+        user = collection.find_one(
+            {"resetToken": token, "tokenExpiry": {"$gt": now}}
+        )
         if user:
+            # Hash the password for security
+            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
             collection.update_one({"_id": user["_id"]}, {"$set": {
-                "password": password,
+                "password": hashed_password.decode('utf-8'), # Store the hashed password
                 "resetToken": None,
                 "tokenExpiry": None
             }})
