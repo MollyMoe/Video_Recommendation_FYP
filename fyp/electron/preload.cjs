@@ -336,78 +336,152 @@ contextBridge.exposeInMainWorld('electron', {
   queueLiked: (action) => queueAction(likedQueuePath, action),
 
   // ✅ Offline remove actions for history, saved, liked
-  removeFromLikedQueue: (movieId) =>
-  queueAction(likedQueuePath, { type: "delete", movieId }),
-
+  removeFromLikedQueue: (movieId) => {
+    try {
+      const data = fs.existsSync(likedQueuePath)
+        ? fs.readFileSync(likedQueuePath, "utf-8")
+        : "[]";
+      const parsed = JSON.parse(data);
+  
+      // tolerate { movie } or raw movie objects
+      const filtered = parsed.filter((entry) => {
+        const m = entry?.movie || entry;
+        const id = m?.movieId || m?._id;
+        return id?.toString() !== movieId.toString();
+      });
+  
+      fs.writeFileSync(likedQueuePath, JSON.stringify(filtered, null, 2), "utf-8");
+      console.log(`🗑️ Updated liked cache after removing: ${movieId}`);
+    } catch (err) {
+      console.error("❌ Failed to update liked cache:", err);
+    }
+  },
+  
   removeFromSavedQueue: (movieId) =>
-  queueAction(savedQueuePath, { type: "delete", movieId }),
+    queueAction(savedQueuePath, { type: "delete", movieId }),
 
   removeFromHistoryQueue: (movieId) =>
-  queueAction(historyQueuePath, { type: "delete", movieId }),
+    queueAction(historyQueuePath, { type: "delete", movieId }),
 
+  queueHistoryAction: (action) => queueAction(historyQueuePath, action),
+  queueSavedAction: (action) => queueAction(savedQueuePath, action),
 
-  //History page
-  saveHistoryQueue: (historyMovies) => {
-  try {
-    fs.writeFileSync(historyQueuePath, JSON.stringify(historyMovies, null, 2), 'utf-8');
-    console.log("💾 Saved history queue.");
-  } catch (err) {
-    console.error("❌ Failed to save history queue:", err);
-  }
-},
+  removeMovieFromHistoryCache: (movieId) => {
+    try {
+      const data = fs.readFileSync(historyQueuePath, "utf-8");
+      const parsed = JSON.parse(data);
+      const filtered = parsed.filter(
+        (m) => m.movieId?.toString() !== movieId.toString()
+      );
+      fs.writeFileSync(historyQueuePath, JSON.stringify(filtered, null, 2));
+      console.log(`🗑️ Updated history cache after removing: ${movieId}`);
+    } catch (err) {
+      console.error("❌ Failed to update local history cache:", err);
+    }
+  },
+
+  removeFromSavedQueue: (movieId) => {
+    queueAction(savedQueuePath, { type: "delete", movieId });
+
+    // Also remove immediately from cache (UI)
+    try {
+      const data = fs.readFileSync(savedQueuePath, "utf-8");
+      const parsed = JSON.parse(data);
+
+      // Handle both raw movie and action format
+      const filtered = parsed.filter((entry) => {
+        const m = entry.movie || entry;
+        const id = m.movieId || m._id;
+        return id?.toString() !== movieId.toString();
+      });
+
+      fs.writeFileSync(savedQueuePath, JSON.stringify(filtered, null, 2));
+      console.log(`🗑️ Updated saved cache after removing: ${movieId}`);
+    } catch (err) {
+      console.error("❌ Failed to update saved cache:", err);
+    }
+  },
+
+  saveHistoryQueue: (queue) => {
+    try {
+      if (!Array.isArray(queue)) throw new Error("Queue is not array");
+      const json = JSON.stringify(queue, null, 2);
+      fs.writeFileSync(historyQueuePath, json);
+      console.log("✅ Saved history queue to:", historyQueuePath);
+    } catch (err) {
+      console.error("❌ Failed to save history queue:", err);
+    }
+  },
 
   getHistoryQueue: () => {
-  try {
-    if (fs.existsSync(historyQueuePath)) {
-      return JSON.parse(fs.readFileSync(historyQueuePath, 'utf-8'));
-    }
-    return [];
-  } catch {
-    return [];
-  }
-},
-
-getRawHistoryQueue: () => {
-  try {
-    if (fs.existsSync(historyQueuePath)) {
-      return JSON.parse(fs.readFileSync(historyQueuePath, 'utf-8'));
-    }
-    return [];
-  } catch {
-    return [];
-  }
-},
-
-clearHistoryQueue: () => {
-  try {
-    if (fs.existsSync(historyQueuePath)) {
-      fs.unlinkSync(historyQueuePath);
-      console.log("🧹 Cleared history queue.");
-    }
-  } catch (err) {
-    console.error("❌ Failed to clear history queue:", err);
-  }
-},
-
-//clear all history 
-clearHistoryQueueByUser: (userId) => {
-  try {
-    if (!fs.existsSync(historyQueuePath)) return;
-    const entries = JSON.parse(fs.readFileSync(historyQueuePath, "utf-8"));
-    const filtered = entries.filter(
-      (entry) => entry.movie?.userId !== userId && entry.userId !== userId
-    );
-    fs.writeFileSync(historyQueuePath, JSON.stringify(filtered, null, 2), "utf-8");
-    console.log("🧹 Cleared history queue for user:", userId);
-  } catch (err) {
-    console.error("❌ Failed to clear user history queue:", err);
-  }
-},
-
-//Liked Movies Page
- saveLikedQueue: (likedMovies) => {
     try {
-      fs.writeFileSync(likedQueuePath, JSON.stringify(likedMovies, null, 2), 'utf-8');
+      if (fs.existsSync(historyQueuePath)) {
+        const raw = fs.readFileSync(historyQueuePath, "utf-8");
+        const parsed = JSON.parse(raw);
+
+        // ✅ Filter only movies with at least a title or poster_url
+        const filtered = parsed.filter((entry) => {
+          const movie = entry.movie || entry;
+          return movie?.title || movie?.poster_url;
+        });
+
+        return filtered;
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  getRawHistoryQueue: () => {
+    try {
+      if (fs.existsSync(historyQueuePath)) {
+        return JSON.parse(fs.readFileSync(historyQueuePath, "utf-8"));
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  },
+
+  clearHistoryQueue: () => {
+    try {
+      if (fs.existsSync(historyQueuePath)) {
+        fs.unlinkSync(historyQueuePath);
+        console.log("🧹 Cleared history queue.");
+      }
+    } catch (err) {
+      console.error("❌ Failed to clear history queue:", err);
+    }
+  },
+
+  //clear all history
+  clearHistoryQueueByUser: (userId) => {
+    try {
+      if (!fs.existsSync(historyQueuePath)) return;
+      const entries = JSON.parse(fs.readFileSync(historyQueuePath, "utf-8"));
+      const filtered = entries.filter(
+        (entry) => entry.movie?.userId !== userId && entry.userId !== userId
+      );
+      fs.writeFileSync(
+        historyQueuePath,
+        JSON.stringify(filtered, null, 2),
+        "utf-8"
+      );
+      console.log("🧹 Cleared history queue for user:", userId);
+    } catch (err) {
+      console.error("❌ Failed to clear user history queue:", err);
+    }
+  },
+
+  //Liked Movies Page
+  saveLikedQueue: (likedMovies) => {
+    try {
+      fs.writeFileSync(
+        likedQueuePath,
+        JSON.stringify(likedMovies, null, 2),
+        "utf-8"
+      );
       console.log("💾 Saved liked queue.");
     } catch (err) {
       console.error("❌ Failed to save liked queue:", err);
@@ -415,105 +489,109 @@ clearHistoryQueueByUser: (userId) => {
   },
 
   getLikedQueue: () => {
-  try {
-    if (!fs.existsSync(likedQueuePath)) return [];
-
-    const actions = JSON.parse(fs.readFileSync(likedQueuePath, 'utf-8'));
-    const seen = new Set();
-    const movies = [];
-
-    for (const action of actions) {
-      const movie = action.movie;
-      const id = movie?._id || movie?.movieId;
-      if (movie && id && !seen.has(id)) {
-        seen.add(id);
-        movies.push(movie);
+    try {
+      if (!fs.existsSync(likedQueuePath)) return [];
+  
+      const raw = JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+      const seen = new Set();
+      const movies = [];
+  
+      for (const entry of raw) {
+        const m = entry?.movie || entry; // tolerate {movie} or raw movie
+        const id = m?.movieId || m?._id;
+        if (m && id && !seen.has(id)) {
+          seen.add(id);
+          movies.push(m);
+        }
       }
+  
+      return movies;
+    } catch (err) {
+      console.error("❌ Failed to read liked queue:", err);
+      return [];
     }
+  },
+  
 
-    return movies;
-  } catch (err) {
-    console.error("❌ Failed to read liked queue:", err);
-    return [];
-  }
-},
-
-getRawLikedQueue: () => {
-  try {
-    if (fs.existsSync(likedQueuePath)) {
-      return JSON.parse(fs.readFileSync(likedQueuePath, 'utf-8'));
+  getRawLikedQueue: () => {
+    try {
+      if (fs.existsSync(likedQueuePath)) {
+        return JSON.parse(fs.readFileSync(likedQueuePath, "utf-8"));
+      }
+      return [];
+    } catch {
+      return [];
     }
-    return [];
-  } catch {
-    return [];
-  }
-},
-clearLikedQueue: () => {
-  try {
-    if (fs.existsSync(likedQueuePath)) {
-      fs.unlinkSync(likedQueuePath);
-      console.log("🧹 Cleared liked queue.");
+  },
+  clearLikedQueue: () => {
+    try {
+      if (fs.existsSync(likedQueuePath)) {
+        fs.unlinkSync(likedQueuePath);
+        console.log("🧹 Cleared liked queue.");
+      }
+    } catch (err) {
+      console.error("❌ Failed to clear liked queue:", err);
     }
-  } catch (err) {
-    console.error("❌ Failed to clear liked queue:", err);
-  }
-},
+  },
 
   //Watch Later Page
-  saveSavedQueue: (savedMovies) => {
+  saveSavedQueue: (movies) => {
     try {
-      fs.writeFileSync(savedQueuePath, JSON.stringify(savedMovies, null, 2), 'utf-8');
+      if (!Array.isArray(movies)) throw new Error("Invalid data");
+      fs.writeFileSync(
+        savedQueuePath,
+        JSON.stringify(movies, null, 2),
+        "utf-8"
+      );
       console.log("💾 Saved watch later queue.");
     } catch (err) {
       console.error("❌ Failed to save saved queue:", err);
     }
   },
 
-   getSavedQueue: () => {
-  try {
-    if (!fs.existsSync(savedQueuePath)) return [];
+  getSavedQueue: () => {
+    try {
+      if (!fs.existsSync(savedQueuePath)) return [];
 
-    const actions = JSON.parse(fs.readFileSync(savedQueuePath, "utf-8"));
-    const seen = new Set();
-    const movies = [];
+      const raw = JSON.parse(fs.readFileSync(savedQueuePath, "utf-8"));
+      const seen = new Set();
+      const movies = [];
 
-    for (const action of actions) {
-      if (action.movie) {
-        const id = action.movie.movieId || action.movie._id;
-        if (id && !seen.has(id)) {
+      for (const movie of raw) {
+        const id = movie?.movieId || movie?._id;
+        if (movie && id && !seen.has(id)) {
           seen.add(id);
-          movies.push(action.movie);
+          movies.push(movie);
         }
       }
-    }
 
-    return movies;
-  } catch (err) {
-    console.error("❌ Failed to read saved queue:", err);
-    return [];
-  }
-},
-
-getRawSavedQueue: () => {
-  try {
-    if (fs.existsSync(savedQueuePath)) {
-      return JSON.parse(fs.readFileSync(savedQueuePath, 'utf-8'));
+      return movies;
+    } catch (err) {
+      console.error("❌ Failed to read saved queue:", err);
+      return [];
     }
-    return [];
-  } catch {
-    return [];
-  }
-},
+  },
 
-clearSavedQueue: () => {
-  try {
-    if (fs.existsSync(savedQueuePath)) {
-      fs.unlinkSync(savedQueuePath);
-      console.log("🧹 Cleared saved queue.");
+  getRawSavedQueue: () => {
+    try {
+      if (fs.existsSync(savedQueuePath)) {
+        return JSON.parse(fs.readFileSync(savedQueuePath, "utf-8"));
+      }
+      return [];
+    } catch {
+      return [];
     }
-  } catch (err) {
-    console.error("❌ Failed to clear saved queue:", err);
-  }
-},
+  },
+
+  clearSavedQueue: () => {
+    try {
+      if (fs.existsSync(savedQueuePath)) {
+        fs.unlinkSync(savedQueuePath);
+        console.log("🧹 Cleared saved queue.");
+      }
+    } catch (err) {
+      console.error("❌ Failed to clear saved queue:", err);
+    }
+  },
 
 });

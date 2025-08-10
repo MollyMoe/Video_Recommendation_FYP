@@ -37,10 +37,69 @@ const StFilterPage = () => {
     };
   }, []);
 
-  // ✅ Load everything (recommended + topRated)
+
+
+const processList = (list = []) =>
+  (list || [])
+    .filter(m => m?.poster_url && m?.trailer_url)
+    .map((movie) => {
+      const url = movie.trailer_url || "";
+      let trailer_key = null;
+      if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
+      else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
+
+      return {
+        ...movie,
+        trailer_key,
+        genres:    normalizeString(movie.genres),
+        producers: normalizeString(movie.producers),
+        actors:    normalizeString(movie.actors),
+        director:  normalizeString(movie.director),
+      };
+    });
+
+const computeTop10 = (processed) =>
+  processed.slice()
+    .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
+    .slice(0, 10);
+
+
+useEffect(() => {
+  let cancelled = false;
+  (async () => {
+    try {
+      const cached = await Promise.resolve(window.electron?.getRecommendedMovies?.() ?? []);
+      if (cancelled) return;
+      const processed = processList(cached);
+      if (processed.length) {
+        setMovies(processed);
+        setAllMovies(processed);
+      }
+      const topCached = await Promise.resolve(window.electron?.getTopRatedMovies?.() ?? []);
+      if (!cancelled) setTopRated(Array.isArray(topCached) ? topCached : []);
+    } catch (e) {
+      console.warn("Cache read failed:", e);
+    }
+  })();
+  return () => { cancelled = true; };
+}, []);
+
+
+// 2) AUTHORITATIVE LOAD: network when online, cache when offline
+useEffect(() => {
+  if (!userId) {
+    setIsLoading(false);
+    return;
+  }
+
+  let cancelled = false;
+  const runId = Math.random(); // drop stale runs if isOnline flips quickly
+  let activeRun = runId;
+
   const loadRecommendedMovies = async () => {
     try {
-      let subData, recommendedData, topRatedData = [];
+      let subData = null;
+      let recommendedData = [];
 
       if (isOnline) {
         const [subRes, recommendedRes] = await Promise.all([
@@ -50,96 +109,66 @@ const StFilterPage = () => {
 
         subData = await subRes.json();
         recommendedData = await recommendedRes.json();
-
         if (!Array.isArray(recommendedData)) recommendedData = [];
 
-        // Save raw recommended data for offline
-        if (window.electron?.saveSubscription) {
-          await window.electron.saveSubscription(subData);
-          await window.electron.saveRecommendedMovies(recommendedData);
+        // Normalize once and save the processed list for offline
+        const processed = processList(recommendedData);
+        const top10 = computeTop10(processed);
+
+        if (!cancelled && activeRun === runId) {
+          setAllMovies(processed);
+          setMovies(processed);
+          setTopRated(top10);
         }
 
-        // Normalize and process recommended movies
-        const processed = recommendedData
-          .filter(m => m.poster_url && m.trailer_url)
-          .map((movie) => {
-            const url = movie.trailer_url || "";
-            let trailer_key = null;
-            if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
-            else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
-
-            return {
-              ...movie,
-              trailer_key,
-              genres: normalizeString(movie.genres),
-              producers: normalizeString(movie.producers),
-              actors: normalizeString(movie.actors),
-              director: normalizeString(movie.director),
-            };
-          });
-
-        const top10 = processed
-          .slice()
-          .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
-          .slice(0, 10);
-
-        setAllMovies(processed);
-        setMovies(processed);
-        setTopRated(top10);
-
-        // ✅ Save topRated to offline
-        if (window.electron?.saveTopRatedMovies) {
-          await window.electron.saveTopRatedMovies(top10);
-          console.log("Top Rated Movies saved ..");
+        // Persist for offline
+        try {
+          await window.electron?.saveSubscription?.(subData);
+          await window.electron?.saveRecommendedMovies?.(processed); // save processed, not raw
+          await window.electron?.saveTopRatedMovies?.(top10);
+        } catch (e) {
+          console.warn("Offline save failed:", e);
         }
       } else {
-        subData = await window.electron.getSubscription(userId);
-        const cached = await window.electron.getRecommendedMovies();
-        const topCached = await window.electron.getTopRatedMovies();
-        console.log("Top Rated Movies offline fetched ..");
+        // Offline path
+        try {
+          subData = await Promise.resolve(window.electron?.getSubscription?.(userId));
+        } catch {}
 
-        const processed = (cached || [])
-          .filter(m => m.poster_url && m.trailer_url)
-          .map((movie) => {
-            const url = movie.trailer_url || "";
-            let trailer_key = null;
-            if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
-            else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
+        const cached = await Promise.resolve(window.electron?.getRecommendedMovies?.() ?? []);
+        const topCached = await Promise.resolve(window.electron?.getTopRatedMovies?.() ?? []);
 
-            return {
-              ...movie,
-              trailer_key,
-              genres: normalizeString(movie.genres),
-              producers: normalizeString(movie.producers),
-              actors: normalizeString(movie.actors),
-              director: normalizeString(movie.director),
-            };
-          });
+        const processed = processList(cached);
 
-        setAllMovies(processed);
-        setMovies(processed);
-        setTopRated(topCached || []);
+        if (!cancelled && activeRun === runId) {
+          setAllMovies(processed);
+          setMovies(processed);
+          setTopRated(Array.isArray(topCached) ? topCached : computeTop10(processed));
+        }
       }
 
-      setIsSubscribed(subData?.isActive || false);
+      if (!cancelled && activeRun === runId) {
+        setIsSubscribed(!!subData?.isActive);
+      }
     } catch (err) {
       console.error("❌ Failed to load recommended data:", err);
-      setIsSubscribed(false);
-      setMovies([]);
-      setAllMovies([]);
-      setTopRated([]);
+      if (!cancelled && activeRun === runId) {
+        setIsSubscribed(false);
+        setMovies([]);
+        setAllMovies([]);
+        setTopRated([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (!cancelled && activeRun === runId) setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (!userId) {
-      setIsLoading(false);
-      return;
-    }
-    loadRecommendedMovies();
-  }, [userId, isOnline]);
+  loadRecommendedMovies();
+
+  return () => { cancelled = true; activeRun = null; };
+}, [userId, isOnline, API]);
+
+
 
   // ✅ Search logic
   const handleSearch = (query) => {

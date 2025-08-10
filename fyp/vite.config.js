@@ -25,7 +25,7 @@ export default defineConfig({
     hmr: process.env.NODE_ENV !== 'production',
     proxy: {
       '/api': {
-        target: 'https://cineit.onrender.com',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       },

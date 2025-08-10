@@ -3,7 +3,11 @@ import StNav from "../../components/streamer_components/StNav";
 import StSideBar from "../../components/streamer_components/StSideBar";
 import StSearchBar from "../../components/streamer_components/StSearchBar";
 import { Play, Trash2, CheckCircle } from "lucide-react";
+import CompactMovieCard from "../../components/movie_components/CompactMovieCard";
+
 import { API } from "@/config/api";
+const getId = (m) => (m?._id ?? m?.movieId ?? "").toString();
+
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
@@ -12,7 +16,7 @@ const StLikedMoviesPage = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  
+  const savedUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     const handleNetworkChange = () => setIsOnline(navigator.onLine);
@@ -25,27 +29,31 @@ const StLikedMoviesPage = () => {
   }, []);
 
   const fetchSubscription = async (userId) => {
-  try {
-    let subscription;
+    try {
+      let subscription;
 
-    if (isOnline) {
-      const res = await fetch(`${API}/api/subscription/${userId}`);
-      subscription = await res.json();
-      console.log("🔑 Online subscription data:", subscription);
-      window.electron?.saveSubscription(subscription);
-    } else {
-      const offlineSub = window.electron?.getSubscription();
-      subscription = offlineSub?.userId === userId ? offlineSub : null;
-      console.log("📦 Offline subscription data:", subscription);
+      if (isOnline) {
+        const res = await fetch(`${API}/api/subscription/${userId}`);
+        subscription = await res.json();
+        console.log("🔑 Online subscription data:", subscription);
+
+        // Save for offline use (entire object)
+        window.electron?.saveSubscription(subscription);
+      } else {
+        const offlineSub = window.electron?.getSubscription();
+        subscription = offlineSub?.userId === userId ? offlineSub : null;
+        console.log("📦 Offline subscription data:", subscription);
+      }
+
+      setIsSubscribed(Boolean(subscription?.isActive));
+      console.log("✅ isOnline:", isOnline);
+      console.log("✅ isSubscribed:", isSubscribed, typeof isSubscribed);
+    } catch (err) {
+      console.error("Failed to fetch subscription:", err);
+      setIsSubscribed(false); // fallback
     }
+  };
 
-    console.log("🧪 Subscription before setting:", subscription);
-    setIsSubscribed(subscription?.isActive === true); // force exact boolean match
-  } catch (err) {
-    console.error("Failed to fetch subscription:", err);
-    setIsSubscribed(false); // fallback
-  }
-};
 
 useEffect(() => {
   console.log("🎯 Updated isSubscribed:", isSubscribed);
@@ -53,62 +61,68 @@ useEffect(() => {
 
 
   const fetchLikedMovies = async (userId) => {
-  if (!userId) {
-    console.warn("❗ No userId provided");
-    return;
-  }
 
-  setIsLoading(true);
-  const start = Date.now();
-  const minDelay = 500;
+    if (!userId) {
+      console.warn("❗ No userId provided");
+      return;
 
-  try {
-    let data = { likedMovies: [] };
-
-    if (isOnline) {
-      // ✅ Online: fetch from FastAPI
-      const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
-      data = await res.json();
-      console.log("🎬 Liked movies (online):", data);
-
-      // ✅ Save for offline access
-      if (window.electron?.saveLikedQueue) {
-        window.electron.saveLikedQueue(data.likedMovies);
-      }
-    } else if (window.electron?.getLikedQueue) {
-      // ✅ Offline: load from local file
-      const offlineQueue = await window.electron.getLikedQueue();
-      data.likedMovies = offlineQueue || [];
-      console.log("📦 Liked movies (offline):", data.likedMovies);
-    } else {
-      console.warn("⚠️ Offline and no preload getLikedQueue available");
     }
 
-    // ✅ Deduplicate
-    const seen = new Set();
-    const uniqueMovies = [];
+    setIsLoading(true);
+    const start = Date.now();
+    const minDelay = 500;
 
-    for (const movie of data.likedMovies || []) {
-      const id = movie._id || movie.movieId;
-      if (id && !seen.has(id)) {
-        seen.add(id);
-        uniqueMovies.push(movie);
+    try {
+      let data = { likedMovies: [] };
+
+      if (isOnline) {
+        // ✅ Online: fetch from FastAPI
+        const res = await fetch(`${API}/api/movies/likedMovies/${userId}`);
+        data = await res.json();
+        console.log("🎬 Liked movies (online):", data);
+
+        // ✅ Save for offline access
+        if (window.electron?.saveLikedQueue) {
+          window.electron.saveLikedQueue(data.likedMovies);
+        }
+      } else if (window.electron?.getLikedQueue) {
+        // ✅ Offline: use normalized liked queue (movies array)
+        const offlineMovies = window.electron.getLikedQueue();
+        console.log("📦 Offline liked movies (normalized):", offlineMovies);
+        data.likedMovies = offlineMovies || [];
+
+        // (Optional debug) If nothing found, peek at raw shape:
+        if (!data.likedMovies?.length && window.electron?.getRawLikedQueue) {
+          const rawQueue = window.electron.getRawLikedQueue();
+          console.log("🧪 Raw liked queue (fallback view):", rawQueue);
+        }
+      } else {
+        console.warn("⚠️ Offline and no preload getLikedQueue available");
       }
-    }
 
-    setLikedMovies(uniqueMovies);
-  } catch (err) {
-    console.error("❌ Failed to fetch liked movies:", err);
-  } finally {
-    const elapsed = Date.now() - start;
-    setTimeout(() => {
-      setIsLoading(false);
-    }, Math.max(0, minDelay - elapsed));
-  }
-};
+      // ✅ Deduplicate
+      const seen = new Set();
+      const uniqueMovies = [];
+      for (const movie of data.likedMovies || []) {
+        const id = getId(movie);
+        if (id && !seen.has(id)) {
+          seen.add(id);
+          uniqueMovies.push(movie);
+        }
+      }
+      setLikedMovies(uniqueMovies);
+      
+    } catch (err) {
+      console.error("❌ Failed to fetch liked movies:", err);
+    } finally {
+      const elapsed = Date.now() - start;
+      setTimeout(() => {
+        setIsLoading(false);
+      }, Math.max(0, minDelay - elapsed));
+    }
+  };
 
   useEffect(() => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
     if (savedUser?.userId) {
       fetchLikedMovies(savedUser.userId);
       fetchSubscription(savedUser.userId);
@@ -116,7 +130,6 @@ useEffect(() => {
   }, []);
 
   const handlePlay = async (movieId, trailerUrl) => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
     if (!movieId || !savedUser?.userId) return;
 
     console.log("▶️ Trailer URL:", trailerUrl);
@@ -149,95 +162,101 @@ useEffect(() => {
   };
 
   useEffect(() => {
-  const syncLikedQueue = async () => {
-    const savedUser = JSON.parse(localStorage.getItem("user"));
-    if (!savedUser?.userId) return;
-
-    const liked = window.electron.getRawLikedQueue?.() || [];
-
-    for (const action of liked) {
+    const syncLikedDiff = async () => {
+      if (!isOnline || !savedUser?.userId) return;
+  
+      // Choose the endpoint your backend supports:
+      const DELETE_URL = `${API}/api/movies/likedMovies/delete`;
+      // If your server only has /api/movies/like/delete, use that instead:
+      // const DELETE_URL = `${API}/api/movies/like/delete`;
+  
       try {
-        if (action.type === "delete") {
-          await fetch(`${API}/api/movies/like/delete`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: savedUser.userId,
-              movieId: action.movieId,
-            }),
-          });
-        } else if (action.movie) {
-          await fetch(`${API}/api/movies/like`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: savedUser.userId,
-              movie: action.movie,
-            }),
-          });
+        // 1) Server liked list
+        const res = await fetch(`${API}/api/movies/likedMovies/${savedUser.userId}`);
+        if (!res.ok) throw new Error(`Server liked fetch failed: ${res.status}`);
+        const payload = await res.json();
+        const serverLiked = Array.isArray(payload?.likedMovies) ? payload.likedMovies : [];
+  
+        // 2) Local liked list (offline truth)
+        const localLiked = window.electron?.getLikedQueue?.() || [];
+  
+        // 3) Diff by normalized id
+        const serverSet = new Set(serverLiked.map(getId));
+        const localSet  = new Set(localLiked.map(getId));
+        const toDelete = [...serverSet].filter((id) => !localSet.has(id));
+  
+        // 4) Send deletes for items removed offline
+        for (const movieId of toDelete) {
+          try {
+            const delRes = await fetch(DELETE_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: savedUser.userId,
+                movieId,
+              }),
+            });
+            if (!delRes.ok) {
+              const t = await delRes.text();
+              console.warn("❌ Delete failed for", movieId, delRes.status, t);
+            }
+          } catch (e) {
+            console.warn("❌ Delete error for", movieId, e);
+          }
         }
-      } catch (err) {
-        console.warn("❌ Failed to sync liked movie:", err);
+  
+        // 5) Refresh UI/cache to match server
+        await fetchLikedMovies(savedUser.userId);
+      } catch (e) {
+        console.error("❌ Liked diff sync failed:", e);
       }
-    }
-
-    window.electron.clearLikedQueue?.();
-    console.log("✅ Synced liked queue");
-  };
-
-  if (isOnline) syncLikedQueue();
-}, [isOnline]);
-
-  const handleRemove = async (movieId) => {
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-
-  if (!movieId || !savedUser?.userId) {
-    console.warn("⚠️ Missing movieId or userId");
-    return;
-  }
-
-  // ✅ Always remove from UI first
-  setLikedMovies((prev) =>
-    prev.filter((m) => m.movieId?.toString() !== movieId.toString())
-  );
-
-  setShowSuccess(true);
-  setTimeout(() => setShowSuccess(false), 2000);
-
-  // ✅ OFFLINE mode: remove from local queue only
-  if (!isOnline) {
-    console.log("🛠 Offline — removing from local liked queue only");
-    window.electron?.removeFromLikedQueue?.(movieId);
-    return;
-  }
-
-  // ✅ ONLINE mode: remove from backend
-  try {
-    const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userId: savedUser.userId,
-        movieId,
-      }),
+    };
+  
+    syncLikedDiff();
+  }, [isOnline]);
+  
+  
+  const handleRemove = async (id) => {
+    if (!id || !savedUser?.userId) return;
+  
+    // ✅ Optimistic UI + write-through to disk when offline
+    setLikedMovies((prev) => {
+      const next = prev.filter((m) => getId(m) !== id);
+      if (!isOnline) {
+        // persist the filtered list to the offline file immediately
+        window.electron?.saveLikedQueue?.(next);
+      }
+      return next;
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Server error ${res.status}: ${errText}`);
+  
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 2000);
+  
+    // ✅ OFFLINE: we're done (already persisted locally)
+    if (!isOnline) return;
+  
+    // ✅ ONLINE: delete on backend
+    try {
+      const res = await fetch(`${API}/api/movies/likedMovies/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: savedUser.userId,
+          movieId: id,
+        }),
+      });
+  
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Server error ${res.status}: ${errText}`);
+      }
+      // (Optional) await fetchLikedMovies(savedUser.userId);
+    } catch (err) {
+      console.error("❌ Error removing liked movie:", err);
+      // (Optional) rollback: await fetchLikedMovies(savedUser.userId);
     }
-
-    const data = await res.json();
-    console.log("🗑️ Removed from backend:", data);
-  } catch (err) {
-    console.error("❌ Error removing liked movie:", err.message || err);
-    alert("Failed to remove from server. Please try again later.");
-  }
-};
-
-
+  };
+  
   return (
     <div className="p-4">
       <StNav />
@@ -251,48 +270,14 @@ useEffect(() => {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {likedMovies.map((movie) => (
-                <div
-                  key={movie._id || movie.movieId}
-                  className="bg-white rounded-lg shadow p-2 flex flex-col justify-between h-[320px]"
-                >
-                  <img
-                    src={movie.poster_url || "https://via.placeholder.com/150"}
-                    alt={movie.title || "No Title"}
-                    className="rounded mb-2 w-full h-60 object-cover"
-                  />
-                  <h3 className="text-sm font-semibold mb-2 line-clamp-2">{movie.title}</h3>
-
-                  <div className="flex justify-center gap-2 mt-auto">
-                    {/* play btn */}
-                    <button
-                      onClick={() => {
-                        console.log("▶️ Play clicked for:", movie.movieId);
-                        handlePlay(movie.movieId, movie.trailer_url); // ✅ Pass trailerUrl here
-                      }}
-                      disabled={!isSubscribed}
-                    className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
-                      ${isSubscribed
-                        ? "bg-white text-black hover:bg-gray-200"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
-                  >
-                      <Play className="w-3 h-3 mr-1 fill-black" />
-                      Play
-                    </button>
-
-                    {/* remove btn */}
-                    <button
-                      onClick={() => handleRemove(movie.movieId)}
-                     disabled={!isSubscribed}
-                      className={`flex items-center justify-center flex-1 text-xs px-2 py-1 rounded-lg shadow-sm
-                      ${isSubscribed
-                        ? "bg-white text-black hover:bg-gray-200"
-                        : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
-                  >
-                      <Trash2 className="w-3 h-3 mr-1 fill-black" />
-                      Remove
-                    </button>
-                  </div>
-                </div>
+                <CompactMovieCard
+                  key={getId(movie)}
+                  movie={movie}
+                  isSubscribed={isSubscribed}
+                  isOnline={isOnline}
+                  onPlay={handlePlay}
+                  onRemove={() => handleRemove(getId(movie))}
+                />
               ))}
             </div>
           )}

@@ -57,6 +57,7 @@ function StHomeContent({ searchQuery }) {
     };
   }, []);
 
+
    const fetchSubscription = async (userId) => {
   try {
     let subscription;
@@ -364,10 +365,17 @@ const handleAction = async (actionType, movieId) => {
     const action = actions[actionType];
     if (!action) return;
 
-    if (actionType === "delete") {
-      setMovies(prev => prev.filter(m => m.movieId !== movieId));
-      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+    if (actionType === 'delete') {
+        // Remove from main recommendations
+        setMovies(prev => prev.filter(m => m.movieId !== movieId));
+        setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+
+        // Remove from section-specific arrays
+        setLikedMovies(prev => prev.filter(m => m.movieId !== movieId));
+        setSavedMovies(prev => prev.filter(m => m.movieId !== movieId));
+        setWatchedMovies(prev => prev.filter(m => m.movieId !== movieId));
     }
+
 
     try {
       await axios.post(`${API}/api/movies/${action.url}`, {
