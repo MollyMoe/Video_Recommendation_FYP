@@ -86,24 +86,65 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
 # Liked Movies
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
+    print("✅ Backend received like request:", request)
     data = await request.json()
     db = request.app.state.movie_db
     liked_collection = db["liked"]
+    movies_collection = db["hybridRecommendation2"]
 
     user_id = data.get("userId")
-    movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
 
-    if not user_id or not movie_id:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+    raw_movie = data.get("movie")
+    raw_movie_id = data.get("movieId")
 
-    # Use $addToSet to avoid duplicates
+    def _extract_id(x):
+        if isinstance(x, (str, int)):
+            return str(x)
+        if isinstance(x, dict):
+            return str(x.get("movieId") or x.get("_id") or "")
+        return ""
+
+    movie = None
+    if isinstance(raw_movie, dict):
+        movie = raw_movie
+    elif raw_movie_id is not None:
+        mid = _extract_id(raw_movie_id[0] if isinstance(raw_movie_id, list) and raw_movie_id else raw_movie_id)
+        if mid:
+            movie = movies_collection.find_one({"$or": [{"movieId": mid}, {"_id": mid}]})
+
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found or not provided")
+
+    full = dict(movie)
+    if "_id" in full:
+        full["_id"] = str(full["_id"])
+    if "movieId" in full:
+        full["movieId"] = str(full["movieId"])
+    else:
+        if full.get("_id"):
+            full["movieId"] = full["_id"]
+
+    if isinstance(full.get("genres"), str):
+        full["genres"] = [s.strip() for s in full["genres"].split(",") if s.strip()]
+
+    mid = str(full.get("movieId") or full.get("_id") or "")
+    if not mid:
+        raise HTTPException(status_code=422, detail="Movie lacks identifiable ID")
+
+    # 3) de-dupe by id, then push object
     liked_collection.update_one(
         {"userId": user_id},
-        {"$addToSet": {"likedMovies": movie_id}},
+        {"$pull": {"likedMovies": {"$or": [{"movieId": mid}, {"_id": mid}]}}}
+    )
+    liked_collection.update_one(
+        {"userId": user_id},
+        {"$push": {"likedMovies": full}},
         upsert=True
     )
 
-    return {"message": "Movie added to liked list"}
+    return {"message": "Movie added to liked list", "movieId": mid}
 
 @router.get("/likedMovies/{userId}")
 def get_liked_movies(userId: str, request: Request):
