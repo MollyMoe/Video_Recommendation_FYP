@@ -937,6 +937,7 @@ if (!isOnline && actionType === "delete") {
         movie={selectedMovie}
         onClose={() => setSelectedMovie(null)}
         isSubscribed={isSubscribed}
+        isOnline={isOnline}  
         onPlay={handleHistory}
         onLike={(movie) => handleLike(movie)}
         onSave={(movieId) => handleAction("save", movieId)}
