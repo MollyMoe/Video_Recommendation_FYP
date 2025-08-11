@@ -96,7 +96,7 @@ const StSideBar = () => {
             />
           </li>
           <li>
-s
+
              <StSidebarButton
 
               to="/home/subscription"
