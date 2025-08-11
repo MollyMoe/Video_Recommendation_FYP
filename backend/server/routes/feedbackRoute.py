@@ -89,7 +89,7 @@ CineIt Support Team
         raise HTTPException(status_code=500, detail="Failed to submit feedback due to an internal error.")
 
 
-@router.get("/feedback", response_model=List[Dict[str, Any]])
+@router.get("/fetch", response_model=List[Dict[str, Any]])
 async def get_all_feedback(request: Request):
     """
     Endpoint to retrieve all submitted user feedback.

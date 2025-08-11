@@ -1,102 +1,78 @@
-// src/utils/syncOfflineCache.js
 import { API } from "@/config/api";
 
-const processMovies = (list) => {
-  if (!Array.isArray(list)) list = [];
-  return list
-    .filter(m => m?.poster_url && m?.trailer_url)
-    .map(m => {
-      const url = m.trailer_url || "";
-      let trailer_key = null;
-      if (url.includes("v=")) trailer_key = url.split("v=")[1].split("&")[0];
-      else if (url.includes("youtu.be/")) trailer_key = url.split("youtu.be/")[1].split("?")[0];
-
-      const norm = (v) =>
-        Array.isArray(v) ? v.join(" ").toLowerCase()
-        : typeof v === "string" ? v.replace(/[|,]/g, " ").toLowerCase()
-        : "";
-
-      return {
-        ...m,
-        trailer_key,
-        genres: norm(m.genres),
-        producers: norm(m.producers),
-        actors: norm(m.actors),
-        director: norm(m.director),
-      };
-    });
-};
-
-const top10From = (arr) =>
-  arr.slice().sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0)).slice(0, 10);
-
-/**
- * If `genres` is provided, call /movies/regenerate to get FRESH recs.
- * Otherwise, fall back to /movies/recommendations/:userId (cached collection).
- */
-export const syncOfflineCache = async (user, { genres, force = false } = {}) => {
-  if (!user?.userId || !navigator.onLine) return;
-
-  const userId = user.userId;
+export const syncOfflineCache = async (user, { force = false } = {}) => {
+  if (!navigator.onLine || !user?.userId) return;
 
   try {
-    // Build a clean genres array (no blanks)
-    const genresArr = (Array.isArray(genres) ? genres : String(genres || "").split(/[|,]/))
-      .map(g => g.trim())
-      .filter(Boolean);
+    const userId = user.userId;
 
-    // Exclude current cached titles so regen returns fresh ones
-    let excludeTitles = [];
-    try {
-      const cached = await Promise.resolve(window.electron?.getRecommendedMovies?.() ?? []);
-      excludeTitles = Array.isArray(cached) ? cached.map(m => m?.title).filter(Boolean) : [];
-    } catch { /* ignore */ }
-
-    // ---- 1) Get fresh recommendations
-    let recData = [];
-    if (genresArr.length) {
-      const body = { userId, genres: genresArr, excludeTitles };
-      const regenRes = await fetch(`${API}/api/movies/regenerate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!regenRes.ok) {
-        const msg = await regenRes.text();
-        throw new Error(`Regenerate failed ${regenRes.status}: ${msg}`);
+    // --- (A) get recommendations (force regen if asked) ---
+    const fetchRecs = async () => {
+      if (force) {
+        const res = await fetch(`${API}/api/movies/regenerate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, excludeTitles: [] }),
+        });
+        return await res.json();
       }
-      const json = await regenRes.json();
-      recData = Array.isArray(json) ? json : (json.data || []);
-    } else {
-      const recRes = await fetch(
-        `${API}/api/movies/recommendations/${userId}${force ? `?ts=${Date.now()}` : ""}`
-      );
-      if (!recRes.ok) {
-        const msg = await recRes.text();
-        throw new Error(`Recommendations failed ${recRes.status}: ${msg}`);
-      }
-      const json = await recRes.json();
-      recData = Array.isArray(json) ? json : (json.data || []);
-    }
+      const res = await fetch(`${API}/api/movies/recommendations/${userId}`);
+      return await res.json();
+    };
 
-    const processed = processMovies(recData || []);
-    const top10 = top10From(processed);
+    // normalize helpers
+    const normalizeString = (value) => {
+      if (Array.isArray(value)) return value.join(" ").toLowerCase();
+      if (typeof value === "string") return value.replace(/[|,]/g, " ").toLowerCase();
+      return "";
+    };
+    const normalizeMovie = (movie) => {
+      const m = { ...movie };
+      m.trailer_key = m.trailer_url?.includes("v=")
+        ? m.trailer_url.split("v=")[1].split("&")[0]
+        : m.trailer_url?.includes("youtu.be/")
+          ? m.trailer_url.split("youtu.be/")[1].split("?")[0]
+          : null;
+      m.genres = normalizeString(m.genres);
+      m.producers = normalizeString(m.producers);
+      m.actors = normalizeString(m.actors);
+      m.director = normalizeString(m.director);
+      const n = parseFloat(m.predicted_rating);
+      m.predicted_rating = Number.isFinite(n) ? n : 0;
+      return m;
+    };
 
-    await window.electron?.saveRecommendedMovies?.(processed);
-    await window.electron?.saveTopRatedMovies?.(top10);
+    // 1) Recommended + Top 10
+    const recommendedRaw = await fetchRecs();
+    const processed = (recommendedRaw || [])
+      .filter((m) => m.poster_url && m.trailer_url)
+      .map(normalizeMovie);
 
-    // ---- 2) Subscription
+    const top10 = [...processed]
+      .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
+      .slice(0, 10);
+
+    await window.electron.saveRecommendedMovies(processed);
+    await window.electron.saveTopRatedMovies(top10);
+
+    // 2) Subscription
     const subRes = await fetch(`${API}/api/subscription/${userId}`);
     const subscription = await subRes.json();
-    await window.electron?.saveSubscription?.(subscription);
+    window.electron.saveSubscription(subscription);
 
-    // ---- 3) Genres from user profile (prefer the ones we just set if provided)
+    // 3) Genres (save array form for offline)
     const userRes = await fetch(`${API}/api/auth/users/streamer/${userId}`);
     const userData = await userRes.json();
-    const genresToSave = genresArr.length ? genresArr : (userData?.genres || []);
-    await window.electron?.saveUserGenres?.(genresToSave);
+    const genres =
+      Array.isArray(userData.genres)
+        ? userData.genres
+        : String(userData.genre || "")
+            .split(/[,|]/)
+            .map((g) => g.trim())
+            .filter(Boolean);
+    window.electron.saveUserGenres(genres);
 
-    // ---- 4) Carousel Data
+    // 4) Carousel Data
     const [topLikedRes, likedTitlesRes, savedTitlesRes, watchedTitlesRes] = await Promise.all([
       fetch(`${API}/api/movies/top-liked`),
       fetch(`${API}/api/movies/likedMovies/${userId}`),
@@ -104,10 +80,13 @@ export const syncOfflineCache = async (user, { genres, force = false } = {}) => 
       fetch(`${API}/api/movies/historyMovies/${userId}`),
     ]);
 
-    await window.electron?.saveCarouselData?.("topLiked",      await topLikedRes.json());
-    await window.electron?.saveCarouselData?.("likedTitles",   await likedTitlesRes.json());
-    await window.electron?.saveCarouselData?.("savedTitles",   await savedTitlesRes.json());
-    await window.electron?.saveCarouselData?.("watchedTitles", await watchedTitlesRes.json());
+    window.electron.saveCarouselData("topLiked", await topLikedRes.json());
+    window.electron.saveCarouselData("likedTitles", await likedTitlesRes.json());
+    window.electron.saveCarouselData("savedTitles", await savedTitlesRes.json());
+    window.electron.saveCarouselData("watchedTitles", await watchedTitlesRes.json());
+
+    // 🔔 >>> THIS is the “notify Filter to reload” line — put it at the END:
+    window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
 
     console.log("✅ Offline cache synced successfully.");
   } catch (err) {

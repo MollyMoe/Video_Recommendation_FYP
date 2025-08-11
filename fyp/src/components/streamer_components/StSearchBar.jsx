@@ -78,28 +78,28 @@ const [history, setHistory] = useState(() => {
     <div className="flex-1 px-5 hidden md:flex justify-center" ref={wrapperRef}>
       <div className="relative w-full max-w-md z-60">
         <input
-        type="text"
-  value={searchQuery}
-  onChange={(e) => setSearchQuery(e.target.value)}
-  onFocus={() => setIsFocused(true)}
-  onKeyDown={(e) => {
-    if (isSearchDisabled) return;
-    handleKeyDown(e);
-  }}
-  disabled={isSearchDisabled}
-  placeholder={
-    !isOnline
-      ? "Unavailable while offline!"
-      : !isSubscribed
-      ? "Subscribe to unlock search"
-      : "Search..."
-  }
-  className={`w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 ${
-    !isSearchDisabled
-      ? "focus:ring-blue-500"
-      : "cursor-not-allowed text-gray-400 bg-gray-200"
-  }`}
-/>
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onKeyDown={(e) => {
+            if (isSearchDisabled) return;
+            handleKeyDown(e);
+          }}
+          disabled={isSearchDisabled}
+          placeholder={
+            !isOnline
+              ? "Unavailable while offline!"
+              : !isSubscribed
+              ? "Subscribe to unlock search"
+              : "Search..."
+          }
+          className={`w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 ${
+            !isSearchDisabled
+              ? "focus:ring-blue-500"
+              : "cursor-not-allowed text-gray-400 bg-gray-200"
+          }`}
+        />
 
         {searchQuery && (
           <button

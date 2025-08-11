@@ -6,16 +6,12 @@ import { API } from "@/config/api";
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchStreamers = async () => {
       try {
-        const res = await fetch(
-          `${API}/api/auth/users/streamer`
-        );
+        const res = await fetch(`${API}/api/auth/users/streamer`);
         const data = await res.json();
-        console.log("Fetched streamers:", data);
         setUsers(data);
       } catch (err) {
         console.error("Error loading users:", err);
@@ -25,110 +21,40 @@ const AdUserTable = ({ searchQuery }) => {
     fetchStreamers();
   }, []);
 
-  useEffect(() => {
-  const fetchUser = async () => {
-    const res = await fetch(`${API}/api/auth/users/streamer/${user.userId}`);
-    const data = await res.json();
-    setUser(data);
-  };
-
-  fetchUser();
-}, []);
-
-  // const handleToggleSuspend = async (userId) => {
-  //   const updatedUsers = users.map((user) =>
-  //     user.userId === userId
-  //       ? {
-  //           ...user,
-  //           status: user.status === "Suspended" ? "Active" : "Suspended",
-  //         }
-  //       : user
-  //   );
-
-  //   setUsers(updatedUsers);
-
-  //   const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
-
-  //   try {
-  //     await fetch(`${API}/api/auth/users/${userId}/status`, {
-  //       method: "PUT",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({ status: newStatus }),
-  //     });
-  //   } catch (err) {
-  //     console.error("Failed to update status:", err);
-  //   }
-  // };
-
   const handleToggleSuspend = async (userId) => {
-  // ✅ Keep your original structure
-  const updatedUsers = users.map((user) =>
-    user.userId === userId
-      ? {
-          ...user,
-          status: user.status === "Suspended" ? "Active" : "Suspended",
-        }
-      : user
-  );
+    const updatedUsers = users.map((user) =>
+      user.userId === userId
+        ? { ...user, status: user.status === "Suspended" ? "Active" : "Suspended" }
+        : user
+    );
+    setUsers(updatedUsers);
 
-  setUsers(updatedUsers);
+    const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
+    const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
 
-  const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
-  const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
-
-  if (!userType) {
-    console.error("❌ Missing userType for user:", userId);
-    return;
-  }
-  console.log("🧪 Sending:", {
-  userId,
-  userType,
-  status: newStatus,
-});
-
-  try {
-    // 🔄 Update status in DB
-    const res = await fetch(`${API}/api/auth/users/${userId}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: newStatus,
-        userType,
-      }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      console.error("❌ Failed to update user status:", err.detail || err);
+    if (!userType) {
+      console.error("❌ Missing userType for user:", userId);
       return;
     }
-    console.log(`✅ User ${userId} status updated to ${newStatus}`);
 
-    // ✅ Reset lastSignout if unsuspending
-    if (newStatus === "Active") {
-      const resetRes = await fetch(`${API}/api/auth/update-signout-time`, {
-        method: "POST",
+    try {
+      await fetch(`${API}/api/auth/users/${userId}/status`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          userType,
-          time: new Date().toISOString(),
-        }),
+        body: JSON.stringify({ status: newStatus, userType }),
       });
 
-      if (!resetRes.ok) {
-        const err = await resetRes.json();
-        console.warn("⚠️ Failed to reset lastSignout:", err.detail || err);
-      } else {
-        console.log("✅ lastSignout reset after unsuspending");
+      if (newStatus === "Active") {
+        await fetch(`${API}/api/auth/update-signout-time`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, userType, time: new Date().toISOString() }),
+        });
       }
+    } catch (err) {
+      console.error("❌ Error toggling suspension:", err);
     }
-
-    console.log(`✅ User ${userId} status updated to ${newStatus}`);
-  } catch (err) {
-    console.error("❌ Error toggling suspension:", err);
-  }
-};
+  };
 
   const handleView = (user) => {
     navigate(`/admin/view/${user.userId}`, {
@@ -145,57 +71,66 @@ const AdUserTable = ({ searchQuery }) => {
     );
   }, [searchQuery, users]);
 
-  if (filteredUsers.length === 0) return null;
+  if (filteredUsers.length === 0 && searchQuery) {
+    return (
+        <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+            No users found matching your search.
+        </div>
+    );
+  }
 
   return (
-    <div className="sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-800">
-      <div className="shadow rounded-lg overflow-hidden dark:bg-gray-800">
-        <table className="min-w-full overflow-hidden">
-          <thead>
-            <tr>
-              <th className="px-10 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+    <div className="w-full dark:bg-gray-900">
+    <div className="sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-900">
+      <div className="shadow-md rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 isolate">
+        <table className="min-w-full">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="px-10 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 UserID
               </th>
-              <th className="px-7 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-7 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 User
               </th>
-              <th className="px-10 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-10 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 Email
               </th>
-              <th className="px-15 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-15 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 Action
               </th>
             </tr>
           </thead>
-          <tbody>
-            {filteredUsers.map((user, index) => (
-              <tr key={user._id}>
-                <td className="px-10 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+          <tbody className="bg-white dark:bg-gray-800/50">
+            {filteredUsers.map((user) => (
+              // --- FIX: Added dark mode border ---
+              <tr key={user._id || user.userId} className="border-b border-gray-200 dark:border-gray-700">
+                <td className="px-10 py-5 text-sm text-gray-700 dark:text-gray-300">
                   {user.userId}
                 </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+                <td className="px-5 py-5 text-sm">
                   <div className="flex items-center">
                     <div className="ml-3">
-                      <p className="text-gray-900 dark:text-white">
+                      {/* --- FIX: Added dark mode text color --- */}
+                      <p className="text-gray-900 dark:text-white font-semibold">
                         {user.username}
                       </p>
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+                <td className="px-5 py-5 text-sm text-gray-700 dark:text-gray-300">
                   {user.email}
                 </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
-                  <div className="flex gap-2 mt-2">
+                <td className="px-5 py-5 text-sm">
+                  <div className="flex gap-2 items-center">
                     <button
                       onClick={() => handleView(user)}
-                      className="bg-white border border-gray-400 text-black px-5 py-2 text-xs rounded-lg shadow-sm hover:bg-gray-200"
+                      className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-black dark:text-gray-200 px-5 py-2 text-xs rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       View
                     </button>
                     <button
                       onClick={() => handleToggleSuspend(user.userId)}
-                      className={`min-w-[90px] px-3 py-1 text-xs rounded-lg shadow-sm text-white ${
+                      className={`min-w-[90px] px-3 py-2 text-xs rounded-lg shadow-sm text-white ${
                         user.status === "Suspended"
                           ? "bg-green-500 hover:bg-green-600"
                           : "bg-red-500 hover:bg-red-600"
@@ -210,6 +145,7 @@ const AdUserTable = ({ searchQuery }) => {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 };

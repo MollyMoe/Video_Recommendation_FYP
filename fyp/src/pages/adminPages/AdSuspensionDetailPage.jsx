@@ -3,8 +3,26 @@ import { useParams } from "react-router-dom";
 
 import { API } from "@/config/api";
 
+// --- Best Practice: Helper function to format dates gracefully ---
+const formatDateTime = (dateString) => {
+  if (!dateString) return "N/A";
+  try {
+    return new Date(dateString).toLocaleString("en-US", {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch (error) {
+    return "Invalid Date";
+  }
+};
+
+
 const AdSuspensionDetailPage = () => {
-  const { id } = useParams();  // Access the 'id' parameter from the URL
+  const { id } = useParams();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -14,54 +32,63 @@ const AdSuspensionDetailPage = () => {
         const res = await fetch(`${API}/api/auth/users/streamer/${id}`);
         const data = await res.json();
         setUser(data);
-        setIsLoading(false);
       } catch (err) {
         console.error("Failed to fetch user details:", err);
+      } finally {
         setIsLoading(false);
       }
     };
     fetchUserDetails();
   }, [id]);
 
-  if (isLoading) return <div>Loading...</div>;
+  // --- FIX: Added a properly styled loading state for dark mode ---
+  if (isLoading) {
+    return (
+      <div className="w-full mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-gray-700 dark:text-gray-300">
+        Loading...
+      </div>
+    );
+  }
 
-  // Check if user is suspended and display appropriate message
   const isSuspended = user?.status === "Suspended";
 
   return (
-    <div className="w-full mx-auto bg-white dark:bg-gray-800 p-6 rounded shadow-md">
+    // --- FIX: Added dark mode background, border, and text ---
+    <div className="w-full mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-transparent dark:border-gray-700">
       <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-        User's Suspension Details
+        User Suspension Details
       </h3>
-      <div className="bg-white dark:bg-gray-900 rounded shadow-lg overflow-hidden">
+      {/* --- FIX: Added dark mode border and isolate class for proper corner rounding --- */}
+      <div className="rounded-lg shadow-inner overflow-hidden border border-gray-200 dark:border-gray-700 isolate">
         <table className="w-full table-auto">
           <thead>
-            <tr className="text-center bg-gray-50 dark:bg-gray-700">
+            {/* --- FIX: Cleaned up structure, added dark mode background and bottom border --- */}
+            <tr className="text-center bg-gray-50 dark:bg-gray-700/60">
               <th className="py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Status</th>
-              <th className="py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Last Signin</th>
-              <th className="py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Last Signout</th>
+              <th className="py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Last Sign-in</th>
+              <th className="py-3 px-4 text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Last Sign-out</th>
             </tr>
           </thead>
-          <tbody className="text-gray-700 dark:text-gray-200">
-            <tr>
-              <td colSpan="6">
-                <div className="border-b border-gray-300"></div>
-              </td>
-            </tr>
+           {/* --- FIX: Added dark mode text color for table body --- */}
+          <tbody className="bg-white dark:bg-gray-800/50 text-gray-700 dark:text-gray-200">
+            {/* --- FIX: Removed unnecessary border row --- */}
             <tr className="text-center">
-              <td className="py-4 px-4 uppercase">
+              <td className="py-4 px-4">
                 {isSuspended ? (
-                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                  // --- FIX: Added dark mode styles to the 'Suspended' pill ---
+                  <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-red-900/50 dark:text-red-300">
                     Suspended
                   </span>
                 ) : (
-                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                  // --- FIX: Added dark mode styles to the 'Active' pill ---
+                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-green-900/50 dark:text-green-300">
                     Active
                   </span>
                 )}
               </td>
-              <td className="py-4 px-4 uppercase">{user?.lastSignin}</td>
-              <td className="py-4 px-4 uppercase">{user?.lastSignout}</td>
+              {/* --- FIX: Used the formatting function for dates and added font-mono --- */}
+              <td className="py-4 px-4 font-mono text-sm">{formatDateTime(user?.lastSignin)}</td>
+              <td className="py-4 px-4 font-mono text-sm">{formatDateTime(user?.lastSignout)}</td>
             </tr>
           </tbody>
         </table>

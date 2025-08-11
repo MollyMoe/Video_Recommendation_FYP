@@ -84,7 +84,24 @@ useEffect(() => {
   console.log("🎯 Updated isSubscribed:", isSubscribed);
 }, [isSubscribed]);
 
-  
+  function normalizeAndEnrich(movie) {
+  if (!movie) return null;
+
+  const m = { ...movie };
+
+  // genres: string -> array
+  if (typeof m.genres === "string") {
+    m.genres = m.genres.split(/[,|]/).map((g) => g.trim());
+  }
+
+  // trailer_key from trailer_url
+  if (!m.trailer_key && m.trailer_url) {
+    const match = m.trailer_url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+    if (match) m.trailer_key = match[1];
+  }
+
+  return m;
+}
   const allAvailableGenres = useMemo(() => {
     const genres = new Set();
     lastRecommendedMovies.forEach(movie => {
@@ -276,33 +293,17 @@ const fetchUserAndMovies = async () => {
       }
     }
 
-    //added
-    // Existing: moviesToDisplay collected from API/offline
-    const filteredByDelete = (moviesToDisplay || []).filter(
-      m => !deletedIds.has(String(m.movieId))
-    );
-
-    const normalizedMovies = filteredByDelete.map(normalizeMovie).filter(Boolean);
-
-    setLastRecommendedMovies(normalizedMovies.slice(0, 60));
-    setAllShownTitles(new Set(normalizedMovies.map(m => m.title)));
-    if (window.electron?.saveRecommendedMovies) {
-      window.electron.saveRecommendedMovies(filteredByDelete); // save filtered
+      const normalizedMovies = moviesToDisplay
+        .map(normalizeMovie)
+        .filter(Boolean);
+      setLastRecommendedMovies(normalizedMovies.slice(0, 60));
+      setAllShownTitles(new Set(normalizedMovies.map((m) => m.title)));
+    } catch (err) {
+      console.error("❌ Error in fetchUserAndMovies:", err);
+    } finally {
+      setIsLoading(false);
     }
-
-  
-
-    // const normalizedMovies = moviesToDisplay.map(normalizeMovie).filter(Boolean);
-    // setLastRecommendedMovies(normalizedMovies.slice(0, 60));
-    // setAllShownTitles(new Set(normalizedMovies.map((m) => m.title)));
-
-  } catch (err) {
-    console.error("❌ Error in fetchUserAndMovies:", err);
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+  };
 
   const handleRegenerate = async () => {
   if (!isSubscribed) return;
@@ -313,11 +314,9 @@ const fetchUserAndMovies = async () => {
       const response = await axios.post(`${API}/api/movies/regenerate`, {
         userId: savedUser.userId,
         excludeTitles: Array.from(allShownTitles),
-        excludeIds: Array.from(deletedIds), //added
       });
 
       const newMovies = (response.data || [])
-        .filter(m => !deletedIds.has(String(m.movieId))) // add this
         .map(normalizeMovie)
         .filter(Boolean);
 
@@ -372,21 +371,6 @@ const fetchUserAndMovies = async () => {
   }
 };
 
-//handle delete presisted set 
-// --- Persisted "deleted" memory (per user) ---
-const DELETED_KEY = `deleted_${savedUser?.userId || 'anon'}`;
-
-const loadDeleted = () => {
-  try { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY)) || []); }
-  catch { return new Set(); }
-};
-
-const saveDeleted = (set) =>
-  localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(set)));
-
-const [deletedIds, setDeletedIds] = useState(loadDeleted());
-useEffect(() => { saveDeleted(deletedIds); }, [deletedIds]);
-
 
 const handleAction = async (actionType, movieId) => {
     if (!movieId || !savedUser?.userId) return;
@@ -401,37 +385,198 @@ const handleAction = async (actionType, movieId) => {
     const action = actions[actionType];
     if (!action) return;
 
-      if (actionType === 'delete') {
-        // UI remove
-        setMovies(prev => prev.filter(m => m.movieId !== movieId));
-        setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
-        setLikedMovies(prev => prev.filter(m => m.movieId !== movieId));
-        setSavedMovies(prev => prev.filter(m => m.movieId !== movieId));
-        setWatchedMovies(prev => prev.filter(m => m.movieId !== movieId));
+      if (!isOnline && actionType === "delete"){
+        try {
+    // 1) update UI immediately
+    setMovies((prev) => prev.filter((m) => String(m.movieId) !== String(movieId)));
+    setLastRecommendedMovies((prev) => prev.filter((m) => String(m.movieId) !== String(movieId)));
 
-        // persist deletion
-        setDeletedIds(prev => {
-          const next = new Set(prev);
-          next.add(String(movieId));
-          return next;
-        });
+    // 2) update local recommended.json
+    window.electron?.removeFromRecommended?.(movieId);
+
+    // 3) queue for backend sync
+    window.electron?.queueRecommendedAction?.({ type: "delete", movieId });
+
+    // 4) toast
+    setPopupMessage("Removed from recommendations (offline)");
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 2000);
+  } catch (e) {
+    console.warn("❌ Offline recommended delete failed:", e);
+  }
+  return; // stop here—no API call while offline
+}
+
+  
+    // ---------- OFFLINE SAVE (early return) ----------
+    if (!isOnline && actionType === "save") {
+      try {
+        // 1) queue for later sync
+        window.electron?.queueSavedAction?.({ type: "add", movieId });
+  
+        // 2) build a rich object for the offline snapshot
+        let full =
+          lastRecommendedMovies.find(m => String(m.movieId) === String(movieId)) ||
+          movies.find(m => String(m.movieId) === String(movieId)) ||
+          null;
+  
+        // enrich from preload if missing poster/trailer
+        if (!full || !full.poster_url || !full.trailer_url) {
+          try {
+            const pool = (await window.electron?.getRecommendedMovies?.()) || [];
+            const found = pool.find(m => String(m.movieId) === String(movieId));
+            if (found) full = { ...found, ...full };
+          } catch {}
+        }
+  
+        if (!full) {
+          full = { movieId: String(movieId), title: `Movie #${movieId}`, poster_url: "" };
+        }
+  
+        full = normalizeAndEnrich(full);
+  
+        // 3) write to offline snapshot if not already present
+        if (window.electron?.getSavedSnapshot && window.electron?.saveSavedSnapshot) {
+          const snap = window.electron.getSavedSnapshot() || [];
+          const seen = new Set(snap.map(m => String(m.movieId ?? m._id)));
+          if (!seen.has(String(movieId))) {
+            window. electron. saveSavedSnapshot([ ... snap, full]);
+          }
+        }
+  
+        // 4) toast
+        setPopupMessage("Saved to Watch Later! (offline)");
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 2000);
+      } catch (e) {
+        console.warn("❌ Offline save failed:", e);
       }
-
+      return; // IMPORTANT: stop here in offline save
+    }
+  
+    // ---------- Immediate UI update for delete ----------
+    if (actionType === "delete") {
+      setMovies(prev => prev.filter(m => m.movieId !== movieId));
+      setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
+    }
+  
+    // ---------- ONLINE / other actions ----------
     try {
       await axios.post(`${API}/api/movies/${action.url}`, {
         userId: savedUser.userId,
-        movieId
+        movieId,
       });
-
-      if (action.message) {
-        setPopupMessage(action.message);
-        setShowPopup(true);
-        setTimeout(() => setShowPopup(false), 2000);
+  
+      // mirror successful ONLINE save into snapshot for instant Watch Later UI
+      if (actionType === "save") {
+        let full =
+          lastRecommendedMovies.find(m => String(m.movieId) === String(movieId)) ||
+          movies.find(m => String(m.movieId) === String(movieId)) ||
+          null;
+  
+        if (!full || !full.poster_url || !full.trailer_url) {
+          try {
+            const pool = (await window.electron?.getRecommendedMovies?.()) || [];
+            const found = pool.find(m => String(m.movieId) === String(movieId));
+            if (found) full = { ...found, ...full };
+          } catch {}
+        }
+  
+        if (full && window.electron?.getSavedSnapshot && window.electron?.saveSavedSnapshot) {
+          full = normalizeAndEnrich(full);
+          const snap = window.electron.getSavedSnapshot() || [];
+          const seen = new Set(snap.map(m => String(m.movieId ?? m._id)));
+          if (!seen.has(String(movieId))) {
+            window.electron.saveSavedSnapshot([full, ...snap]);
+          }
+        }
       }
+  
+      // toast (online)
+      setPopupMessage(action.message);
+      setShowPopup(true);
+      setTimeout(() => setShowPopup(false), 2000);
     } catch (err) {
       console.error(`❌ Error with action ${actionType}:`, err);
     }
   };
+
+
+  const handleLike = async (movie) => {
+      if (!movie || !savedUser?.userId) return;
+  
+      // ✅ normalize to keep genres/trailer_key/etc. consistent offline and online
+      const normalized = normalizeMovie({ ...movie });
+  
+      if (!isOnline) {
+        // 📴 Store the entire movie object locally for the Liked page
+        // window.electron?.addMovieToLikedCache?.(normalized);
+  
+        // window.electron?.queueLiked?.({ type: "add", movie: normalized });
+  
+        // queue for future sync
+        window.electron?.queueLiked?.({ type: "add", movie: normalized });
+        console.log(
+          "bridge:",
+          !!window.electron,
+          "addMovieToLikedList:",
+          !!window.electron?.addMovieToLikedList,
+          "queueLiked:",
+          !!window.electron?.queueLiked
+        );
+  
+        // snapshot so Liked page shows it immediately when offline/online
+        window.electron?.addMovieToLikedList?.(normalized);
+  
+        setPopupMessage("Movie Liked! (offline)");
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 2000);
+        return; // no API call when offline
+      }
+  
+      // 🌐 Online — send only IDs to API (backend will already store full movie object)
+      try {
+        await axios.post(`${API}/api/movies/like`, {
+          userId: savedUser.userId,
+          movieId: normalized,
+        });
+  
+        window.electron?.addMovieToLikedList?.(normalized);
+  
+        setPopupMessage("Movie Liked!");
+        setShowPopup(true);
+        setTimeout(() => setShowPopup(false), 2000);
+      } catch (err) {
+        console.error("❌ Error with action like:", err);
+      }
+    };
+
+      useEffect(() => {
+        const syncRecommendedQueue = async () => {
+          const queued = window.electron?.getRawRecommendedQueue?.() || [];
+          if (!queued.length) return;
+      
+          for (const action of queued) {
+            try {
+              if (action?.type === "delete" && action.movieId) {
+                await axios.post(`${API}/api/movies/recommended/delete`, {
+                  userId: savedUser.userId,
+                  movieId: action.movieId,
+                });
+              }
+            } catch (err) {
+              console.warn("❌ Failed to sync recommended delete:", err);
+            }
+          }
+      
+          window.electron?.clearRecommendedQueue?.();
+          console.log("✅ Synced recommended queue");
+        };
+      
+        if (isOnline && savedUser?.userId) {
+          syncRecommendedQueue();
+        }
+      }, [isOnline, savedUser?.userId]);
 
 const handleHistory = (movie) => {
     if (!isSubscribed || !movie) return;
@@ -459,98 +604,142 @@ useEffect(() => {
    useEffect(() => {
   if (!savedUser?.userId) return;
 
-const fetchAllCarouselData = async () => {
-  try {
-    console.log("--- Starting Carousel Data Fetch ---");
-    const seenIds = new Set();
-    const setDefaultCounts = { liked: 0, saved: 0, watched: 0 };
+    const fetchAllCarouselData = async () => {
+      try {
+        console.log("--- Starting Carousel Data Fetch ---");
+        const seenIds = new Set();
+        const setDefaultCounts = { liked: 0, saved: 0, watched: 0 };
 
-    if (isOnline) {
-      // 🌐 Online mode
-      const [topLikedRes, likedTitlesRes, savedTitlesRes, watchedTitlesRes] = await Promise.all([
-        axios.get(`${API}/api/movies/top-liked`),
-        axios.get(`${API}/api/movies/likedMovies/${savedUser.userId}`),
-        axios.get(`${API}/api/movies/watchLater/${savedUser.userId}`),
-        axios.get(`${API}/api/movies/historyMovies/${savedUser.userId}`),
-      ]);
+        if (isOnline) {
+          // 🌐 Online mode
+          const [
+            topLikedRes,
+            likedTitlesRes,
+            savedTitlesRes,
+            watchedTitlesRes,
+          ] = await Promise.all([
+            axios.get(`${API}/api/movies/top-liked`),
+            axios.get(`${API}/api/movies/likedMovies/${savedUser.userId}`),
+            axios.get(`${API}/api/movies/watchLater/${savedUser.userId}`),
+            axios.get(`${API}/api/movies/historyMovies/${savedUser.userId}`),
+          ]);
 
-      const topLiked = topLikedRes.data.map(m => normalizeMovie(m.details)).filter(Boolean).filter(m => !deletedIds.has(String(m.movieId)));
-      const likedMoviesFull = likedTitlesRes.data?.likedMovies || [];
-      const savedMoviesFull = savedTitlesRes.data?.SaveMovies || [];
-      const watchedMoviesFull = watchedTitlesRes.data?.historyMovies || [];
+          const topLiked = topLikedRes.data
+            .map((m) => normalizeMovie(m.details))
+            .filter(Boolean);
+          const likedMoviesFull = likedTitlesRes.data?.likedMovies || [];
+          const savedMoviesFull = savedTitlesRes.data?.SaveMovies || [];
+          const watchedMoviesFull = watchedTitlesRes.data?.historyMovies || [];
 
-      // Titles (just for carousel titles)
-      const likedTitles = likedMoviesFull.slice(0, 2).map(m => m.title);
-      const savedTitles = savedMoviesFull.slice(0, 2).map(m => m.title);
-      const watchedTitles = watchedMoviesFull.slice(0, 2).map(m => m.title);
+          // Titles (just for carousel titles)
+          const likedTitles = likedMoviesFull.slice(0, 2).map((m) => m.title);
+          const savedTitles = savedMoviesFull.slice(0, 2).map((m) => m.title);
+          const watchedTitles = watchedMoviesFull
+            .slice(0, 2)
+            .map((m) => m.title);
 
-      // Set states
-      setTopLikedMovies(topLiked);
-      setLikedTitles(likedTitles);
-      setSavedTitles(savedTitles);
-      setWatchedTitles(watchedTitles);
+          // Set states
+          setTopLikedMovies(topLiked);
+          setLikedTitles(likedTitles);
+          setSavedTitles(savedTitles);
+          setWatchedTitles(watchedTitles);
 
-      // Save lists to preload (for offline ALS use)
-      window.electron?.saveCarouselData?.("topLiked", topLiked);
-      window.electron?.saveCarouselData?.("likedTitles", likedTitles);
-      window.electron?.saveCarouselData?.("savedTitles", savedTitles);
-      window.electron?.saveCarouselData?.("watchedTitles", watchedTitles);
+          // Save lists to preload (for offline ALS use)
+          window.electron?.saveCarouselData?.("topLiked", topLiked);
+          window.electron?.saveCarouselData?.("likedTitles", likedTitles);
+          window.electron?.saveCarouselData?.("savedTitles", savedTitles);
+          window.electron?.saveCarouselData?.("watchedTitles", watchedTitles);
 
-      // Counts
-      const countsRes = await axios.get(`${API}/api/movies/counts/${savedUser.userId}`);
-      const { liked, saved, watched } = countsRes.data;
-      setInteractionCounts({ liked, saved, watched });
-      window.electron?.saveCarouselData?.("interactionCounts", { liked, saved, watched });
-
-      // ALS fetch helper (returns movies)
-      const fetchAndSetALS = async (key, count, endpoint, setter) => {
-        if (count >= 5) {
-          const res = await axios.post(endpoint, {
-            userId: savedUser.userId,
-            excludeIds: Array.from(seenIds),
+          // Counts
+          const countsRes = await axios.get(
+            `${API}/api/movies/counts/${savedUser.userId}`
+          );
+          const { liked, saved, watched } = countsRes.data;
+          setInteractionCounts({ liked, saved, watched });
+          window.electron?.saveCarouselData?.("interactionCounts", {
+            liked,
+            saved,
+            watched,
           });
-          const movies = res.data.map(normalizeMovie).filter(Boolean).filter(m => !deletedIds.has(String(m.movieId)));
-          setter(movies);
-          movies.forEach(m => seenIds.add(String(m.movieId)));
-          window.electron?.saveCarouselData?.(key, movies);
-          return movies;
+
+          // ALS fetch helper (returns movies)
+          const fetchAndSetALS = async (key, count, endpoint, setter) => {
+            if (count >= 5) {
+              const res = await axios.post(endpoint, {
+                userId: savedUser.userId,
+                excludeIds: Array.from(seenIds),
+              });
+              const movies = res.data.map(normalizeMovie).filter(Boolean);
+              setter(movies);
+              movies.forEach((m) => seenIds.add(String(m.movieId)));
+              window.electron?.saveCarouselData?.(key, movies);
+              return movies;
+            } else {
+              setter([]);
+              window.electron?.saveCarouselData?.(key, []);
+              return [];
+            }
+          };
+
+          // Save ALS movies
+          await fetchAndSetALS(
+            "alsLiked",
+            liked,
+            `${API}/api/movies/als-liked`,
+            setLikedMovies
+          );
+          await fetchAndSetALS(
+            "alsSaved",
+            saved,
+            `${API}/api/movies/als-saved`,
+            setSavedMovies
+          );
+          await fetchAndSetALS(
+            "alsWatched",
+            watched,
+            `${API}/api/movies/als-watched`,
+            setWatchedMovies
+          );
         } else {
-          setter([]);
-          window.electron?.saveCarouselData?.(key, []);
-          return [];
+          // 📴 Offline mode
+          if (window.electron) {
+            setTopLikedMovies(
+              window.electron.getCarouselData?.("topLiked") || []
+            );
+            setLikedTitles(
+              window.electron.getCarouselData?.("likedTitles") || []
+            );
+            setSavedTitles(
+              window.electron.getCarouselData?.("savedTitles") || []
+            );
+            setWatchedTitles(
+              window.electron.getCarouselData?.("watchedTitles") || []
+            );
+            setInteractionCounts(
+              window.electron.getCarouselData?.("interactionCounts") ||
+                setDefaultCounts
+            );
+
+            // Match keys saved in online mode (alsLiked, alsSaved, alsWatched)
+            setLikedMovies(window.electron.getCarouselData?.("alsLiked") || []);
+            setSavedMovies(window.electron.getCarouselData?.("alsSaved") || []);
+            setWatchedMovies(
+              window.electron.getCarouselData?.("alsWatched") || []
+            );
+          }
         }
-      };
 
-      // Save ALS movies
-      await fetchAndSetALS("alsLiked", liked, `${API}/api/movies/als-liked`, setLikedMovies);
-      await fetchAndSetALS("alsSaved", saved, `${API}/api/movies/als-saved`, setSavedMovies);
-      await fetchAndSetALS("alsWatched", watched, `${API}/api/movies/als-watched`, setWatchedMovies);
-
-    } else {
-      // 📴 Offline mode
-      if (window.electron) {
-        setTopLikedMovies(window.electron.getCarouselData?.("topLiked") || []);
-        setLikedTitles(window.electron.getCarouselData?.("likedTitles") || []);
-        setSavedTitles(window.electron.getCarouselData?.("savedTitles") || []);
-        setWatchedTitles(window.electron.getCarouselData?.("watchedTitles") || []);
-        setInteractionCounts(window.electron.getCarouselData?.("interactionCounts") || setDefaultCounts);
-
-        // Match keys saved in online mode (alsLiked, alsSaved, alsWatched)
-        setLikedMovies(window.electron.getCarouselData?.("alsLiked") || []);
-        setSavedMovies(window.electron.getCarouselData?.("alsSaved") || []);
-        setWatchedMovies(window.electron.getCarouselData?.("alsWatched") || []);
+        console.log("--- Carousel Data Fetch Complete ---");
+      } catch (err) {
+        console.error(
+          "💥 A critical error occurred in fetchAllCarouselData:",
+          err
+        );
       }
-    }
+    };
 
-    console.log("--- Carousel Data Fetch Complete ---");
-  } catch (err) {
-    console.error("💥 A critical error occurred in fetchAllCarouselData:", err);
-  }
-};
-
-
-  fetchAllCarouselData();
-}, [savedUser?.userId, isOnline]);
+    fetchAllCarouselData();
+  }, [savedUser?.userId, isOnline]);
 
 
   useEffect(() => {
@@ -561,13 +750,12 @@ const fetchAllCarouselData = async () => {
     }
     const debouncedFetch = debounce(async () => {
       try {
-        const res = await axios.get(`${API}/api/movies/search`, { params: { q: trimmedQuery } });
-        //setMovies((res.data || []).map(normalizeMovie).filter(Boolean).slice(0, 60));
-        setMovies((res.data || []).filter(m => !deletedIds.has(String(m.movieId))) // prevent deleted movies from coming back
-          .map(normalizeMovie)
-          .filter(Boolean)
-          .slice(0, 60)
-      );
+        const res = await axios.get(`${API}/api/movies/search`, {
+          params: { q: trimmedQuery },
+        });
+        setMovies(
+          (res.data || []).map(normalizeMovie).filter(Boolean).slice(0, 60)
+        );
       } catch (err) {
         console.error("Search failed:", err);
         setMovies([]);
@@ -627,7 +815,7 @@ const fetchAllCarouselData = async () => {
               <MovieCarousel
                 title={<span className="dark:text-white">🔥 Most Liked Movies </span>}
                 movies={topLikedMovies}
-                onMovieClick={setSelectedMovie}
+                onMovieClick={(m) => setSelectedMovie({ ...m, __noDelete: true })}
                 autoScroll={true} 
               />
               
@@ -639,18 +827,33 @@ const fetchAllCarouselData = async () => {
                   onMovieClick={setSelectedMovie}
                 />
               )}
-              
+
               {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
                 <MovieCarousel
-                  title={<span className="dark:text-white">Because you saved <span className="italic text-green-500">{savedTitles.join(", ")}</span></span>}
+                  title={
+                    <span className="dark:text-white">
+                      Because you saved{" "}
+                      <span className="italic text-green-500">
+                        {savedTitles.join(", ")}
+                      </span>
+                    </span>
+                  }
                   movies={savedMovies}
                   onMovieClick={setSelectedMovie}
                 />
               )}
+
               
               {interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
                 <MovieCarousel
-                  title={<span className="dark:text-white">Because you watched <span className="italic text-orange-500">{watchedTitles.join(", ")}</span></span>}
+                  title={
+                    <span className="dark:text-white">
+                      Because you watched{" "}
+                      <span className="italic text-orange-500">
+                        {watchedTitles.join(", ")}
+                      </span>
+                    </span>
+                  }
                   movies={watchedMovies}
                   onMovieClick={setSelectedMovie}
                 />
@@ -658,25 +861,29 @@ const fetchAllCarouselData = async () => {
             </div>
 
             {/* Main Recommendations Grid */}
-            <div>
-              <div className="flex justify-between items-center mb-4 px-4">
-                <h2 className="text-2xl font-semibold text-black dark:text-white">Recommended for You</h2>
+            <div className="flex justify-between items-center mb-4 px-4">
+              <h2 className="text-2xl font-semibold text-black dark:text-white">
+                Recommended for You
+              </h2>
+
+              <div className="relative inline-block group">
                 <button
                   onClick={handleRegenerate}
                   disabled={!isSubscribed || isLoading}
-                  className="font-medium border border-gray-400 px-6 py-2 rounded-lg text-sm shadow-md disabled:opacity-50 bg-white text-black hover:bg-gray-200 transition-transform active:scale-95"
+                  className="relative z-10 font-medium border border-gray-400 px-6 py-2 rounded-lg text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed bg-white text-black hover:bg-gray-200 transition-transform active:scale-95"
                 >
                   Regenerate
-                  {!isSubscribed && (
-                    <div 
-                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-max whitespace-nowrap bg-black text-white text-xs rounded py-1 px-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                    >
-                      Subscribe to unlock this feature
-                    </div>
-                  )}
                 </button>
-              </div>
 
+                {!isSubscribed && (
+                  <div
+                    className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full w-max whitespace-nowrap bg-black text-white text-xs rounded py-1 px-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-md"
+                  >
+                    Subscribe to unlock this feature
+                  </div>
+                )}
+              </div>
+            </div>
                 {isSubscribed && isOnline && (
                   <FilterButtons
                     allGenres={allAvailableGenres}
@@ -692,7 +899,6 @@ const fetchAllCarouselData = async () => {
                 ))}
               </div>
             </div>
-          </div>
         )}
       </div>
 
@@ -704,7 +910,7 @@ const fetchAllCarouselData = async () => {
         isSubscribed={isSubscribed}
         isOnline={isOnline}
         onPlay={handleHistory}
-        onLike={(movieId) => handleAction('like', movieId)}
+        onLike={(movie) => handleLike(movie)}
         onSave={(movieId) => handleAction('save', movieId)}
         onDelete={(movieId) => handleAction('delete', movieId)}
         isSearching={isSearching}

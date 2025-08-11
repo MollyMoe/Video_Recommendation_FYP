@@ -73,7 +73,7 @@ const AdUserWatchLaterPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen p-6">
 
       {/* Loading */}
       {isLoading && (
@@ -91,7 +91,7 @@ const AdUserWatchLaterPage = () => {
       )}
 
       {/* Movie Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
         {watchLaterMovies.map((movie) => (
           <div
             key={movie._id || movie.movieId}
@@ -103,7 +103,7 @@ const AdUserWatchLaterPage = () => {
               className="w-full h-64 object-cover"
             />
             <div className="p-4 flex flex-col flex-1">
-              <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-2">
+              <h3 className="text-sm font-semibold text-gray-800 mb-2 line-clamp-4">
                 {movie.title || "Untitled"}
               </h3>
             </div>

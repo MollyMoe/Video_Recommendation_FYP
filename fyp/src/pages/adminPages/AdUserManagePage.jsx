@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AdNav from "../../components/admin_components/AdNav";
-import AdSearch from "../../components/admin_components/AdSearch";
+import AdUserSearchBar from "../../components/admin_components/AdUserSearchBar";
 import { Link } from "react-router-dom";
 import AdUserTable from "../../components/admin_components/AdUserTable";
 import { useLocation } from "react-router-dom";
@@ -15,7 +15,7 @@ const AdUserManagePage = () => {
       <AdNav />
 
       <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-        <AdSearch
+        <AdUserSearchBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearch={(value) => setSearchQuery(value)}

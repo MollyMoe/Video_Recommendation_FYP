@@ -427,6 +427,54 @@ async def update_signout_time(request: Request):
 
     return {"message": "Sign-out time updated successfully"}
 
-@router.get("/ping")
-async def ping():
-    return {"status": "ok"}
+# Add this code to your movies router file (e.g., at the end)
+
+from datetime import datetime, timedelta
+
+@router.get("/stats")
+async def get_platform_stats(request: Request):
+    try:
+        # Get database connections
+        movie_db = request.app.state.movie_db
+        user_db = request.app.state.user_db
+
+        # Define the time window for "new" items
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+
+        # --- MOVIE COUNTS ---
+        # 1. Get total number of movies
+        total_movies = movie_db.hybridRecommendation2.count_documents({})
+
+        # 2. Get number of new movies added in the last 30 days
+        new_movies = movie_db.hybridRecommendation2.count_documents(
+            {"createdAt": {"$gte": thirty_days_ago}}
+        )
+
+        # --- USER COUNTS ---
+        # 3. Get total number of regular users (streamers) and admins
+        total_streamers = user_db.streamer.count_documents({})
+        total_admins = user_db.admin.count_documents({})
+        total_users = total_streamers + total_admins
+
+        # 4. Get number of new users in the last 30 days
+        new_streamers = user_db.streamer.count_documents(
+            {"createdAt": {"$gte": thirty_days_ago}}
+        )
+        new_admins = user_db.admin.count_documents(
+            {"createdAt": {"$gte": thirty_days_ago}}
+        )
+        new_users = new_streamers + new_admins
+
+        # 5. Assemble the response
+        stats = {
+            "totalUsers": total_users,
+            "newUsers": new_users,
+            "totalMovies": total_movies,
+            "newMovies": new_movies
+        }
+
+        return JSONResponse(content=stats)
+
+    except Exception as e:
+        print(f"❌ Error fetching platform stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch platform statistics.")

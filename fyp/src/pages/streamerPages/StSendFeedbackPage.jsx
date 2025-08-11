@@ -178,7 +178,7 @@ const StSendFeedbackPage = () => {
   // Sync queued feedbacks on reconnect
   useEffect(() => {
     const syncFeedbacks = async () => {
-      const queue = window.electron.getFeedbackQueue?.();
+      const queue = window.electron?.getFeedbackQueue?.();
       if (!queue || queue.length === 0) return;
 
       for (const item of queue) {
@@ -209,7 +209,7 @@ const StSendFeedbackPage = () => {
         }
       }
 
-      window.electron.clearFeedbackQueue?.();
+      window.electron?.clearFeedbackQueue?.();
     };
 
     if (isOnline) syncFeedbacks();
@@ -255,7 +255,7 @@ const StSendFeedbackPage = () => {
         }
       }
 
-      window.electron.queueFeedback?.(queued);
+      window.electron?.queueFeedback?.(queued);
       setSuccessMessage("You're offline. Feedback has been queued.");
       setFeedback("");
       setFile(null);

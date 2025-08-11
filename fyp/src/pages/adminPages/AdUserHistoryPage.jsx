@@ -46,7 +46,7 @@ const AdUserHistoryPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen p-6">
 
       {/* Loading / Error / Empty */}
       {isLoading ? (
@@ -60,7 +60,7 @@ const AdUserHistoryPage = () => {
           {historyMovies.map((movie) => (
             <div
               key={movie._id || movie.movieId}
-              className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col"
+              className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col "
             >
               <img
                 src={movie.poster_url || "https://via.placeholder.com/150"}

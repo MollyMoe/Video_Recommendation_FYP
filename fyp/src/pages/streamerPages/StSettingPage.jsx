@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
-import { syncOfflineCache } from "@/utils/syncOfflineCache";
 import { API } from "@/config/api";
 
 const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
@@ -31,7 +30,7 @@ const StSettingPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordStep, setPasswordStep] = useState("verify");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Changed initial state to false
 
   const fileInputRef = useRef(null);
   const modalRef = useRef(null);
@@ -41,7 +40,7 @@ const StSettingPage = () => {
 
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  
+
     useEffect(() => {
       const handleNetworkChange = () => setIsOnline(navigator.onLine);
       window.addEventListener("online", handleNetworkChange);
@@ -69,8 +68,8 @@ const StSettingPage = () => {
   const fallbackImage = cachedImage || savedUser.profileImage || defaultImage;
   updateProfileImage(fallbackImage, "streamer");
 
-  // newly added
-    const fetchSubscription = async (userId) => {
+
+  const fetchSubscription = async (userId) => {
     try {
       const res = await fetch(`${API}/api/subscription/${userId}`);
       const data = await res.json();
@@ -81,7 +80,8 @@ const StSettingPage = () => {
       setIsSubscribed(false); // fail-safe
     }
   };
-  
+
+
   //fetch user
   const fetchUser = async () => {
     if (!isOnline) {
@@ -143,22 +143,23 @@ const StSettingPage = () => {
   };
 
   fetchUser();
+  fetchSubscription(savedUser.userId);
 }, [isOnline]);
 
 // for profile image
 const handleChange = async (e) => {
     const { name, value, files } = e.target;
     const user = JSON.parse(localStorage.getItem("user"));
-  
+
     if (name === "profileImage") {
       const file = files[0];
       if (file && user) {
         setPreviewImage(URL.createObjectURL(file)); // immediate preview
         setFormData((prev) => ({ ...prev, profileImage: file }));
-  
+
         const formDataToSend = new FormData();
         formDataToSend.append("profileImage", file);
-  
+
         try {
           const res = await fetch(
             `${API}/api/profile/upload/streamer/${user.userId}`, //backend connect
@@ -171,7 +172,7 @@ const handleChange = async (e) => {
           if (res.ok) {
             const imageUrl = data.profileImage;
             updateProfileImage(imageUrl, "streamer");
-            localStorage.setItem("streamer_profileImage", imageUrl);  
+            localStorage.setItem("streamer_profileImage", imageUrl);
             setPreviewImage(imageUrl); // update preview to final version
             console.log("data.profileImage:", data.profileImage);
             console.log("imageUrl used:", imageUrl);
@@ -193,191 +194,135 @@ const handleChange = async (e) => {
   };
 
   //submitting
-  const handleSubmit = async (e) => {
-  e.preventDefault();
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
 
-
-  const savedUser = JSON.parse(localStorage.getItem("user"));
-  if (!savedUser?.userId) {
-    console.warn("❗ No saved user found.");
-    alert("User session expired. Please sign in again.");
-    return;
-  }
-
-  // 1) build payload exactly like you do now
-  const updatePayload = {
-    userId: savedUser.userId,
-    username: formData.username,
-    genre: formData.genre, // server expects string in your current API
-  };
-
-  // 2) also compute array form of genres for local usage + sync
-  const genreArray = parseGenres(formData.genre);
-
-  // ✅ OFFLINE MODE
-  if (!isOnline) {
-    try {
-      // keep your existing offline profile queue/save
-      window.electron?.saveProfileUpdate?.(updatePayload);
-
-      // ALSO persist genres locally so Home/Filter see them right away
-      window.electron?.saveUserGenres?.(
-  Array.isArray(data.genres) ? data.genres : parseGenres(data.genre)
-);
-  console.log("profile data saved");
- 
-      setSuccessMessage("You're offline. Changes saved locally and will sync once you're online.");
-      setShowSuccessModal(true);
-    } catch (err) {
-      console.error("❌ Failed to save offline update:", err);
-      alert("Offline save failed. Please reconnect and try again.");
-    }
-    return;
-  }
-
-  // ✅ ONLINE MODE
-  try {
-    // 3) PUT full profile (unchanged)
-    const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updatePayload),
-    });
-    if (!res.ok) throw new Error(`Failed to update profile: ${res.status}`);
-
-    const updated = await res.json();
-
-    // 4) Save updated user locally
-    localStorage.setItem("user", JSON.stringify(updated));
-    localStorage.setItem("refreshAfterSettings", "true");
-
-    // 5) Save genres locally (array) for consistency
-    window.electron?.saveUserGenres?.(genreArray);
-    // after successful PUT /api/editProfile/streamer/:userId
-   const genresArr = (formData.genre || "")
-  .split(/[|,]/).map(g => g.trim()).filter(Boolean); 
-
-    // 6) Now fetch fresh recommendations and cache them to disk
-    //    (this merges with your original sync code)
-    await syncOfflineCache(updated, { genres: genresArr, force: true });
-    
-
-    // 7) After Home loads, auto-jump to Filter
-    sessionStorage.setItem("pendingRouteAfterHome", "/home/filter");
-
-    setSuccessMessage("Profile updated! New recommendations cached for offline.");
-    setShowSuccessModal(true);
-
-    // 8) Navigate to Home (Home will redirect to Filter after it finishes loading)
-    navigate("/home");
-  } catch (err) {
-    console.error("❌ Update error:", err);
-    alert("Could not update profile. Please try again later.");
-
-  }
-};
-
-
- useEffect(() => {
-  const refreshUser = async () => {
-    if (!isOnline || !savedUser?.userId) return;
-
-    try {
-      const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
-      const data = await res.json();
-      localStorage.setItem("user", JSON.stringify(data)); // 🔄 Refresh localStorage
-    } catch (err) {
-      console.warn("Failed to refresh user:", err);
-    }
-  };
-
-  refreshUser();
-}, [isOnline]);
-
-
-useEffect(() => {
-  const syncOfflineChanges = async () => {
-    if (!window.electron?.getProfileUpdate) {
-      console.warn("⚠️ Electron bridge missing. Cannot sync offline profile.");
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    if (!savedUser?.userId) {
+      alert("User session expired. Please sign in again.");
+      setIsLoading(false);
       return;
     }
 
-    const offlineData = window.electron.getProfileUpdate();
-    if (!offlineData || !offlineData.userId) {
-      console.log("🟢 No offline profile update to sync.");
-      return;
-    }
+    const updatePayload = {
+      userId: savedUser.userId,
+      username: formData.username,
+      genre: formData.genre, // backend expects string
+    };
+    const genreArray = parseGenres(formData.genre);
 
-    try {
-      const res = await fetch(`${API}/api/editProfile/streamer/${offlineData.userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: offlineData.username,
-          genre: offlineData.genre,
-        }),
-      });
+    // OFFLINE
+    if (!isOnline) {
+      try {
+        window.electron?.saveProfileUpdate?.(updatePayload);
+        await window.electron?.saveUserGenres?.(genreArray);
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Server error ${res.status}: ${errText}`);
+        // ⬇️ Re-filter local recommended to the new genres immediately
+        const pool = (await window.electron?.getRecommendedMovies?.()) || [];
+        const hasAll = (movieGenres) => {
+          const arr = Array.isArray(movieGenres)
+            ? movieGenres
+            : String(movieGenres || "").split(/[,|]/).map((s) => s.trim());
+          return genreArray.length > 0 && genreArray.every((g) => arr.includes(g));
+        };
+        const filtered = pool.filter((m) => hasAll(m.genres));
+        await window.electron?.saveRecommendedMovies?.(filtered);
+        const top10 = [...filtered]
+          .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
+          .slice(0, 10);
+        await window.electron?.saveTopRatedMovies?.(top10);
+
+        // notify any open pages and go straight to Filter
+        window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
+
+        setSuccessMessage("You're offline. Changes saved locally.");
+        setShowSuccessModal(true);
+        navigate("/home/filter", { replace: true });
+      } catch (err) {
+        console.error("❌ Offline save failed:", err);
+        alert("Offline save failed. Please reconnect and try again.");
+      } finally {
+        setIsLoading(false);
       }
+      return;
+    }
+
+    // ONLINE
+    try {
+      const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatePayload),
+      });
+      if (!res.ok) throw new Error(`Failed to update profile: ${res.status}`);
 
       const updated = await res.json();
       localStorage.setItem("user", JSON.stringify(updated));
-      localStorage.setItem("refreshAfterSettings", "true");
+      await window.electron?.saveUserGenres?.(genreArray);
 
-      if (window.electron?.clearProfileUpdate) {
-        window.electron.clearProfileUpdate();
-      }
+      // ⏳ wait for regeneration + offline cache writes, then notify
+      const { syncOfflineCache } = await import("@/utils/syncOfflineCache");
+      await syncOfflineCache(updated, { force: true });
+      window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
 
-      console.log("✅ Successfully synced offline profile update.");
+      setSuccessMessage("Profile updated! New recommendations ready.");
+      setShowSuccessModal(true);
+
+      // go straight to Filter (no “home hop” needed)
+      navigate("/home/filter", { replace: true });
     } catch (err) {
-      console.warn("❌ Failed to sync offline profile update:", err.message || err);
+      console.error("❌ Update error:", err);
+      alert("Could not update profile. Please try again later.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (isOnline) {
-    syncOfflineChanges();
-  }
-}, [isOnline]);
+  useEffect(() => {
+    const refreshUser = async () => {
+      if (!isOnline || !savedUser?.userId) return;
+      try {
+        const res = await fetch(`${API}/api/auth/users/streamer/${savedUser.userId}`);
+        const data = await res.json();
+        localStorage.setItem("user", JSON.stringify(data));
+      } catch (err) {
+        console.warn("Failed to refresh user:", err);
+      }
+    };
+    refreshUser();
+  }, [isOnline, savedUser?.userId]);
 
-// const handleSubmit = async (e) => {
-//   e.preventDefault();
-//   try {
-//     const savedUser = JSON.parse(localStorage.getItem("user"));
-//     console.log("Using ID for update:", savedUser.userId); 
+  useEffect(() => {
+    const syncOfflineChanges = async () => {
+      if (!window.electron?.getProfileUpdate) return;
 
-//     const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
-//       method: "PUT",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({
-//         username: formData.username,
-//         genre: formData.genre,
-//       }),
-//     });
+      const offlineData = window.electron.getProfileUpdate();
+      if (!offlineData || !offlineData.userId) return;
 
-//     if (!res.ok) throw new Error("Failed to update");
-
-//     const updated = await res.json();
-//     setSuccessMessage("Profile updated!");
-//     setShowSuccessModal(true);
-
-//     // ✅ Set flag to refresh homepage recommendations
-//     localStorage.setItem("refreshAfterSettings", "true");
-
-//     // ✅ Update user data in localStorage
-//     localStorage.setItem("user", JSON.stringify(updated));
-//   } catch (err) {
-//     console.error("Update error:", err);
-//     alert("Could not update profile.");
-//   }
-// };
-
+      try {
+        const res = await fetch(`${API}/api/editProfile/streamer/${offlineData.userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: offlineData.username,
+            genre: offlineData.genre,
+          }),
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Server error ${res.status}: ${errText}`);
+        }
+        const updated = await res.json();
+        localStorage.setItem("user", JSON.stringify(updated));
+        localStorage.setItem("refreshAfterSettings", "true");
+        window.electron?.clearProfileUpdate?.();
+      } catch (err) {
+        console.warn("❌ Failed to sync offline profile update:", err.message || err);
+      }
+    };
+    if (isOnline) syncOfflineChanges();
+  }, [isOnline]);
 
   const closeModal = () => {
     setShowSuccessModal(false);
@@ -513,31 +458,29 @@ useEffect(() => {
                 disabled={
                   !isOnline
                     ? ["contact", "username", "genre"].includes(field)
-                    : field === "contact" || ( field == "genre" && !isSubscribed)
+                    : field === "contact" || (field === "genre" && !isSubscribed)
                 }
-                className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
+                className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+                  focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700
                   dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
-                ${
-                  isOnline
-                    ? (
-                        (field === "contact" || (field === "genre" && !isSubscribed))
-                          ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800"
-                          : ""
-                      )
-                    : (
-                        ["contact", "username", "genre"].includes(field)
-                          ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800"
-                          : ""
-                      )
-                }`}
+                  ${
+                   isOnline
+                      ? (field === "contact" || (field === "genre" && !isSubscribed))
+                        ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                        : ""
+                      : ["contact", "username", "genre"].includes(field)
+                        ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+                        : ""
+                  }`}
               />
             </div>
           ))}
 
           {/* Password Modal Button */}
           <div className="mb-5">
-            <button type="submit" className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300">
+            <button type="submit" 
+              disabled={!isOnline}
+              className="w-32 bg-white text-black text-xs px-6 py-2 rounded-lg shadow-md hover:bg-gray-200 border border-gray-300 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">
               Save Changes
             </button>
           </div>
@@ -663,6 +606,16 @@ useEffect(() => {
           </div>
         )}
 
+        {/* Loading Modal */}
+        {isLoading && (
+          <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
+              <p className="text-lg font-semibold">Saving Changes...</p>
+              <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+            </div>
+          </div>
+        )}
+
         {/* Success Modals */}
         {showSuccessModal && (
           <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50" aria-modal="true" role="dialog">
@@ -691,15 +644,6 @@ useEffect(() => {
             </div>
           </div>
         )}
-
-        {isLoading && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <p className="text-lg font-semibold">Loading Movie...</p>
-            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
-          </div>
-        </div>
-      )}
       </div>
     </div>
   );

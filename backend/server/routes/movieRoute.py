@@ -83,225 +83,107 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
         print("❌ Error:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
-# Liked Movies
+# like
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
+    print("✅ Backend received like request:", request)
     data = await request.json()
     db = request.app.state.movie_db
     liked_collection = db["liked"]
+    movies_collection = db["hybridRecommendation2"]
 
     user_id = data.get("userId")
-    movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
 
-    if not user_id or not movie_id:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+    raw_movie = data.get("movie")
+    raw_movie_id = data.get("movieId")
 
-    # Use $addToSet to avoid duplicates
+    def _extract_id(x):
+        if isinstance(x, (str, int)):
+            return str(x)
+        if isinstance(x, dict):
+            return str(x.get("movieId") or x.get("_id") or "")
+        return ""
+
+    # 1) resolve a single movie object (prefer provided object; else fetch by id)
+    movie = None
+    if isinstance(raw_movie, dict):
+        movie = raw_movie
+    elif raw_movie_id is not None:
+        # handle string/int or accidental [id] array
+        mid = _extract_id(raw_movie_id[0] if isinstance(raw_movie_id, list) and raw_movie_id else raw_movie_id)
+        if mid:
+            movie = movies_collection.find_one({"$or": [{"movieId": mid}, {"_id": mid}]})
+
+    if not movie:
+        raise HTTPException(status_code=404, detail="Movie not found or not provided")
+
+    # 2) normalize a bit
+    full = dict(movie)
+    if "_id" in full:
+        full["_id"] = str(full["_id"])
+    if "movieId" in full:
+        full["movieId"] = str(full["movieId"])
+    else:
+        # ensure we always have a comparable key
+        if full.get("_id"):
+            full["movieId"] = full["_id"]
+
+    if isinstance(full.get("genres"), str):
+        full["genres"] = [s.strip() for s in full["genres"].split(",") if s.strip()]
+
+    mid = str(full.get("movieId") or full.get("_id") or "")
+    if not mid:
+        raise HTTPException(status_code=422, detail="Movie lacks identifiable ID")
+
+    # 3) de-dupe by id, then push object
     liked_collection.update_one(
         {"userId": user_id},
-        {"$addToSet": {"likedMovies": movie_id}},
+        {"$pull": {"likedMovies": {"$or": [{"movieId": mid}, {"_id": mid}]}}}
+    )
+    liked_collection.update_one(
+        {"userId": user_id},
+        {"$push": {"likedMovies": full}},
         upsert=True
     )
 
-    return {"message": "Movie added to liked list"}
+    return {"message": "Movie added to liked list", "movieId": mid}
+    
+# # Liked Movies
+# @router.post("/like")
+# async def add_to_liked_movies(request: Request):
+#     data = await request.json()
+#     db = request.app.state.movie_db
+#     liked_collection = db["liked"]
+
+#     user_id = data.get("userId")
+#     movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
+
+#     if not user_id or not movie_id:
+#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+#     # Use $addToSet to avoid duplicates
+#     liked_collection.update_one(
+#         {"userId": user_id},
+#         {"$addToSet": {"likedMovies": movie_id}},
+#         upsert=True
+#     )
+
+#     return {"message": "Movie added to liked list"}
 
 @router.get("/likedMovies/{userId}")
 def get_liked_movies(userId: str, request: Request):
-    try:
-        db = request.app.state.movie_db
-        liked_collection = db["liked"]
-        movies_collection = db["hybridRecommendation2"]
-
-        liked_doc = liked_collection.find_one({"userId": userId})
-        if not liked_doc or not liked_doc.get("likedMovies"):
-            return {"likedMovies": []}
-
-        liked_ids = [str(mid) for mid in liked_doc["likedMovies"]]  # maintain order
-
-        # 1. Fetch matching movies
-        movies_cursor = movies_collection.find(
-            {"movieId": {"$in": liked_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1}
-        )
-
-        # 2. Build a movie lookup dictionary
-        movie_dict = {
-            str(movie["movieId"]): {
-                "_id": str(movie["_id"]),
-                "movieId": movie["movieId"],
-                "poster_url": movie.get("poster_url"),
-                "title": movie.get("title"),
-                "trailer_url": movie.get("trailer_url"),
-            }
-            for movie in movies_cursor
-        }
-
-        # 3. Reconstruct list in the order of liked_ids (most recent first)
-        ordered_liked_movies = []
-        seen = set()
-        for mid in reversed(liked_ids):  # Reverse to make newest liked appear first
-            if mid not in seen and mid in movie_dict:
-                ordered_liked_movies.append(movie_dict[mid])
-                seen.add(mid)
-
-        return {"likedMovies": ordered_liked_movies}
-
-    except Exception as e:
-        print("❌ Error fetching liked movies:", e)
-        raise HTTPException(status_code=500, detail="Failed to fetch liked movies")
-
-
-@router.post("/history")
-async def add_to_history(request: Request):
-    data = await request.json()
     db = request.app.state.movie_db
-    history_collection = db["history"]
+    liked_collection = db["liked"]
+    movies_collection = db["hybridRecommendation2"]
 
-    user_id = data.get("userId")
-    movie_id = data.get("movieId")
+    liked_doc = liked_collection.find_one({"userId": userId})
+    if not liked_doc or not liked_doc.get("likedMovies"):
+        return {"likedMovies": []}
 
-
-    if not user_id or movie_id is None:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-    movie_id = str(movie_id) 
-    
-    try:
-        # ✅ Remove existing entry (synchronously)
-        history_collection.update_one(
-            {"userId": user_id},
-            {"$pull": {"historyMovies": movie_id}}
-        )
-
-        # ✅ Add new entry to the end (synchronously)
-        history_collection.update_one(
-            {"userId": user_id},
-            {"$push": {"historyMovies": movie_id}},
-            upsert=True
-        )
-
-        return {"message": "Movie moved to end of history"}
-
-    except Exception as e:
-        print("❌ Error saving history:", e)
-        raise HTTPException(status_code=500, detail="Failed to save history")
-
-
-@router.get("/historyMovies/{userId}")
-def get_history_movies(userId: str, request: Request):
-    try:
-        db = request.app.state.movie_db
-        history_collection = db["history"]
-        movies_collection = db["hybridRecommendation2"]
-
-        # 1. Get user history
-        history_doc = history_collection.find_one({"userId": userId})
-        if not history_doc or not history_doc.get("historyMovies"):
-            return {"historyMovies": []}
-
-        history_ids = [str(mid) for mid in history_doc["historyMovies"]]
-
-        # 2. Fetch movie details from DB
-        movies_cursor = movies_collection.find(
-            {"movieId": {"$in": history_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1}
-        )
-
-        # 3. Create a lookup dict for fast access by movieId
-        movie_dict = {
-            movie["movieId"]: {
-                "_id": str(movie["_id"]),
-                "movieId": movie["movieId"],
-                "poster_url": movie.get("poster_url"),
-                "title": movie.get("title"),
-                "trailer_url": movie.get("trailer_url"),
-            }
-            for movie in movies_cursor
-        }
-
-        # 4. Reconstruct ordered list (latest movie appears first)
-        ordered_movies = []
-        seen = set()
-        for mid in reversed(history_ids):
-            if mid not in seen and mid in movie_dict:
-                ordered_movies.append(movie_dict[mid])
-                seen.add(mid)
-
-        return {"historyMovies": ordered_movies}
-
-    except Exception as e:
-        print("❌ Error fetching history movies:", e)
-        raise HTTPException(status_code=500, detail="Failed to fetch history movies")
-    
-@router.post("/watchLater")
-async def add_to_watchLater(request: Request):
-    data = await request.json()
-    db = request.app.state.movie_db
-    watchLater_collection = db["saved"]
-
-    user_id = data.get("userId")
-    movie_id = data.get("movieId")
-
-    if not user_id or not movie_id:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-    movie_id = str(movie_id) 
-
-    # Use $addToSet to avoid duplicate entries in history
-    watchLater_collection.update_one(
-        {"userId": user_id},
-        {"$addToSet": {"SaveMovies": movie_id}},
-        upsert=True
-    )
-
-    return {"message": "Movie saved to watch later"}
-
-
-@router.get("/watchLater/{userId}")
-def get_watchLater_movies(userId: str, request: Request):
-    try:
-        db = request.app.state.movie_db
-        watchLater_collection = db["saved"]
-        movies_collection = db["hybridRecommendation2"]
-
-        save = watchLater_collection.find_one({"userId": userId})
-        if not save or not save.get("SaveMovies"):
-            return {"SaveMovies": []}
-
-        saveMovie_ids = [str(mid) for mid in save["SaveMovies"]]
-
-        # 1. Fetch all matching movie details
-        movies_cursor = movies_collection.find(
-            {"movieId": {"$in": saveMovie_ids}},
-            {"_id": 1, "movieId": 1, "poster_url": 1, "title": 1, "trailer_url": 1}
-        )
-
-        # 2. Build lookup dict by movieId
-        movie_dict = {
-            movie["movieId"]: {
-                "_id": str(movie["_id"]),
-                "movieId": movie["movieId"],
-                "poster_url": movie.get("poster_url"),
-                "title": movie.get("title"),
-                "trailer_url": movie.get("trailer_url"),
-            }
-            for movie in movies_cursor
-        }
-
-        # 3. Reconstruct ordered list (newest saved first)
-        ordered_movies = []
-        seen = set()
-        for mid in reversed(saveMovie_ids):
-            if mid not in seen and mid in movie_dict:
-                ordered_movies.append(movie_dict[mid])
-                seen.add(mid)
-
-        return {"SaveMovies": ordered_movies}
-
-    except Exception as e:
-        print("❌ Error fetching saved movies:", e)
-        raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
-    
+    # The likedMovies are full movie objects already (your screenshot shows that)
+    return {"likedMovies": liked_doc["likedMovies"]}
 
 @router.post("/likedMovies/delete")
 async def remove_from_liked_movies(request: Request):
@@ -315,27 +197,374 @@ async def remove_from_liked_movies(request: Request):
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
+    mid = str(movie_id)  # normalize to string
+    int_mid = None
     try:
-        movie_id = int(movie_id)
+        int_mid = int(movie_id)
     except (ValueError, TypeError):
         pass
 
-    movie_id = str(data.get("movieId"))
-
-    result = liked_collection.update_one(
+    # remove scalar match
+    r1 = liked_collection.update_one(
         {"userId": user_id},
-        {"$pull": {"likedMovies": movie_id}}
+        {"$pull": {"likedMovies": {"$in": [mid] + ([int_mid] if int_mid is not None else [])}}}
+    )
+    # remove object match: { movieId: "<id>" }
+    r2 = liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": {"movieId": mid}}}
+    )
+    # remove object match: { _id: "<id>" }
+    r3 = liked_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"likedMovies": {"_id": mid}}}
     )
 
-    print("💥 MongoDB modified count:", result.modified_count)
+    modified = (r1.modified_count or 0) + (r2.modified_count or 0) + (r3.modified_count or 0)
+    print(f"💥 MongoDB modified counts: {r1.modified_count}, {r2.modified_count}, {r3.modified_count}")
 
-
-    if result.modified_count > 0:
+    if modified > 0:
         return {"message": "Movie removed from liked list"}
     else:
         return {"message": "Movie not found or already removed"}
 
 
+@router.post("/history")
+async def add_to_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history_collection = db["history"]
+    movies_collection = db["hybridRecommendation2"]
+
+    user_id = data.get("userId")
+    movie_obj = data.get("movie") or None
+    movie_id = data.get("movieId")
+
+    # derive id from object if needed
+    if movie_id is None and isinstance(movie_obj, dict):
+        movie_id = movie_obj.get("movieId") or movie_obj.get("_id")
+
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movie/movieId")
+
+    movie_id = str(movie_id)
+
+    # normalize helper
+    def normalize_movie(m: dict) -> dict:
+        out = dict(m or {})
+        if "_id" in out:
+            out["_id"] = str(out["_id"])
+        # normalize genres to list[str]
+        g = out.get("genres")
+        if isinstance(g, str):
+            out["genres"] = [s.strip() for s in g.split("|") if s.strip()]
+        elif isinstance(g, list):
+            out["genres"] = [str(x).strip() for x in g if str(x).strip()]
+        # ensure a stable key exists
+        out["movieId"] = str(out.get("movieId") or out.get("_id") or movie_id)
+        return out
+
+    # If only ID was sent, hydrate a full object from movies_collection
+    if not movie_obj:
+        doc = movies_collection.find_one(
+            {"movieId": movie_id},
+            {
+                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+                "trailer_url": 1, "trailer_key": 1, "genres": 1,
+                "tmdb_id": 1, "overview": 1, "director": 1,
+                "producers": 1, "actors": 1
+            }
+        )
+        # If not found, still store a minimal object so history is usable offline
+        movie_obj = doc or {"movieId": movie_id, "title": f"Movie {movie_id}"}
+
+    movie_norm = normalize_movie(movie_obj)
+
+    try:
+        # Remove any existing occurrence (by id or _id) so we can "move to end"
+        history_collection.update_one(
+            {"userId": user_id},
+            {"$pull": {
+                "historyObjects": {
+                    "$or": [
+                        {"movieId": movie_id},
+                        {"_id": movie_id}
+                    ]
+                },
+                # Optional: if you keep IDs for order/compatibility, pull them too
+                "historyMovies": movie_id
+            }},
+            upsert=True
+        )
+
+        # Always store the full object; optionally keep an ID list too
+        history_collection.update_one(
+            {"userId": user_id},
+            {
+                "$push": {
+                    "historyObjects": {"$each": [movie_norm], "$slice": -300},
+                    # Optional: keep a parallel ID list (handy for ordering/back-compat)
+                    "historyMovies": {"$each": [movie_id], "$slice": -1000}
+                }
+            },
+            upsert=True
+        )
+
+        return {"message": "Movie stored in history as object"}
+    except Exception as e:
+        print("❌ Error saving history:", e)
+        raise HTTPException(status_code=500, detail="Failed to save history")
+
+@router.get("/historyMovies/{userId}")
+def get_history_movies(userId: str, request: Request):
+    db = request.app.state.movie_db
+    history = db["history"]
+    movies = db["hybridRecommendation2"]
+
+    def norm(m: dict) -> dict:
+        out = dict(m)
+        if "_id" in out:
+            out["_id"] = str(out["_id"])
+        g = out.get("genres")
+        if isinstance(g, str):
+            out["genres"] = [s.strip() for s in g.split("|") if s.strip()]
+        elif isinstance(g, list):
+            out["genres"] = [str(x).strip() for x in g if str(x).strip()]
+        return out
+
+    # 1) Get the objects, but EXCLUDE the `historyMovies` array so it's never in memory here
+    doc = history.find_one({"userId": userId}, {"historyMovies": 0}) or {}
+    objs: list[dict] = doc.get("historyObjects") or []
+
+    # 2) Fetch ordering separately (only the array), but we won't return it
+    order_doc = history.find_one({"userId": userId}, {"_id": 0, "historyMovies": 1}) or {}
+    ids: list[str] = [str(x) for x in (order_doc.get("historyMovies") or [])]
+
+    # 3) Prefer objects; order them by the `historyMovies` id list if available
+    if objs:
+        bykey = {}
+        for m in objs:
+            k = str(m.get("movieId") or m.get("_id") or "")
+            if k:
+                bykey[k] = m
+
+        seen, out = set(), []
+        if ids:
+            for mid in ids:
+                m = bykey.get(mid)
+                if m and mid not in seen:
+                    seen.add(mid)
+                    out.append(norm(m))
+            # append any extras not referenced by ids (rare)
+            for m in objs:
+                k = str(m.get("movieId") or m.get("_id") or "")
+                if k and k not in seen:
+                    seen.add(k)
+                    out.append(norm(m))
+        else:
+            # no ordering array → return as stored
+            for m in objs:
+                k = str(m.get("movieId") or m.get("_id") or "")
+                if k:
+                    out.append(norm(m))
+
+        # ✅ Response has NO `historyMovies` field from DB; just the list of movies
+        return {"historyMovies": out}
+
+    # 4) Fallback for legacy docs with only the id array (still not exposing it)
+    if not ids:
+        return {"historyMovies": []}
+
+    cursor = movies.find(
+        {"movieId": {"$in": ids}},
+        {
+            "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+            "trailer_url": 1, "trailer_key": 1, "genres": 1,
+            "tmdb_id": 1, "overview": 1, "director": 1,
+            "producers": 1, "actors": 1
+        }
+    )
+    by_id = {str(d.get("movieId")): norm({**d, "_id": str(d["_id"])}) for d in cursor}
+    ordered = [by_id[i] for i in ids if i in by_id]
+
+    # ✅ Still returning only the movie objects; internal array never leaves the server
+    return {"historyMovies": ordered}
+
+@router.post("/historyMovies/delete")
+async def remove_from_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history = db["history"]
+
+    user_id = data.get("userId")
+    movie_id = data.get("movieId")
+    if not user_id or movie_id is None:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    movie_id = str(movie_id)
+
+    result = history.update_one(
+        {"userId": user_id},
+        {"$pull": {
+            "historyMovies": movie_id,
+            "historyObjects": {"$or": [{"movieId": movie_id}, {"_id": movie_id}]},
+        }}
+    )
+    return {"message": "Movie removed from history" if result.modified_count else "Movie not found or already removed"}
+
+@router.post("/historyMovies/removeAllHistory")
+async def remove_history(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    history = db["history"]
+
+    user_id = data.get("userId")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Missing userId")
+
+    result = history.update_one(
+        {"userId": user_id},
+        {"$set": {"historyMovies": [], "historyObjects": []}},
+        upsert=True,
+    )
+    return {"message": "History cleared"}
+
+@router.post("/watchLater")
+async def add_to_watchLater(request: Request):
+    data = await request.json()
+    db = request.app.state.movie_db
+    watchLater_collection = db["saved"]
+    movies_collection = db["hybridRecommendation2"]
+
+    user_id = data.get("userId")
+    movie_id = str(data.get("movieId") or data.get("movie", {}).get("movieId") or "")
+
+    if not user_id or not movie_id:
+        raise HTTPException(status_code=400, detail="Missing userId or movieId")
+
+    # inline projection (only fields the UI needs)
+    proj = {
+        "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+        "trailer_url": 1, "trailer_key": 1, "genres": 1,
+        "tmdb_id": 1, "overview": 1, "director": 1,
+        "producers": 1, "actors": 1
+    }
+
+    movie = movies_collection.find_one({"movieId": movie_id}, proj)
+    if not movie:
+        movie = {"movieId": movie_id, "title": f"Movie #{movie_id}", "poster_url": ""}
+
+    # light normalize inline
+    movie = dict(movie)
+    if "_id" in movie:
+        movie["_id"] = str(movie["_id"])
+    if "movieId" in movie and movie["movieId"] is not None:
+        movie["movieId"] = str(movie["movieId"])
+    # (optional) normalize genres only if you need it:
+    g = movie.get("genres")
+    if isinstance(g, str):
+        movie["genres"] = [x.strip() for x in g.split("|") if x.strip()]
+
+    # avoid dupes by movieId: pull then add
+    watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"SaveMovies": {"movieId": movie_id}}},
+        upsert=True,
+    )
+    watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"SaveMovies": movie}},
+        upsert=True,
+    )
+
+    return {"message": "Movie saved to watch later"}
+
+
+@router.get("/watchLater/{userId}")
+def get_watchLater_movies(userId: str, request: Request):
+    try:
+        db = request.app.state.movie_db
+        watchLater_collection = db["saved"]
+        movies_collection = db["hybridRecommendation2"]
+
+        doc = watchLater_collection.find_one({"userId": userId}) or {}
+        saved = doc.get("SaveMovies") or []
+        if not saved:
+            return {"SaveMovies": []}
+
+        full_objects = []
+        legacy_ids = []
+
+        for item in saved:
+            if isinstance(item, (str, int)):
+                legacy_ids.append(str(item))
+            elif isinstance(item, dict):
+                m = dict(item)
+                if "_id" in m:
+                    m["_id"] = str(m["_id"])
+                if "movieId" in m and m["movieId"] is not None:
+                    m["movieId"] = str(m["movieId"])
+                g = m.get("genres")
+                if isinstance(g, str):
+                    m["genres"] = [x.strip() for x in g.split("|") if x.strip()]
+                full_objects.append(m)
+
+        if legacy_ids:
+            proj = {
+                "_id": 1, "movieId": 1, "poster_url": 1, "title": 1,
+                "trailer_url": 1, "trailer_key": 1, "genres": 1,
+                "tmdb_id": 1, "overview": 1, "director": 1,
+                "producers": 1, "actors": 1
+            }
+            cursor = movies_collection.find({"movieId": {"$in": legacy_ids}}, proj)
+            found = []
+            for movie in cursor:
+                m = dict(movie)
+                if "_id" in m:
+                    m["_id"] = str(m["_id"])
+                if "movieId" in m and m["movieId"] is not None:
+                    m["movieId"] = str(m["movieId"])
+                g = m.get("genres")
+                if isinstance(g, str):
+                    m["genres"] = [x.strip() for x in g.split("|") if x.strip()]
+                found.append(m)
+            full_objects.extend(found)
+
+            # optional migration: replace scalar IDs with full docs
+            if found:
+                watchLater_collection.update_one(
+                    {"userId": userId},
+                    {"$pull": {"SaveMovies": {"$in": legacy_ids}}}
+                )
+                for m in found:
+                    mid = m.get("movieId")
+                    if not mid:
+                        continue
+                    watchLater_collection.update_one(
+                        {"userId": userId},
+                        {"$pull": {"SaveMovies": {"movieId": mid}}}
+                    )
+                    watchLater_collection.update_one(
+                        {"userId": userId},
+                        {"$addToSet": {"SaveMovies": m}},
+                        upsert=True
+                    )
+
+        # de-dupe by movieId
+        seen = set()
+        unique = []
+        for m in full_objects:
+            mid = m.get("movieId")
+            if mid and mid not in seen:
+                seen.add(mid)
+                unique.append(m)
+
+        return {"SaveMovies": unique}
+
+    except Exception as e:
+        print("❌ Error fetching saved movies:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
+    
 @router.post("/watchLater/delete")
 async def remove_from_watchLater(request: Request):
     data = await request.json()
@@ -348,47 +577,28 @@ async def remove_from_watchLater(request: Request):
     if not user_id or movie_id is None:
         raise HTTPException(status_code=400, detail="Missing userId or movieId")
 
-    movie_id = str(movie_id)
+    mid = str(movie_id)
+    int_mid = None
+    try:
+        int_mid = int(movie_id)
+    except (ValueError, TypeError):
+        pass
 
-    result = watchLater_collection.update_one(
+    r1 = watchLater_collection.update_one(
         {"userId": user_id},
-        {"$pull": {"SaveMovies": movie_id}}
+        {"$pull": {"SaveMovies": {"$in": [mid] + ([int_mid] if int_mid is not None else [])}}}
+    )
+    r2 = watchLater_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"SaveMovies": {"movieId": mid}}}
     )
 
-    print("💥 WatchLater delete modified count:", result.modified_count)
+    print("💥 WatchLater delete modified counts:", r1.modified_count, r2.modified_count)
 
-    if result.modified_count > 0:
+    if (r1.modified_count or 0) + (r2.modified_count or 0) > 0:
         return {"message": "Movie removed from watch later list"}
     else:
         return {"message": "Movie not found or already removed"}
-    
-
-@router.post("/historyMovies/delete")
-async def remove_from_history(request: Request):
-    data = await request.json()
-    db = request.app.state.movie_db
-    history_collection = db["history"]
-
-    user_id = data.get("userId")
-    movie_id = data.get("movieId")
-
-    if not user_id or movie_id is None:
-        raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-    movie_id = str(movie_id)
-
-    result = history_collection.update_one(
-        {"userId": user_id},
-        {"$pull": {"historyMovies": movie_id}}
-    )
-
-    print("🧹 Removed from history:", result.modified_count)
-
-    if result.modified_count > 0:
-        return {"message": "Movie removed from history"}
-    else:
-        return {"message": "Movie not found or already removed"}
-    
 
 def _process_and_filter_movies(movie_list: List[Dict]) -> List[Dict]:
 

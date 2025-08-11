@@ -4,22 +4,26 @@ import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
 
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdVideoManageGenrePage = () => {
   const [genres, setGenres] = useState([]);
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [movies, setMovies] = useState([]);
   const [loadingMovies, setLoadingMovies] = useState(false);
+  const [loadingGenres, setLoadingGenres] = useState(true); 
 
   // Fetch all genres on mount
   useEffect(() => {
     const fetchGenres = async () => {
       try {
+        setLoadingGenres(true);
         const res = await axios.get(`${API}/api/movies/all-genres`);
         setGenres(res.data);
       } catch (err) {
         console.error("❌ Failed to load genres", err);
+      } finally {
+        setLoadingGenres(false);
       }
     };
 
@@ -68,25 +72,30 @@ const AdVideoManageGenrePage = () => {
         <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
           🎞️ Filter Movies by Genre
         </h1>
-
         {/* Genre Buttons */}
         <div className="flex flex-wrap gap-3 mb-8">
-          {genres.map((genre) => (
-            <button
-              key={genre}
-              onClick={() => toggleGenre(genre)}
-              className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
-                selectedGenres.includes(genre)
-                  ? "bg-purple-600 text-white border-purple-600"
-                  : "bg-white dark:bg-gray-700 text-gray-700 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-              }`}
-            >
-              {genre}
-            </button>
-          ))}
+          {loadingGenres ? (
+            <div className="text-gray-800 dark:text-white text-sm animate-pulse">
+              🔄 Loading genres...
+            </div>
+          ) : (
+            genres.map((genre) => (
+              <button
+                key={genre}
+                onClick={() => toggleGenre(genre)}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                  selectedGenres.includes(genre)
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                {genre}
+              </button>
+            ))
+          )}
 
           {/* Clear All */}
-          {selectedGenres.length > 0 && (
+          {!loadingGenres && selectedGenres.length > 0 && (
             <button
               onClick={clearGenres}
               className="px-4 py-2 rounded-lg border text-sm font-medium bg-red-600 text-white border-red-700 hover:bg-red-700"
@@ -95,10 +104,10 @@ const AdVideoManageGenrePage = () => {
             </button>
           )}
         </div>
-
+        
         {/* Loading indicator */}
         {loadingMovies && selectedGenres.length > 0 && (
-          <div className="text-white font-medium text-lg mb-4">
+          <div className="text-black dark:text-white font-medium text-lg mb-4">
             🔄 Loading movies for:{" "}
             <span className="text-purple-400">{selectedGenres.join(", ")}</span>...
           </div>
@@ -137,7 +146,7 @@ const AdVideoManageGenrePage = () => {
 
         {/* No movies found */}
         {!loadingMovies && selectedGenres.length > 0 && movies.length === 0 && (
-          <div className="text-white text-center mt-10">⚠️ No movies found for selected genres.</div>
+          <div className="text-black text-center mt-10">⚠️ No movies found for selected genres.</div>
         )}
       </div>
     </>

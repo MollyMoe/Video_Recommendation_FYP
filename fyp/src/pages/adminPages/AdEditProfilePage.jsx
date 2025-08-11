@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, ArrowLeft } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
 import { API } from "@/config/api";
@@ -250,11 +250,21 @@ const handleChange = async (e) => {
 
   return (
     <div className="min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800">
-      <div className="fixed top-17 px-3 pb-4 bg-white dark:bg-gray-800">
-        <button className="bg-white border border-gray-400 text-black text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-          <Link to="/admin">Back</Link>
-        </button>
-      </div>
+      {/* Sidebar */}
+      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white/70 dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
+        <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
+
+          {/* Back */}
+          <Link
+            to="/admin"
+            className="flex items-center gap-3 px-4 py-2 text-gray-800 dark:text-white hover:bg-fuchsia-200 dark:hover:bg-gray-700 rounded-lg"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link>
+
+        </div>
+      </aside>
 
       <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
