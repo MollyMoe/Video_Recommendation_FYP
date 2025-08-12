@@ -75,7 +75,7 @@ const AdUserFeedback = () => {
 
   const handleDownload = (feedbackId, fileName) => {
     if (!feedbackId || !fileName) return;
-    const attachmentUrl = `${API}/api/feedback/fetch/${feedbackId}/attachment`;
+    const attachmentUrl = `${API}/api/feedback/feedback/${feedbackId}/attachment`;
     const link = document.createElement('a');
     link.href = attachmentUrl;
     link.setAttribute('download', fileName);
@@ -84,42 +84,58 @@ const AdUserFeedback = () => {
     document.body.removeChild(link);
   };
 
-  const handleStatusChange = async (feedbackId, changedField, newValue) => {
-    const originalList = [...feedbackList];
-    setFeedbackList(prevList =>
-      prevList.map(item => {
-        if (item._id === feedbackId) {
-          const updatedItem = { ...item, [changedField]: newValue };
-          if (changedField === 'is_not_solved' && newValue === true) {
-            updatedItem.is_solved = false;
-          } else if (changedField === 'is_solved' && newValue === true) {
-            updatedItem.is_not_solved = false;
-          }
-          return updatedItem;
-        }
-        return item;
-      })
-    );
+const handleStatusChange = async (feedbackId, changedField, newValue) => {
+  const id = encodeURIComponent(feedbackId);
+  const originalList = feedbackList;
+
+  // optimistic UI + capture updated row for payload
+    let updatedItemForPayload = null;
+    const next = feedbackList.map(item => {
+      if (item._id !== feedbackId) return item;
+      const updated = { ...item, [changedField]: newValue };
+      if (changedField === 'is_not_solved' && newValue) updated.is_solved = false;
+      if (changedField === 'is_solved' && newValue)     updated.is_not_solved = false;
+      updatedItemForPayload = updated;
+      return updated;
+    });
+    setFeedbackList(next);
+
+    if (!updatedItemForPayload) {
+      setFeedbackList(originalList);
+      alert("Could not find feedback row to update.");
+      return;
+    }
+
+    const payload = {
+      // send only the booleans your FastAPI model expects
+      is_solved: !!updatedItemForPayload.is_solved,
+      is_not_solved: !!updatedItemForPayload.is_not_solved,
+    };
+
     try {
-      const itemToUpdate = feedbackList.find(item => item._id === feedbackId);
-      const payload = {
-        is_solved: changedField === 'is_solved' ? newValue : (newValue ? false : itemToUpdate.is_solved),
-        is_not_solved: changedField === 'is_not_solved' ? newValue : (newValue ? false : itemToUpdate.is_not_solved)
-      };
-      
-      const res = await fetch(`${API}/api/feedback/fetch/${feedbackId}`, {
+      const res = await fetch(`${API}/api/feedback/feedback/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) { throw new Error(await res.text()) }
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+
+      // FastAPI returns the updated document — use it to replace the row precisely
+      const updated = await res.json();
+      setFeedbackList(list =>
+        list.map(item => (item._id === feedbackId ? updated : item))
+      );
     } catch (err) {
       console.error("Error updating feedback status:", err);
-      setFeedbackList(originalList);
+      setFeedbackList(originalList); // rollback
       alert(`Failed to update status: ${err.message}`);
     }
   };
+
 
   const sortedFeedbackList = useMemo(() => {
       return [...feedbackList].sort((a, b) => {
