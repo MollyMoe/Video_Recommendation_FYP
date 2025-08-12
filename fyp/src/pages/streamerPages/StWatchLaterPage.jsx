@@ -282,8 +282,7 @@ const StWatchLaterPage = () => {
                     </div>
                 ) : watchLaterMovies.length === 0 ? (
                     <div className="text-center mt-20">
-                        <p className="text-lg text-gray-500 dark:text-gray-400">Your watch later list is empty.</p>
-                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">Movies you save will appear here.</p>
+                        <p className="text-lg text-gray-500 dark:text-gray-400">No saved movies found.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

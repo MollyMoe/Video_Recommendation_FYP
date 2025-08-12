@@ -212,10 +212,7 @@ const StLikedMoviesPage = () => {
             ) : likedMovies.length === 0 ? (
               <div className="text-center mt-20">
                 <p className="text-lg text-gray-500 dark:text-gray-400">
-                  You haven't liked any movies yet.
-                </p>
-                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                  Movies you like will appear here.
+                  No like movies found.
                 </p>
               </div>
             ) : (

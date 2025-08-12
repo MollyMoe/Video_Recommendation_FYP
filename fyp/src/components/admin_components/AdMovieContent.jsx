@@ -118,8 +118,8 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
       {/* Loading overlay for the entire page */}
       {isLoading && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-xl text-center">
-            <p className="text-lg font-semibold text-gray-800 dark:text-white">Loading...</p>
+          <div className="bg-white px-6 py-4 rounded-lg shadow-xl text-center">
+            <p className="text-lg font-semibold text-gray-800">Loading...</p>
             <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
           </div>
         </div>
@@ -248,7 +248,7 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
             </p>
 
             {syncStatus.stage === 'deleting' && (
-              <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full mx-auto" />
+              <div className="animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
             )}
 
             {syncStatus.stage === 'finished' && (

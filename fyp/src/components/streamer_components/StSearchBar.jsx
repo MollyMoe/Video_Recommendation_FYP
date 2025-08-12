@@ -96,7 +96,7 @@ const [history, setHistory] = useState(() => {
           }
           className={`w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 ${
             !isSearchDisabled
-              ? "focus:ring-blue-500"
+              ? "focus:ring-purple-500"
               : "cursor-not-allowed text-gray-400 bg-gray-200"
           }`}
         />
