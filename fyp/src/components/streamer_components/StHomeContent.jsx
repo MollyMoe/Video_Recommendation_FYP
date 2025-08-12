@@ -293,11 +293,11 @@ const fetchUserAndMovies = async () => {
       }
     }
 
-      const normalizedMovies = moviesToDisplay
-        .map(normalizeMovie)
-        .filter(Boolean);
-      setLastRecommendedMovies(normalizedMovies.slice(0, 60));
-      setAllShownTitles(new Set(normalizedMovies.map((m) => m.title)));
+      const normalizedMovies = moviesToDisplay.map(normalizeMovie).filter(Boolean);
+      const sixty = normalizedMovies.slice(0, 60);
+      setLastRecommendedMovies(sixty);
+      setAllShownTitles(new Set(sixty.map((m) => m.title)));
+      writeRecsCache(sixty); // <-- add this
     } catch (err) {
       console.error("❌ Error in fetchUserAndMovies:", err);
     } finally {
@@ -329,6 +329,7 @@ const fetchUserAndMovies = async () => {
         const newTitles = newMovies.map(m => m.title);
         setMovies(newMovies);
         setLastRecommendedMovies(newMovies);
+        writeRecsCache(newMovies);
         setAllShownTitles(prev => new Set([...prev, ...newTitles]));
 
         if (window.electron?.saveRecommendedMovies) {
@@ -808,6 +809,17 @@ useEffect(() => {
 // helper
 const pickTop10 = (list=[]) =>
   [...list].sort((a,b)=>(b.predicted_rating||0)-(a.predicted_rating||0)).slice(0,10);
+
+const writeRecsCache = async (list) => {
+  try {
+    await window.electron?.replaceRecommendedMovies?.(list);     // overwrite the 60
+    await window.electron?.saveTopRatedMovies?.(pickTop10(list)); // keep a stable Top 10
+    localStorage.setItem("recs_version", String(Date.now()));     // bump version
+    window.dispatchEvent(new Event("cineit:recommendationsUpdated")); // notify listeners
+  } catch (e) {
+    console.warn("Failed to write recs cache:", e);
+  }
+};
 
 useEffect(() => {
   const loadOfflineTop10 = async () => {
