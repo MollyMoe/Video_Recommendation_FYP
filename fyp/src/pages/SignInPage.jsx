@@ -76,6 +76,7 @@ function SignInPage() {
           username: formData.username,
           password: formData.password,
           userType: formData.userType.toLowerCase(),
+          email: formData.email,
         }),
       });
 

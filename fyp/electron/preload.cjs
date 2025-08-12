@@ -109,6 +109,15 @@ function dedupeDeleteActions(q) {
   return out.reverse();
 }
 
+function dedupeMovies(arr){
+  const seen = new Set();
+  return (arr||[]).filter(m=>{
+    const id = String(m?.movieId ?? m?._id ?? m?.title ?? "");
+    if (!id || seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
 
 contextBridge.exposeInMainWorld('electron', {
    // start from session replaced
@@ -234,7 +243,17 @@ contextBridge.exposeInMainWorld('electron', {
   getSubscription: () => safeRead(subscriptionPath),
 
   //liked Data for filter page
-  saveTopRatedMovies: (data) => safeWrite(topRatedPath, data),
+  saveTopRatedMovies: (data) => {
+  const normalized = (Array.isArray(data) ? data : []).map(m => ({
+    ...m,
+    genres: Array.isArray(m.genres)
+      ? m.genres
+      : String(m.genres || "")
+          .split(/[|,]/).map(s => s.trim()).filter(Boolean)
+  }));
+  safeWrite(topRatedPath, normalized);
+},
+
   getTopRatedMovies: () => safeRead(topRatedPath),
 
   // ✅ Carousel offline cache (topLiked, likedMovies, etc.)
@@ -248,7 +267,31 @@ contextBridge.exposeInMainWorld('electron', {
     return [];
   },
 
-
+  replaceRecommendedMovies: (movies) => {
+    try {
+      fs.mkdirSync(path.dirname(recommendedPath), { recursive: true });
+      fs.writeFileSync(recommendedPath, JSON.stringify(dedupeMovies(movies), null, 2), "utf-8");
+      console.log("💾 replaced recommended.json");
+    } catch(e){ console.error(e); }
+  },
+  replaceTopRatedMovies: (movies) => {
+  try {
+    fs.mkdirSync(path.dirname(topRatedPath), { recursive: true });
+    const normalized = (Array.isArray(movies) ? movies : []).map(m => ({
+      ...m,
+      genres: Array.isArray(m.genres)
+        ? m.genres
+        : String(m.genres || "")
+            .split(/[|,]/).map(s => s.trim()).filter(Boolean)
+    }));
+    fs.writeFileSync(
+      topRatedPath,
+      JSON.stringify(dedupeMovies(normalized), null, 2),
+      "utf-8"
+    );
+    console.log("💾 replaced topRatedMovies.json");
+  } catch (e) { console.error(e); }
+},
 
   // ✅ Recommended Movies
   saveRecommendedMovies: async (movies) => {

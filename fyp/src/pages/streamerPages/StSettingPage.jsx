@@ -21,6 +21,9 @@ const StSettingPage = () => {
     .map(g => g.trim())
     .filter(Boolean);
 
+  const initialRef = useRef({ username: "", genre: "" });
+  const normGenres = (v) => parseGenres(v).map(s => s.toLowerCase()).sort().join("|");
+
   const [previewImage, setPreviewImage] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -121,6 +124,13 @@ const StSettingPage = () => {
           : "",
       });
 
+      initialRef.current = {
+        username: data.username || "",
+        genre: Array.isArray(data.genres)
+          ? data.genres.join(", ")
+          : typeof data.genre === "string" ? data.genre : "",
+      };
+
       if (data.profileImage) {
         updateProfileImage(data.profileImage, "streamer");
         localStorage.setItem("streamer_profileImage", data.profileImage);
@@ -194,7 +204,7 @@ const handleChange = async (e) => {
   };
 
   //submitting
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -212,43 +222,52 @@ const handleSubmit = async (e) => {
     };
     const genreArray = parseGenres(formData.genre);
 
-    // OFFLINE
-    if (!isOnline) {
-      try {
-        window.electron?.saveProfileUpdate?.(updatePayload);
-        await window.electron?.saveUserGenres?.(genreArray);
+    const usernameChanged = formData.username.trim() !== initialRef.current.username.trim();
+    const genreChanged    = normGenres(formData.genre) !== normGenres(initialRef.current.genre);
 
-        // ⬇️ Re-filter local recommended to the new genres immediately
+  // ---------------- OFFLINE ----------------
+  if (!isOnline) {
+    try {
+      // always cache the basic profile update
+      window.electron?.saveProfileUpdate?.(updatePayload);
+
+      if (genreChanged) {
+        // only re-filter + write top10 when genres changed
+        await window.electron?.saveUserGenres?.(genreArray);
         const pool = (await window.electron?.getRecommendedMovies?.()) || [];
         const hasAll = (movieGenres) => {
           const arr = Array.isArray(movieGenres)
             ? movieGenres
-            : String(movieGenres || "").split(/[,|]/).map((s) => s.trim());
+            : String(movieGenres || "").split(/[,|]/).map(s => s.trim());
           return genreArray.length > 0 && genreArray.every((g) => arr.includes(g));
         };
         const filtered = pool.filter((m) => hasAll(m.genres));
         await window.electron?.saveRecommendedMovies?.(filtered);
-        const top10 = [...filtered]
-          .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
-          .slice(0, 10);
+        const top10 = [...filtered].sort((a,b)=>(b.predicted_rating||0)-(a.predicted_rating||0)).slice(0,10);
         await window.electron?.saveTopRatedMovies?.(top10);
-
-        // notify any open pages and go straight to Filter
         window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
-
-        setSuccessMessage("You're offline. Changes saved locally.");
-        setShowSuccessModal(true);
-        navigate("/home/filter", { replace: true });
-      } catch (err) {
-        console.error("❌ Offline save failed:", err);
-        alert("Offline save failed. Please reconnect and try again.");
-      } finally {
-        setIsLoading(false);
       }
-      return;
-    }
 
-    // ONLINE
+      setSuccessMessage(
+        genreChanged ? "You're offline. Changes saved locally; filter updated." : "You're offline. Username saved locally."
+      );
+      setShowSuccessModal(true);
+
+      // NEW: only go to Filter if genre changed
+      if (genreChanged) navigate("/home/filter", { replace: true });
+
+      // NEW: update the baseline so further saves compare correctly
+      initialRef.current = { username: formData.username, genre: formData.genre };
+    } catch (err) {
+      console.error("❌ Offline save failed:", err);
+      alert("Offline save failed. Please reconnect and try again.");
+    } finally {
+      setIsLoading(false);
+    }
+    return;
+  }
+
+    // ---------------- ONLINE ----------------
     try {
       const res = await fetch(`${API}/api/editProfile/streamer/${savedUser.userId}`, {
         method: "PUT",
@@ -259,18 +278,23 @@ const handleSubmit = async (e) => {
 
       const updated = await res.json();
       localStorage.setItem("user", JSON.stringify(updated));
-      await window.electron?.saveUserGenres?.(genreArray);
 
-      // ⏳ wait for regeneration + offline cache writes, then notify
-      const { syncOfflineCache } = await import("@/utils/syncOfflineCache");
-      await syncOfflineCache(updated, { force: true });
-      window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
+      // only sync/recompute if genres changed
+      if (genreChanged) {
+        await window.electron?.saveUserGenres?.(genreArray);
+        const { syncOfflineCache } = await import("@/utils/syncOfflineCache");
+        await syncOfflineCache(updated, { force: true });
+        window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
+      }
 
-      setSuccessMessage("Profile updated! New recommendations ready.");
+      setSuccessMessage(genreChanged ? "Profile updated! New recommendations ready." : "Username updated!");
       setShowSuccessModal(true);
 
-      // go straight to Filter (no “home hop” needed)
-      navigate("/home/filter", { replace: true });
+      // only navigate if genre changed
+      if (genreChanged) navigate("/home/filter", { replace: true });
+
+      // refresh the baseline after success
+      initialRef.current = { username: formData.username, genre: formData.genre };
     } catch (err) {
       console.error("❌ Update error:", err);
       alert("Could not update profile. Please try again later.");
@@ -610,7 +634,7 @@ const handleSubmit = async (e) => {
         {isLoading && (
           <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-              <p className="text-lg font-semibold">Saving Changes...</p>
+              <p className="text-lg font-semibold text-gray-900">Saving Changes...</p>
               <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
             </div>
           </div>

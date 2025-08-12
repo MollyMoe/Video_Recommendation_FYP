@@ -765,6 +765,8 @@ useEffect(() => {
     return () => debouncedFetch.cancel();
   }, [searchQuery, isSubscribed, lastRecommendedMovies]);
 
+  
+
   // A simple boolean to determine if we are in "search mode"
   const isSearching = searchQuery?.trim().length > 0 && isSubscribed;
 
@@ -779,6 +781,76 @@ useEffect(() => {
   watchedTitles
 });
 
+useEffect(() => {
+  const reloadFromDisk = async () => {
+    const list = (await window.electron?.getRecommendedMovies?.()) || [];
+    const normalized = list.map(normalizeMovie).filter(Boolean);
+    setLastRecommendedMovies(normalized.slice(0, 60));
+    setMovies(normalized.slice(0, 60));
+  };
+
+  const onUpdated = () => !navigator.onLine && reloadFromDisk();
+  window.addEventListener("cineit:filterDataUpdated", onUpdated);
+  return () => window.removeEventListener("cineit:filterDataUpdated", onUpdated);
+}, []);
+
+useEffect(() => {
+  if (!isOnline) {
+    (async () => {
+      const list = (await window.electron?.getRecommendedMovies?.()) || [];
+      const normalized = list.map(normalizeMovie).filter(Boolean);
+      setLastRecommendedMovies(normalized.slice(0, 60));
+      setMovies(normalized.slice(0, 60));
+    })();
+  }
+}, [isOnline]);
+
+// helper
+const pickTop10 = (list=[]) =>
+  [...list].sort((a,b)=>(b.predicted_rating||0)-(a.predicted_rating||0)).slice(0,10);
+
+useEffect(() => {
+  const loadOfflineTop10 = async () => {
+    // 1) try cached top-10 file
+    let top10 = await window.electron?.getTopRatedMovies?.();
+    // 2) fallback: compute from recommended.json if top-10 file missing
+    if (!top10 || top10.length === 0) {
+      const recs = (await window.electron?.getRecommendedMovies?.()) || [];
+      const normalized = recs.map(normalizeMovie).filter(Boolean);
+      top10 = pickTop10(normalized);
+    }
+    // show only the same top-10 everywhere
+    setLastRecommendedMovies(top10);
+    setMovies(top10);
+  };
+
+  const onUpdated = () => { if (!navigator.onLine) loadOfflineTop10(); };
+
+  window.addEventListener("cineit:filterDataUpdated", onUpdated);
+  return () => window.removeEventListener("cineit:filterDataUpdated", onUpdated);
+}, []);
+
+useEffect(() => {
+  if (!isOnline) {
+    (async () => {
+      // immediately switch to cached top 10
+      const top10 = await window.electron?.getTopRatedMovies?.();
+      if (top10?.length) {
+        setLastRecommendedMovies(top10);
+        setMovies(top10);
+      } else {
+        // fallback compute
+        const recs = (await window.electron?.getRecommendedMovies?.()) || [];
+        const normalized = recs.map(normalizeMovie).filter(Boolean);
+        const picked = pickTop10(normalized);
+        setLastRecommendedMovies(picked);
+        setMovies(picked);
+      }
+    })();
+  }
+}, [isOnline]);
+
+
   // === RENDER ===
   return (
     <div className="sm:ml-64 pt-10 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700 bg-gray-50 min-h-screen">
@@ -788,7 +860,7 @@ useEffect(() => {
         {isSearching ? (
           // --- SEARCH RESULTS VIEW ---
           <div className="mt-15">
-            <h2 className="text-2xl font-semibold text-black mb-4 px-4">Search Results</h2>
+            <h2 className="text-2xl font-semibold text-black mb-4 px-4 dark:text-white">Search Results</h2>
               {isSubscribed && (
                 <FilterButtons
                   allGenres={allAvailableGenres}

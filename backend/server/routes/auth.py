@@ -94,6 +94,7 @@ class SigninRequest(BaseModel):
     username: str
     password: str
     userType: str
+    email: EmailStr
 
 @router.post("/signin")
 def signin(data: SigninRequest, request: Request):
@@ -101,12 +102,22 @@ def signin(data: SigninRequest, request: Request):
     username = data.username
     password = data.password
     user_type = data.userType.lower()
+    email = data.email
 
     Model = db["admin"] if user_type == "admin" else db["streamer"]
     user = Model.find_one({"username": username}, {"_id": 0})
 
-    if not user or user["password"] != password:
-        raise HTTPException(status_code=400, detail="Invalid username or password")
+    # Check if user exists
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid username")
+
+    # Check if password matches
+    if user["password"] != password:
+        raise HTTPException(status_code=400, detail="Invalid password")
+
+    # Validate the email
+    if user.get("email") != email:
+        raise HTTPException(status_code=400, detail="Invalid email address")
 
     user_id = user["userId"]
     now = datetime.utcnow()
@@ -132,7 +143,7 @@ def signin(data: SigninRequest, request: Request):
     if user_type == "streamer":
     # 1️⃣ Check for auto-suspension (after 2 minutes since lastSignout)
         if user.get("lastSignout") and user.get("status") == "Active":
-            signout_days = (now - user["lastSignout"]).days # put / 30 for months
+            signout_days = (now - user["lastSignout"]).days / 30 
             if signout_days >= 3:
                 print(f"⛔ Auto-suspending {user['username']} after {signout_days:.2f} days")
                 Model.update_one(

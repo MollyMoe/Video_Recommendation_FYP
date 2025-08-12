@@ -23,8 +23,8 @@ const StSideBar = () => {
         onClick={handleClick}
         className={`block p-4 rounded-lg ${
           current
-            ? "bg-gray-200 text-black font-semibold"
-            : "hover:bg-gray-200 dark:hover:bg-gray-700"
+            ? "bg-fuchsia-100 text-black font-semibold"
+            : "hover:bg-fuchsia-100 dark:hover:bg-gray-700"
         }`}
       >
         {children || label}
@@ -39,7 +39,7 @@ const StSideBar = () => {
       aria-label="Sidebar"
     >
       <div className="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
-        <ul className="space-y-2 font-medium text-center text-black dark:text-white">
+        <ul className="mt-7 space-y-2 font-medium text-center text-black dark:text-white">
           <li>
             <StSidebarButton
               to="/home"

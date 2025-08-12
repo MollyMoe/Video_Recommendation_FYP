@@ -13,3 +13,12 @@
   scrollbar-width: none;     /* Firefox */
 }
 
+@layer base {
+  html, body, #root {
+    @apply min-h-screen dark:bg-gray-900 text-gray-900;
+  }
+}
+
+/* Let the browser pick dark UI defaults (scrollbars, inputs, etc.) */
+:root { color-scheme: light dark; }
+html.dark { color-scheme: dark; }
