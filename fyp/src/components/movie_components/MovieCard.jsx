@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import offlineFallback from "../../images/offlineFallback.jpg";
 
@@ -44,13 +45,16 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+
       {/* Movie Poster */} 
    <div
+
         className={`aspect-[9/16] overflow-hidden rounded-2xl shadow-lg transition-opacity duration-300 ${
           isHovered ? 'opacity-0' : 'opacity-100'
         }`}
       >
         <img
+
         src={movie.poster_url}
         alt={movie.title || "No title"}
         loading="lazy"
@@ -61,6 +65,7 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
         }}
         className="w-full h-full object-cover rounded-lg"
       />
+
       </div>
 
       {/* Trailer Preview */}
@@ -89,9 +94,10 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
             )}
           </div>
           <div className="bg-black/60 text-white text-xs p-2 rounded-b-xl space-y-1">
-            <div>{Array.isArray(movie.genres) ? movie.genres.join(' | ') : movie.genres}</div>
+            <div>{Array.isArray(movie.genres) ? movie.genres.join(', ') : movie.genres}</div>
             <div className="font-semibold text-sm">
               ⭐ {movie.predicted_rating?.toFixed(1) || 'N/A'}
+
             </div>
           </div>
         </div>

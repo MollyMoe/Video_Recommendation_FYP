@@ -56,14 +56,13 @@ function SignInPage() {
     };
   }, []);
 
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   setMessage(null);
 
   if (!validateForm()) return;
 
   const isOnline = navigator.onLine;
-
   setIsLoading(true);
 
   try {
@@ -79,110 +78,142 @@ function SignInPage() {
         }),
       });
 
-      const data = await res.json();
-      console.log("Login API response data:", data);
-
-      if (res.ok) {
-        // Save to localStorage
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        // ✅ Sync offline cache for streamers only
-      if (
-        window.electron &&
-        navigator.onLine &&
-        data.user?.userType?.toLowerCase() === "streamer"
-      ) {
-        syncOfflineCache(data.user); // ✅ Only now!
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        // ignore JSON parse errors for non-OK responses
       }
 
-      // Save session offline
-        if (window.electron && window.electron.saveSession) {
-          window.electron.saveSession({
-            userId: data.user.userId,
-            username: data.user.username,
-            userType: data.user.userType,
-            password: formData.password,
-            lastSignin: new Date().toISOString(),
+      if (!res.ok) {
+        const status = res.status;
+        const errMsg = (data?.detail || data?.error || "Login failed. Please try again.").toString();
+        if (status === 403 && errMsg.toLowerCase().includes("suspended")) {
+          setMessage({
+            type: "error",
+            text: "Your account has been suspended due to prolonged inactivity. Contact cineit.helpdesk@gmail.com.",
           });
+        } else if (status === 400 && errMsg.toLowerCase().includes("invalid")) {
+          setMessage({ type: "error", text: "Invalid username or password." });
         } else {
-          console.warn("⚠️ Electron API not available. Skipping offline session save.");
+          setMessage({ type: "error", text: errMsg });
         }
-        // Clear old profile images
-        localStorage.removeItem("streamer_profileImage");
-        localStorage.removeItem("admin_profileImage");
+        return;
+      }
 
-        // ✅ Fetch profile image
-        if (data.user?.userId && formData.userType) {
-          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${data.user.userId}`;
-          try {
-            const imageRes = await fetch(endpoint);
-            const userInfo = await imageRes.json();
+      // ok
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-            if (userInfo.profileImage) {
-              const key = `${formData.userType.toLowerCase()}_profileImage`;
-              localStorage.setItem(key, userInfo.profileImage);
-            }
-          } catch (error) {
-            console.warn("⚠️ Could not fetch profile image:", error);
+      // Clear old profile images first
+      localStorage.removeItem("streamer_profileImage");
+      localStorage.removeItem("admin_profileImage");
+
+      // 🔎 Fetch full profile (so we persist genres + image consistently)
+      try {
+        const who = data.user?.userType?.toLowerCase(); // "admin" | "streamer"
+        const id = data.user?.userId;
+        if (who && id) {
+          const profRes = await fetch(`${API}/api/auth/users/${who}/${id}`);
+          const profRaw = await profRes.json();
+          const profile = normalizeProfile(profRaw);
+
+          // Save normalized profile for offline
+          window.electron?.saveProfileUpdate?.(profile);
+          localStorage.setItem("profile", JSON.stringify(profile));
+
+          // Merge genres onto user so UI can read either place
+          const mergedUser = { ...data.user, genres: profile.genres };
+          localStorage.setItem("user", JSON.stringify(mergedUser));
+
+          // Save profile image key
+          if (profile.profileImage) {
+            localStorage.setItem(`${who}_profileImage`, profile.profileImage);
           }
         }
-
-        // ✅ Navigate
-        if (formData.userType === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/home");
-        }
-
-        setMessage({ type: "success", text: "Login successful!" });
-      } else if (
-        res.status === 403 &&
-        data.error?.toLowerCase().includes("Suspended")
-      ) {
-        setMessage({
-          type: "error",
-          text:
-            "Your account has been suspended due to prolonged inactivity. Contact cineit.helpdesk@gmail.com.",
-        });
-      } else if (
-        res.status === 400 &&
-        data.detail?.toLowerCase().includes("invalid")
-      ) {
-        setMessage({
-          type: "error",
-          text: "Invalid username or password.",
-        });
-      } else {
-        setMessage({
-          type: "error",
-          text: data.detail || "Login failed. Please try again.",
-        });
+      } catch (e) {
+        console.warn("⚠️ Could not fetch/normalize profile:", e);
       }
+
+      // 🔁 Sync offline cache for streamers only
+      if (window.electron && data.user?.userType?.toLowerCase() === "streamer") {
+        try {
+          await syncOfflineCache(data.user);
+        } catch (e) {
+          console.warn("⚠️ syncOfflineCache failed:", e);
+        }
+      }
+
+      // 💾 Save session offline
+      window.electron?.saveSession?.({
+        userId: data.user.userId,
+        username: data.user.username,
+        userType: data.user.userType,
+        password: formData.password, // stored for offline match
+        lastSignin: new Date().toISOString(),
+      });
+
+      // 🚀 Navigate
+      navigate(formData.userType === "admin" ? "/admin" : "/home");
+      setMessage({ type: "success", text: "Login successful!" });
+
     } else {
       // ⚡ OFFLINE LOGIN FLOW
-      const offlineData = window.electron.getSession();
+      try {
+        const offlineData = window.electron?.getSession?.();
 
-      if (
-        offlineData &&
-        offlineData.username === formData.username &&
-        offlineData.password === formData.password &&
-        offlineData.userType === formData.userType
-      ) {
-        localStorage.setItem("user", JSON.stringify(offlineData));
+        const match =
+          offlineData &&
+          offlineData.username === formData.username &&
+          offlineData.password === formData.password &&
+          (offlineData.userType?.toLowerCase?.() === formData.userType?.toLowerCase?.());
 
-        const key = `${formData.userType.toLowerCase()}_profileImage`;
-        if (offlineData.profileImage) {
-          localStorage.setItem(key, offlineData.profileImage);
+        if (!match) {
+          setMessage({
+            type: "error",
+            text: "Offline login failed. No matching saved session.",
+          });
+          return;
         }
 
-        navigate(formData.userType === "admin" ? "/admin" : "/home");
+        const who = formData.userType.toLowerCase();
 
+        // 1) Load cached, normalized profile (Electron → localStorage fallback)
+        let cachedProfile = null;
+        try {
+          cachedProfile = await window.electron?.getProfileUpdate?.();
+        } catch {}
+        if (!cachedProfile) {
+          const raw = localStorage.getItem("profile");
+          cachedProfile = raw ? JSON.parse(raw) : null;
+        }
+
+        // 2) Merge cached profile onto the offline session for genres/profileImage
+        const mergedUser = { ...offlineData };
+
+        if (cachedProfile) {
+          localStorage.setItem("profile", JSON.stringify(cachedProfile));
+
+          if (!Array.isArray(mergedUser.genres) && Array.isArray(cachedProfile.genres)) {
+            mergedUser.genres = cachedProfile.genres;
+          }
+          if (cachedProfile.profileImage) {
+            localStorage.setItem(`${who}_profileImage`, cachedProfile.profileImage);
+          }
+        } else if (offlineData.profileImage) {
+          // fallback if only in session
+          localStorage.setItem(`${who}_profileImage`, offlineData.profileImage);
+        }
+
+        // 3) Persist and go
+        localStorage.setItem("user", JSON.stringify(mergedUser));
+        navigate(who === "admin" ? "/admin" : "/home");
         setMessage({ type: "success", text: "Logged in offline." });
-      } else {
+      } catch (e) {
+        console.error("Offline login error:", e);
         setMessage({
           type: "error",
-          text: "Offline login failed. No matching saved session.",
+          text: "Offline login failed. Try signing in online once to cache your profile.",
         });
       }
     }

@@ -675,14 +675,6 @@ useEffect(() => {
           </div>
         )}
 
-        {isLoading && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <p className="text-lg font-semibold">Loading Movie...</p>
-            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
-          </div>
-        </div>
-      )}
       </div>
     </div>
   );

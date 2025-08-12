@@ -104,7 +104,7 @@ app.include_router(movie_router, prefix="/api/movies")
 app.include_router(password_router, prefix="/api/password")
 app.include_router(edit_router, prefix="/api/editProfile")
 app.include_router(profile_router, prefix="/api/profile")
-app.include_router(feedback_router, prefix="/api")
+app.include_router(feedback_router, prefix="/api/feedback")
 app.include_router(subscription_router, prefix="/api")
 app.include_router(stripe_router, prefix="/api")
 

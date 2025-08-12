@@ -30,6 +30,32 @@ const processMovies = (list) => {
 const top10From = (arr) =>
   arr.slice().sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0)).slice(0, 10);
 
+
+// put this in a shared util file
+const pick = (obj, ...keys) => {
+  for (const k of keys) if (obj && obj[k] != null) return obj[k];
+  return undefined;
+};
+
+const normalizeGenres = (src) => {
+  const raw = pick(src, "genres", "genre", "preferredGenres", "preferred_genres", "preferredGenre");
+  if (Array.isArray(raw)) return raw.map(String).map(s => s.trim()).filter(Boolean);
+  if (typeof raw === "string") return raw.split(/[|,]/).map(s => s.trim()).filter(Boolean);
+  return [];
+};
+
+export const normalizeStreamerProfile = (raw) => {
+  const u = pick(raw, "user", "data", "streamer", "profile") || raw || {};
+  const genresArr = normalizeGenres(u);
+  return {
+    userId: pick(u, "userId", "_id", "id") || "",
+    username: pick(u, "username", "name") || "",
+    email: pick(u, "email", "contact") || "",
+    profileImage: pick(u, "profileImage", "avatar", "imageUrl") || "",
+    genres: genresArr,                 // array form
+    genre: genresArr.join(", "),       // string form for inputs
+  };
+};
 /**
  * If `genres` is provided, call /movies/regenerate to get FRESH recs.
  * Otherwise, fall back to /movies/recommendations/:userId (cached collection).
@@ -86,17 +112,44 @@ export const syncOfflineCache = async (user, { genres, force = false } = {}) => 
     await window.electron?.saveTopRatedMovies?.(top10);
 
     // ---- 2) Subscription
-    const subRes = await fetch(`${API}/api/subscription/${userId}`);
-    const subscription = await subRes.json();
-    await window.electron?.saveSubscription?.(subscription);
+const subRes = await fetch(`${API}/api/subscription/${userId}`);
+const subscription = await subRes.json();
+await window.electron?.saveSubscription?.(subscription);
 
-    // ---- 3) Genres from user profile (prefer the ones we just set if provided)
-    const userRes = await fetch(`${API}/api/auth/users/streamer/${userId}`);
-    const userData = await userRes.json();
-    const genresToSave = genresArr.length ? genresArr : (userData?.genres || []);
-    await window.electron?.saveUserGenres?.(genresToSave);
+// ---- 3) Profile + Genres (normalize and persist)
+const profileRes = await fetch(`${API}/api/auth/users/streamer/${userId}`);
+const profileRaw = await profileRes.json();
 
-    // ---- 4) Carousel Data
+// ✅ always normalize the profile
+const normalizedProfile = normalizeStreamerProfile(profileRaw);
+
+// save normalized profile everywhere
+await window.electron?.saveProfileUpdate?.(normalizedProfile);
+try {
+  localStorage.setItem("profile", JSON.stringify(normalizedProfile));
+} catch { /* storage might be full; ignore */ }
+
+// decide which genres to store: prefer explicit `genres` param, else normalized profile
+const genresToSave = (Array.isArray(genres) && genres.length)
+  ? genres.map(g => String(g).trim()).filter(Boolean)
+  : (normalizedProfile.genres || []);
+
+// persist genres for offline use
+await window.electron?.saveUserGenres?.(genresToSave);
+
+// (optional) also merge onto the `user` in localStorage for easy reads
+try {
+  const userJson = localStorage.getItem("user");
+  if (userJson) {
+    const u = JSON.parse(userJson);
+    if (!Array.isArray(u.genres) || u.genres.length === 0) {
+      u.genres = genresToSave;
+      localStorage.setItem("user", JSON.stringify(u));
+    }
+  }
+} catch { /* ignore */ }
+
+    // ---- 5) Carousel Data
     const [topLikedRes, likedTitlesRes, savedTitlesRes, watchedTitlesRes] = await Promise.all([
       fetch(`${API}/api/movies/top-liked`),
       fetch(`${API}/api/movies/likedMovies/${userId}`),

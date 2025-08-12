@@ -20,6 +20,13 @@ const recommendedPath = path.join(basePath, 'recommended.json');
 const subscriptionPath = path.join(basePath, "subscription.json");
 const themePath = path.join(basePath, "theme.json");
 const topRatedPath = path.join(basePath, "topRatedMovies.json");
+const savedSnapshotPath = path.join(basePath, "cineit-saved.json");
+
+const likedListPath = path.join(basePath, "cineit-liked.json");
+const recommendedQueuePath = path.join(basePath, "cineit-recommended-queue.json");
+
+const historySnapshotPath = path.join(basePath, "cineit-history-snapshot.json");
+
 
 const paths = {
   topLiked: path.join(basePath, "topLiked.json"),
@@ -52,78 +59,55 @@ function safeWrite(filePath, data) {
   }
 }
 
-// ✅ Helper to queue actions
 function queueAction(filePath, action) {
   try {
+    // Make sure folder exists before any read/write
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
     let list = [];
     if (fs.existsSync(filePath)) {
       list = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     }
     list.push(action);
     fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
-    console.log(`📦 Queued offline action for ${action.type}`);
+    console.log(`📦 Queued offline action for ${action.type} -> ${filePath}`);
   } catch (err) {
     console.error("❌ Failed to queue action:", err);
   }
 }
 
-// Download image and save to given path
-// async function downloadImage(url, filePath) {
-//   const res = await fetch(url);
-//   const buffer = await res.arrayBuffer();
-//   fs.writeFileSync(filePath, Buffer.from(buffer));
-// }
+function readJSON(p, fallback) {
+  try { return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf-8")) : fallback; }
+  catch { return fallback; }
+}
+function writeJSON(p, data) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
+}
 
-// async function cacheRecommendedPosters(movies) {
-//   const folderPath = path.join(basePath, "posters", "recommended");
-//   fs.mkdirSync(folderPath, { recursive: true });
+// Keep only actions after the last clearAll (the last clear wins)
+function compactAfterClearAll(q) {
+  const idxFromEnd = [...q].reverse().findIndex(a => a?.type === "clearAll");
+  if (idxFromEnd < 0) return q;
+  const cut = q.length - 1 - idxFromEnd;
+  return q.slice(cut); // includes that clearAll and everything after it
+}
 
-//   for (const movie of movies) {
-//     if (movie.poster_url && movie.poster_url.startsWith("http")) {
-//       const id = movie.movieId || movie._id || movie.title?.replace(/\s/g, "_");
-//       const ext = path.extname(new URL(movie.poster_url).pathname) || ".jpg";
-//       const posterFile = path.join(folderPath, `${id}${ext}`);
-
-//       try {
-//         await downloadImage(movie.poster_url, posterFile);
-//         movie.poster_url = `file://${posterFile}`;
-//       } catch (err) {
-//         console.warn(`⚠️ Failed to cache poster for ${id}:`, err);
-//       }
-//     }
-//   }
-// }
-
-// function clearRecommendedPosterCache() {
-//   const folderPath = path.join(basePath, "posters", "recommended");
-
-//   if (fs.existsSync(folderPath)) {
-//     const files = fs.readdirSync(folderPath);
-//     for (const file of files) {
-//       const filePath = path.join(folderPath, file);
-//       if (fs.statSync(filePath).isFile()) {
-//         fs.unlinkSync(filePath);
-//       }
-//     }
-//     console.log("🧹 Cleared old recommended poster cache");
-//   }
-// }
-
-
-
-// function removeFromQueue(path, movieId) {
-//   try {
-//     if (!fs.existsSync(path)) return;
-//     const actions = JSON.parse(fs.readFileSync(path, "utf-8"));
-//     const filtered = actions.filter(
-//       (action) => action.movie.movieId !== movieId && action.movie._id !== movieId
-//     );
-//     fs.writeFileSync(path, JSON.stringify(filtered, null, 2), "utf-8");
-//     console.log(`🗑 Removed ${movieId} from queue`);
-//   } catch (err) {
-//     console.error("❌ Failed to remove from queue:", err);
-//   }
-// }
+// Keep at most one "delete" per movieId; last one wins
+function dedupeDeleteActions(q) {
+  const seen = new Set();
+  const out = [];
+  for (let i = q.length - 1; i >= 0; i--) {
+    const a = q[i];
+    if (a?.type === "delete") {
+      const key = `d:${String(a.movieId)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+    }
+    out.push(a);
+  }
+  return out.reverse();
+}
 
 
 contextBridge.exposeInMainWorld('electron', {
@@ -310,26 +294,6 @@ contextBridge.exposeInMainWorld('electron', {
     });
   },
 
-  // // ✅ Shell backup & restore
-  // backupData: () => {
-  //   exec(`bash ${backupScript}`, (err, stdout, stderr) => {
-  //     if (err) {
-  //       console.error("❌ Backup error:", err);
-  //     } else {
-  //       console.log("✅ Backup successful:", stdout);
-  //     }
-  //   });
-  // },
-  // restoreData: (cb) => {
-  //   exec(`bash ${restoreScript}`, (err, stdout, stderr) => {
-  //     if (err) {
-  //       cb({ success: false, message: stderr || err.message });
-  //     } else {
-  //       cb({ success: true, message: stdout });
-  //     }
-  //   });
-  // },
-
   // ✅ Offline actions for history, saved, liked
   // queueHistory: (action) => queueAction(historyQueuePath, action),
   queueSaved: (action) => queueAction(savedQueuePath, action),
@@ -338,12 +302,12 @@ contextBridge.exposeInMainWorld('electron', {
   // ✅ Offline remove actions for history, saved, liked
   removeFromLikedQueue: (movieId) => {
     try {
+      fs.mkdirSync(path.dirname(likedQueuePath), { recursive: true });
       const data = fs.existsSync(likedQueuePath)
         ? fs.readFileSync(likedQueuePath, "utf-8")
         : "[]";
       const parsed = JSON.parse(data);
   
-      // tolerate { movie } or raw movie objects
       const filtered = parsed.filter((entry) => {
         const m = entry?.movie || entry;
         const id = m?.movieId || m?._id;
@@ -357,51 +321,209 @@ contextBridge.exposeInMainWorld('electron', {
     }
   },
   
-  removeFromSavedQueue: (movieId) =>
-    queueAction(savedQueuePath, { type: "delete", movieId }),
-
-  removeFromHistoryQueue: (movieId) =>
-    queueAction(historyQueuePath, { type: "delete", movieId }),
-
-  queueHistoryAction: (action) => queueAction(historyQueuePath, action),
-  queueSavedAction: (action) => queueAction(savedQueuePath, action),
-
-  removeMovieFromHistoryCache: (movieId) => {
-    try {
-      const data = fs.readFileSync(historyQueuePath, "utf-8");
-      const parsed = JSON.parse(data);
-      const filtered = parsed.filter(
-        (m) => m.movieId?.toString() !== movieId.toString()
-      );
-      fs.writeFileSync(historyQueuePath, JSON.stringify(filtered, null, 2));
-      console.log(`🗑️ Updated history cache after removing: ${movieId}`);
-    } catch (err) {
-      console.error("❌ Failed to update local history cache:", err);
-    }
+  removeFromHistoryQueue: (movieId) => {
+    const q = readJSON(historyQueuePath, []);
+    q.push({ type: "delete", movieId });
+    const compacted = compactAfterClearAll(q);
+    writeJSON(historyQueuePath, dedupeDeleteActions(compacted));
   },
+  
+  queueHistoryAction: (action) => {
+    const q = readJSON(historyQueuePath, []);
+    q.push(action); // e.g., { type:"movie", movie } or { type:"delete", movieId }
+    const compacted = compactAfterClearAll(q);
+    writeJSON(historyQueuePath, dedupeDeleteActions(compacted));
+  },
+  
 
-  removeFromSavedQueue: (movieId) => {
-    queueAction(savedQueuePath, { type: "delete", movieId });
+  enqueueHistoryClearAll: () => {
+    const q = readJSON(historyQueuePath, []);
+    q.push({ type: "clearAll" });
+    writeJSON(historyQueuePath, compactAfterClearAll(q));
+  },
+  replaceHistoryQueue: (next) => writeJSON(historyQueuePath, Array.isArray(next) ? next : []),
+    queueSavedAction: (action) => queueAction(savedQueuePath, action),
 
-    // Also remove immediately from cache (UI)
-    try {
-      const data = fs.readFileSync(savedQueuePath, "utf-8");
-      const parsed = JSON.parse(data);
 
-      // Handle both raw movie and action format
-      const filtered = parsed.filter((entry) => {
-        const m = entry.movie || entry;
-        const id = m.movieId || m._id;
-        return id?.toString() !== movieId.toString();
+  // --- Recommended offline queue + helpers ---
+queueRecommendedAction: (action) => queueAction(recommendedQueuePath, action),
+
+getRawRecommendedQueue: () => {
+  try {
+    if (fs.existsSync(recommendedQueuePath)) {
+      return JSON.parse(fs.readFileSync(recommendedQueuePath, "utf-8"));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+},
+
+clearRecommendedQueue: () => {
+  try {
+    if (fs.existsSync(recommendedQueuePath)) {
+      fs.unlinkSync(recommendedQueuePath);
+      console.log("🧹 Cleared recommended queue.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to clear recommended queue:", err);
+  }
+},
+
+removeFromRecommended: (movieId) => {
+  try {
+    if (!fs.existsSync(recommendedPath)) return;
+    const raw = fs.readFileSync(recommendedPath, "utf-8");
+    const arr = JSON.parse(raw);
+    const out = arr.filter((m) => {
+      const id = String(m?.movieId ?? m?._id ?? m?.title ?? "");
+      return id !== String(movieId);
+    });
+    fs.writeFileSync(recommendedPath, JSON.stringify(out, null, 2), "utf-8");
+    console.log(`🗑️ Removed ${movieId} from recommended.json`);
+  } catch (err) {
+    console.error("❌ Failed to remove from recommended:", err);
+  }
+},
+
+
+
+// --- History snapshot (used by History page when offline) ---
+saveHistorySnapshot: (movies) => writeJSON(historySnapshotPath, Array.isArray(movies) ? movies : []),
+
+getHistorySnapshot: () => {
+  const arr = readJSON(historySnapshotPath, []);
+  // de-dup by ID while preserving order
+  const seen = new Set(); const out = [];
+  for (const m of arr) {
+    const id = String(m?.movieId ?? m?._id ?? m?.tmdb_id ?? m?.title ?? "");
+    if (id && !seen.has(id)) { seen.add(id); out.push(m); }
+  }
+  return out;
+},
+
+clearHistorySnapshot: () => {
+  try {
+    if (fs.existsSync(historySnapshotPath)) {
+      fs.unlinkSync(historySnapshotPath);
+      console.log("🧹 Cleared History snapshot.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to clear History snapshot:", err);
+  }
+},
+
+// Put newest at top; also de-dup by id
+prependHistorySnapshot: (movie) => {
+  try {
+    const list = readJSON(historySnapshotPath, []);
+    const mid = String(movie?.movieId ?? movie?._id ?? "");
+    const filtered = list.filter((m) => String(m?.movieId ?? m?._id ?? "") !== mid);
+    filtered.unshift(movie);
+    writeJSON(historySnapshotPath, filtered);
+  } catch (err) {
+    console.error("❌ Failed to append to History snapshot:", err);
+  }
+},
+
+
+removeMovieFromHistoryCache: (movieId) => {
+  try {
+    const toStr = (v) => (v == null ? "" : String(v));
+    const target = toStr(movieId);
+
+    const snap = readJSON(historySnapshotPath, []);
+    const filtered = snap.filter((m) => {
+      const mid = toStr(m?.movieId);
+      const oid = toStr(m?._id);
+      const tmd = toStr(m?.tmdb_id);
+      // drop if ANY match
+      return !(mid === target || oid === target || tmd === target);
+    });
+
+    writeJSON(historySnapshotPath, filtered);
+    console.log(`🗑️ Updated history snapshot after removing: ${movieId}`);
+  } catch (err) {
+    console.error("❌ Failed to update History snapshot:", err);
+  }
+},
+
+syncQueuedHistory: async (apiBase, userId) => {
+  if (!apiBase || !userId) return { ok: false, reason: "Missing apiBase or userId" };
+  try {
+    let queue = readJSON(historyQueuePath, []);
+
+    // 1) If there is a clearAll, send the LAST one first
+    const idxFromEnd = [...queue].reverse().findIndex(a => a?.type === "clearAll");
+    if (idxFromEnd >= 0) {
+      const clearIdx = queue.length - 1 - idxFromEnd;
+      const res = await fetch(`${apiBase}/api/movies/historyMovies/removeAllHistory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
       });
+      if (!res.ok) throw new Error(`clearAll failed: ${res.status}`);
+      // drop everything up to and including the clearAll
+      queue = queue.slice(clearIdx + 1);
+      writeJSON(historyQueuePath, queue);
+    }
 
-      fs.writeFileSync(savedQueuePath, JSON.stringify(filtered, null, 2));
-      console.log(`🗑️ Updated saved cache after removing: ${movieId}`);
+    // 2) Replay remaining actions best-effort
+    for (const action of queue) {
+      try {
+        if (action?.type === "delete" && action.movieId) {
+          const r = await fetch(`${apiBase}/api/movies/historyMovies/delete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, movieId: action.movieId }),
+          });
+          if (!r.ok) console.warn("⚠️ delete sync failed:", r.status);
+        } else if (action?.type === "movie" && action.movie) {
+          const r = await fetch(`${apiBase}/api/movies/history`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, movie: action.movie }),
+          });
+          if (!r.ok) console.warn("⚠️ movie sync failed:", r.status);
+        }
+      } catch (err) {
+        console.warn("⚠️ Failed to sync a history action; continuing:", err);
+      }
+    }
+
+    // 3) Clear queue after replay
+    writeJSON(historyQueuePath, []);
+    console.log("✅ History queue synced and cleared.");
+    return { ok: true };
+  } catch (err) {
+    console.error("❌ syncQueuedHistory failed:", err);
+    return { ok: false, reason: String(err?.message || err) };
+  }
+},
+
+
+
+  removeFromSavedQueue: async (movieId) => {
+    // 1) queue delete action (IDs only)
+    queueAction(savedQueuePath, { type: "delete", movieId });
+  
+    // 2) prune the UI snapshot so page updates immediately
+    try {
+      const snap = fs.existsSync(savedSnapshotPath)
+        ? JSON.parse(fs.readFileSync(savedSnapshotPath, "utf-8"))
+        : [];
+  
+      const updated = snap.filter(
+        (m) => String(m?.movieId ?? m?._id) !== String(movieId)
+      );
+  
+      fs.writeFileSync(savedSnapshotPath, JSON.stringify(updated, null, 2), "utf-8");
+      console.log(`🗑️ Updated Watch Later snapshot after removing: ${movieId}`);
     } catch (err) {
-      console.error("❌ Failed to update saved cache:", err);
+      console.error("❌ Failed to update Watch Later snapshot:", err);
     }
   },
-
+  
   saveHistoryQueue: (queue) => {
     try {
       if (!Array.isArray(queue)) throw new Error("Queue is not array");
@@ -477,16 +599,19 @@ contextBridge.exposeInMainWorld('electron', {
   //Liked Movies Page
   saveLikedQueue: (likedMovies) => {
     try {
-      fs.writeFileSync(
-        likedQueuePath,
-        JSON.stringify(likedMovies, null, 2),
-        "utf-8"
-      );
-      console.log("💾 Saved liked queue.");
+      const items = Array.isArray(likedMovies) ? likedMovies : [];
+      // normalize to action entries so the file has one consistent format
+      const normalized = items.map((x) => {
+        const m = x?.movie || x; // tolerate either shape
+        return { type: "add", movie: m };
+      });
+      fs.writeFileSync(likedQueuePath, JSON.stringify(normalized, null, 2), "utf-8");
+      console.log("💾 Saved liked queue (normalized).");
     } catch (err) {
       console.error("❌ Failed to save liked queue:", err);
     }
   },
+  
 
   getLikedQueue: () => {
     try {
@@ -593,5 +718,93 @@ contextBridge.exposeInMainWorld('electron', {
       console.error("❌ Failed to clear saved queue:", err);
     }
   },
+
+  // Snapshot for Watch Later (full movie objects for UI)
+saveSavedSnapshot: (movies) => {
+  try {
+    const arr = Array.isArray(movies) ? movies : [];
+    fs.writeFileSync(savedSnapshotPath, JSON.stringify(arr, null, 2), "utf-8");
+    console.log("💾 Saved Watch Later snapshot (objects).");
+  } catch (err) {
+    console.error("❌ Failed to save Watch Later snapshot:", err);
+  }
+},
+
+getSavedSnapshot: () => {
+  try {
+    if (!fs.existsSync(savedSnapshotPath)) return [];
+    const raw = JSON.parse(fs.readFileSync(savedSnapshotPath, "utf-8"));
+    const seen = new Set();
+    const out = [];
+    for (const m of raw) {
+      const id = (m?.movieId ?? m?._id ?? m?.tmdb_id ?? m?.title)?.toString();
+      if (id && !seen.has(id)) {
+        seen.add(id);
+        out.push(m);
+      }
+    }
+    return out;
+  } catch (err) {
+    console.error("❌ Failed to read Watch Later snapshot:", err);
+    return [];
+  }
+},
+
+clearSavedSnapshot: () => {
+  try {
+    if (fs.existsSync(savedSnapshotPath)) {
+      fs.unlinkSync(savedSnapshotPath);
+      console.log("🧹 Cleared Watch Later snapshot.");
+    }
+  } catch (err) {
+    console.error("❌ Failed to clear Watch Later snapshot:", err);
+  }
+},
+
+
+
+  // --- Liked snapshot (cineit-liked.json) ---
+// A clean, UI-facing snapshot separate from the action queue.
+// Used by StLikedMoviesPage and HomeContent for instant display.
+
+saveLikedList: (movies) => {
+  try {
+    fs.mkdirSync(path.dirname(likedListPath), { recursive: true });
+    fs.writeFileSync(likedListPath, JSON.stringify(movies ?? [], null, 2), "utf-8");
+    console.log("💾 Saved liked snapshot (cineit-liked.json).");
+  } catch (err) {
+    console.error("❌ Failed to save liked snapshot:", err);
+  }
+},
+
+getLikedList: () => {
+  try {
+    if (!fs.existsSync(likedListPath)) return [];
+    return JSON.parse(fs.readFileSync(likedListPath, "utf-8"));
+  } catch (err) {
+    console.error("❌ Failed to read liked snapshot:", err);
+    return [];
+  }
+},
+
+addMovieToLikedList: (movie) => {
+  try {
+    const list = fs.existsSync(likedListPath)
+      ? JSON.parse(fs.readFileSync(likedListPath, "utf-8"))
+      : [];
+    const idOf = (m) => (m?._id ?? m?.movieId ?? "").toString();
+    const id = idOf(movie);
+    if (!id) return;
+
+    const seen = new Set(list.map(idOf));
+    if (!seen.has(id)) {
+      list.push(movie);
+      fs.writeFileSync(likedListPath, JSON.stringify(list, null, 2), "utf-8");
+      console.log("➕ Added movie to liked snapshot:", id);
+    }
+  } catch (err) {
+    console.error("❌ Failed to append to liked snapshot:", err);
+  }
+},
 
 });
