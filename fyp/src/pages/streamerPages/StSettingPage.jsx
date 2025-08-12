@@ -4,6 +4,26 @@ import { useUser } from "../../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import { API } from "@/config/api";
 
+const writeRecsAndBroadcast = async (recs) => {
+  try {
+    // 1) Replace the full recommendation pool used by Home & Filter
+    await window.electron?.replaceRecommendedMovies?.(recs);
+
+    // 2) Compute and store Top-10 used by Filter’s “Top Rated” and Home (offline sync)
+    const top10 = recs
+      .slice()
+      .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
+      .slice(0, 10);
+    await window.electron?.saveTopRatedMovies?.(top10);
+
+    // 3) Nudge every open page to reload (both same-tab and other tabs)
+    localStorage.setItem("recs_version", String(Date.now()));
+    window.dispatchEvent(new Event("cineit:recommendationsUpdated"));
+  } catch (e) {
+    console.warn("writeRecsAndBroadcast failed:", e);
+  }
+};
+
 const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
 const StSettingPage = () => {
@@ -242,10 +262,9 @@ const handleChange = async (e) => {
           return genreArray.length > 0 && genreArray.every((g) => arr.includes(g));
         };
         const filtered = pool.filter((m) => hasAll(m.genres));
-        await window.electron?.saveRecommendedMovies?.(filtered);
-        const top10 = [...filtered].sort((a,b)=>(b.predicted_rating||0)-(a.predicted_rating||0)).slice(0,10);
-        await window.electron?.saveTopRatedMovies?.(top10);
-        window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
+
+        // 🔔 Single, consistent writer + broadcaster
+        await writeRecsAndBroadcast(filtered);
       }
 
       setSuccessMessage(
@@ -282,9 +301,24 @@ const handleChange = async (e) => {
       // only sync/recompute if genres changed
       if (genreChanged) {
         await window.electron?.saveUserGenres?.(genreArray);
-        const { syncOfflineCache } = await import("@/utils/syncOfflineCache");
-        await syncOfflineCache(updated, { force: true });
-        window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
+
+      // This should refresh server-side + preload cache you use elsewhere
+      const { syncOfflineCache } = await import("@/utils/syncOfflineCache");
+      await syncOfflineCache(updated, { force: true });
+
+      // Pull the fresh recommendations (GET or POST regenerate — pick your source of truth)
+      let fresh = [];
+      try {
+        const recRes = await fetch(`${API}/api/movies/recommendations/${savedUser.userId}`);
+        const data = await recRes.json();
+        fresh = Array.isArray(data) ? data : [];
+      } catch (e) {
+        console.warn("Couldn’t fetch fresh recommendations after save, falling back to local cache:", e);
+        fresh = (await window.electron?.getRecommendedMovies?.()) || [];
+      }
+
+      // 🔔 Single, consistent writer + broadcaster
+      await writeRecsAndBroadcast(fresh);
       }
 
       setSuccessMessage(genreChanged ? "Profile updated! New recommendations ready." : "Username updated!");
