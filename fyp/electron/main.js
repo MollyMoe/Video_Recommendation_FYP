@@ -15,7 +15,7 @@ const iconPath = process.platform === 'darwin'
   : path.join(__dirname, 'assets', 'cineitwhite.ico');
 
 const isDev = process.env.NODE_ENV === 'development';
-const API = 'http://localhost:8000'; // or your deployed backend
+const API = 'https://cineit.onrender.com'; // or your deployed backend
 
 let mainWindow;
 
