@@ -16,6 +16,7 @@ const pick = (obj, ...keys) => {
 };
 
 const normalizeGenres = (src) => {
+
   const raw = pick(
     src,
     "genres",

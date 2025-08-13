@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Trash2, CheckCircle } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
+
 
 const AdUserWatchLaterPage = () => {
   const { id: userId } = useParams();
@@ -73,8 +74,8 @@ const AdUserWatchLaterPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen p-6">
 
+    <div className="min-h-screen p-6">
       {/* Loading */}
       {isLoading && (
         <div className="text-center text-gray-600 mt-10">Loading saved movies...</div>
@@ -115,3 +116,4 @@ const AdUserWatchLaterPage = () => {
 };
 
 export default AdUserWatchLaterPage;
+

@@ -1,3 +1,4 @@
+
 const isOnline = navigator.onLine;
 
 export const API = isOnline

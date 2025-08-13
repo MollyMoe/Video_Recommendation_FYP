@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import AdSideButtons from "../../components/admin_components/AdSideButtons";
 
-
-
 const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdVideoManageGenrePage = () => {
@@ -23,6 +21,7 @@ const AdVideoManageGenrePage = () => {
       } catch (err) {
         console.error("❌ Failed to load genres", err);
       } finally {
+
         setLoadingGenres(false);
       }
     };
@@ -104,7 +103,7 @@ const AdVideoManageGenrePage = () => {
             </button>
           )}
         </div>
-        
+
         {/* Loading indicator */}
         {loadingMovies && selectedGenres.length > 0 && (
           <div className="text-black dark:text-white font-medium text-lg mb-4">
@@ -154,3 +153,4 @@ const AdVideoManageGenrePage = () => {
 };
 
 export default AdVideoManageGenrePage;
+

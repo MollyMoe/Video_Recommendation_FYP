@@ -307,7 +307,6 @@ const fetchUserAndMovies = async () => {
     if (window.electron?.saveRecommendedMovies) {
         window.electron.saveRecommendedMovies(filteredByDelete); // save filtered
       }
-
     } catch (err) {
       console.error("❌ Error in fetchUserAndMovies:", err);
     } finally {
@@ -344,7 +343,6 @@ const fetchUserAndMovies = async () => {
         if (window.electron?.saveRecommendedMovies) {
           window.electron.saveRecommendedMovies(response.data);
         }
-
         setRegenerateIndex(1);
       }
 
@@ -365,12 +363,10 @@ const fetchUserAndMovies = async () => {
         setRegenerateIndex(0);
         nextBatch = normalized.slice(0, 60);
       }
-
       const newTitles = nextBatch.map(m => m.title);
       setMovies(nextBatch);
       setLastRecommendedMovies(nextBatch);
       setAllShownTitles(prev => new Set([...prev, ...newTitles]));
-
       setRegenerateIndex(prev => prev + 1);
     }
 
@@ -633,8 +629,6 @@ useEffect(() => {
   }
 }, [savedUser?.userId, isOnline]);
 
-  
-
    useEffect(() => {
   if (!savedUser?.userId) return;
 
@@ -799,8 +793,6 @@ useEffect(() => {
     return () => debouncedFetch.cancel();
   }, [searchQuery, isSubscribed, lastRecommendedMovies]);
 
-  
-
   // A simple boolean to determine if we are in "search mode"
   const isSearching = searchQuery?.trim().length > 0 && isSubscribed;
 
@@ -885,7 +877,6 @@ useEffect(() => {
   }
 }, [isOnline]);
 
-
   // === RENDER ===
   return (
     <div className="sm:ml-64 pt-10 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700 bg-gray-50 min-h-screen">
@@ -896,6 +887,7 @@ useEffect(() => {
           // --- SEARCH RESULTS VIEW ---
           <div className="mt-15">
             <h2 className="text-2xl font-semibold text-black mb-4 px-4 dark:text-white">Search Results</h2>
+
               {isSubscribed && (
                 <FilterButtons
                   allGenres={allAvailableGenres}

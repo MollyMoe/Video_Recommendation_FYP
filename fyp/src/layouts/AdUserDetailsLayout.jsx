@@ -2,7 +2,7 @@ import { Outlet, useParams, useLocation, Link, NavLink } from "react-router-dom"
 import { useEffect, useState } from "react";
 import { House, ArrowLeft } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserDetailsLayout = () => {
   const { id } = useParams();
@@ -55,6 +55,7 @@ const AdUserDetailsLayout = () => {
             to="/admin/manageUser"
             state={{ searchQuery }}
             className="flex items-center gap-3 px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-fuchsia-200 dark:hover:bg-gray-700 rounded-lg"
+
           >
             <ArrowLeft className="w-4 h-4" />
             Back

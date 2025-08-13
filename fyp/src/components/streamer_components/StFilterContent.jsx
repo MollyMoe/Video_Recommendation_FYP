@@ -261,9 +261,9 @@ const StFilterContent = ({
     if (movie.trailer_url) window.open(movie.trailer_url, "_blank");
   };
 
-
   return (
     <div className="w-full pt-24 sm:pt-20 px-4 sm:px-8 dark:bg-gray-900 min-h-screen mt-40">
+
       {isSearching && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
@@ -367,7 +367,6 @@ const StFilterContent = ({
             </div>
           </div>
         ))}
-
       <MovieModal
         isOpen={!!selectedMovie}
         movie={selectedMovie}

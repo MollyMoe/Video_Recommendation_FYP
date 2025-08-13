@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 // --- Best Practice: Helper function to format dates gracefully ---
 const formatDateTime = (dateString) => {
@@ -23,6 +23,7 @@ const formatDateTime = (dateString) => {
 
 const AdSuspensionDetailPage = () => {
   const { id } = useParams();
+
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,6 +36,7 @@ const AdSuspensionDetailPage = () => {
       } catch (err) {
         console.error("Failed to fetch user details:", err);
       } finally {
+
         setIsLoading(false);
       }
     };

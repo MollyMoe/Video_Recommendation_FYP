@@ -19,6 +19,7 @@ const formatDate = (dateString) => {
 
 
 const AdUserDetails = () => {
+
   const { id } = useParams();
   const [subscription, setSubscription] = useState(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
@@ -27,6 +28,7 @@ const AdUserDetails = () => {
     const fetchSubscription = async (userId) => {
       setLoadingSubscription(true);
       try {
+
         const res = await fetch(`${API}/api/subscription/${userId}`);
         if (!res.ok) {
           setSubscription(null);
@@ -46,6 +48,7 @@ const AdUserDetails = () => {
   }, [id]);
 
   return (
+
     // The parent already handles the screen background, so we only style this component's container
     <div className="w-full">
       {/* --- FIX: Added dark mode background, border, and text --- */}

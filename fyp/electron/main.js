@@ -9,6 +9,7 @@ import fetch from 'node-fetch';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
 // for the application icon
 const iconPath = process.platform === 'darwin'
   ? path.join(__dirname, 'assets', 'cineitwhite.icns')

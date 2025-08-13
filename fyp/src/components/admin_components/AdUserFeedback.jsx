@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import AdNav from "../../components/admin_components/AdNav";
 import { ArrowLeft, Download } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     if (totalPages <= 1) return null;
@@ -30,7 +30,6 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     );
 };
 
-
 const AdUserFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +37,7 @@ const AdUserFeedback = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
 
   useEffect(() => {
     const fetchFeedback = async () => {
@@ -241,5 +241,4 @@ const handleStatusChange = async (feedbackId, changedField, newValue) => {
     </div>
   );
 };
-
 export default AdUserFeedback;

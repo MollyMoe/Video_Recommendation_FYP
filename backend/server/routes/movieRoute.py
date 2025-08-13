@@ -83,7 +83,6 @@ def get_movies(request: Request, page: int = 1, limit: int = 20, search: str = "
         print("❌ Error:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch movies")
 
-# like
 @router.post("/like")
 async def add_to_liked_movies(request: Request):
     print("✅ Backend received like request:", request)
@@ -98,6 +97,7 @@ async def add_to_liked_movies(request: Request):
 
     raw_movie = data.get("movie")
     raw_movie_id = data.get("movieId")
+
 
     def _extract_id(x):
         if isinstance(x, (str, int)):
@@ -149,28 +149,7 @@ async def add_to_liked_movies(request: Request):
     )
 
     return {"message": "Movie added to liked list", "movieId": mid}
-    
-# # Liked Movies
-# @router.post("/like")
-# async def add_to_liked_movies(request: Request):
-#     data = await request.json()
-#     db = request.app.state.movie_db
-#     liked_collection = db["liked"]
 
-#     user_id = data.get("userId")
-#     movie_id = data.get("movieId")  # Keep as string if that's what your frontend uses
-
-#     if not user_id or not movie_id:
-#         raise HTTPException(status_code=400, detail="Missing userId or movieId")
-
-#     # Use $addToSet to avoid duplicates
-#     liked_collection.update_one(
-#         {"userId": user_id},
-#         {"$addToSet": {"likedMovies": movie_id}},
-#         upsert=True
-#     )
-
-#     return {"message": "Movie added to liked list"}
 
 @router.get("/likedMovies/{userId}")
 def get_liked_movies(userId: str, request: Request):
@@ -564,7 +543,6 @@ def get_watchLater_movies(userId: str, request: Request):
     except Exception as e:
         print("❌ Error fetching saved movies:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch saved movies")
-    
 @router.post("/watchLater/delete")
 async def remove_from_watchLater(request: Request):
     data = await request.json()
@@ -635,8 +613,9 @@ def _process_and_filter_movies(movie_list: List[Dict]) -> List[Dict]:
     for movie in unique_movies:
         if isinstance(movie.get("_id"), ObjectId):
             movie["_id"] = str(movie["_id"])
-    
+
     return unique_movies
+
 
 # regenerate
 @router.post("/regenerate")
@@ -751,28 +730,6 @@ def get_user_recommendations(userId: str, request: Request):
         print("❌ Error fetching recommendations:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch recommendations")
 
-# @router.get("/search")
-# def search_movies(request: Request, q: str = Query(..., min_length=1)):
-#     db = request.app.state.movie_db
-#     try:
-#         results = db.hybridRecommendation2.find({
-#             "$text": { "$search": f"\"{q}\"" },
-#             "poster_url": { "$nin": ["", None, "nan", "NaN"] },
-#             "trailer_url": { "$nin": ["", None, "nan", "NaN"] }
-#         })
-
-#         movies = []
-#         for movie in results:
-#             movie["_id"] = str(movie["_id"])
-#             for key, value in movie.items():
-#                 if isinstance(value, float) and math.isnan(value):
-#                     movie[key] = None
-#             movies.append(movie)
-
-#         return JSONResponse(content=movies)
-#     except Exception as e:
-#         print("❌ Search failed:", e)
-#         raise HTTPException(status_code=500, detail="Search failed")
 
 # updated search
 @router.get("/search")
@@ -813,25 +770,103 @@ def search_movies(request: Request, q: str = Query(..., min_length=1)):
         raise HTTPException(status_code=500, detail="Search failed")
 
 
-@router.post("/historyMovies/removeAllHistory")
-async def remove_history(request: Request):
-    data = await request.json()
-    db = request.app.state.movie_db
-    history_collection = db["history"]
+# new for the because you like/save/watch
+@router.post("/als-liked")
+async def als_liked(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "liked", request, set(body.get("excludeIds", [])))
 
-    user_id = data.get("userId")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="Missing userId")
+@router.post("/als-saved")
+async def als_saved(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "saved", request, set(body.get("excludeIds", [])))
+
+@router.post("/als-watched")
+async def als_watched(request: Request):
+    body = await request.json()
+    return _als_filtered(body["userId"], "history", request, set(body.get("excludeIds", [])))
+
+# In your Python router file
+
+def _als_filtered(userId: str, interaction_collection: str, request: Request, exclude_ids=None):
+    # ... (the top part of the function is correct and remains the same)
+    db = request.app.state.movie_db
+    als = db["alsRecommendations"]
+    movies = db["hybridRecommendation2"]
+    interactions = db[interaction_collection]
 
     try:
-        result = history_collection.update_one(
-            {"userId": user_id},
-            {"$set": {"historyMovies": []}}
-        )
+        interaction_doc = interactions.find_one({"userId": userId})
+        if not interaction_doc: return JSONResponse(content=[])
+        interaction_map = { "liked": "likedMovies", "saved": "SaveMovies", "history": "historyMovies" }
+        interaction_key = interaction_map.get(interaction_collection)
+        if not interaction_key: return JSONResponse(content=[])
+        interaction_ids = [str(mid.get("movieId") if isinstance(mid, dict) else mid)
+                           for mid in interaction_doc.get(interaction_key, [])]
+        if not interaction_ids: return JSONResponse(content=[])
 
-        print("🧹 Cleared history count:", result.modified_count)
+        final_movies = []
+        
+        # --- Primary Method: Try to find ALS recommendations first ---
+        als_results = list(als.find({"userId": userId}).sort("rating", -1))
 
-        return {"message": "History cleared"}
+        if als_results:
+            pass
+
+        # --- Fallback Logic: Runs if primary method yields no results ---
+        if not final_movies:
+            print(f"⚠️ No ALS recommendations for {userId}. Initiating genre similarity fallback.")
+            
+            interacted_movies_cursor = list(movies.find({"movieId": {"$in": interaction_ids}}, {"genres": 1}))
+            if not interacted_movies_cursor: return JSONResponse(content=[])
+            
+            user_genre_set = set()
+            for movie in interacted_movies_cursor:
+                raw_genres = movie.get("genres", [])
+                if isinstance(raw_genres, str):
+                    user_genre_set.update(g.strip().lower() for g in raw_genres.split("|"))
+                elif isinstance(raw_genres, list):
+                    user_genre_set.update(g.strip().lower() for g in raw_genres)
+
+            if not user_genre_set: return JSONResponse(content=[])
+            print(f"User's taste profile (genres): {list(user_genre_set)}")
+
+            all_exclude_ids = set(interaction_ids) | exclude_ids
+            candidate_cursor = movies.find({
+                "movieId": {"$nin": list(all_exclude_ids)},
+                "poster_url": {"$ne": None, "$ne": ""},
+                "trailer_url": {"$ne": None, "$ne": ""}
+            }).limit(1000)
+
+            scored_candidates = []
+            for movie in candidate_cursor:
+                raw_movie_genres = movie.get("genres", [])
+                movie_genre_set = set()
+                if isinstance(raw_movie_genres, str):
+                    movie_genre_set = set(g.strip().lower() for g in raw_movie_genres.split("|"))
+                elif isinstance(raw_movie_genres, list):
+                    movie_genre_set = set(g.strip().lower() for g in raw_movie_genres)
+                
+                intersection = len(user_genre_set.intersection(movie_genre_set))
+                
+                if intersection > 0:
+                    # The score is now simply the number of shared genres.
+                    movie['similarity_score'] = intersection
+                    scored_candidates.append(movie)
+            
+            # Sort the candidates by the number of shared genres (most shared first).
+            final_movies = sorted(scored_candidates, key=lambda x: x['similarity_score'], reverse=True)
+            print(f"Fallback found {len(final_movies)} relevant movies with at least one shared genre.")
+
+        
+        # --- Final Processing ---
+        if not final_movies:
+            return JSONResponse(content=[])
+
+        processed_movies = _process_and_filter_movies(final_movies)
+        
+        return JSONResponse(content=processed_movies[:12])
+
     except Exception as e:
         print("❌ Failed to clear history:", e)
         raise HTTPException(status_code=500, detail="Server error")
@@ -1018,46 +1053,6 @@ def get_user_counts(userId: str, request: Request):
         print("❌ Error fetching interaction counts:", e)
         raise HTTPException(status_code=500, detail="Failed to fetch counts")
 
-# @router.get("/top-liked")
-# async def get_top_liked_movies(request: Request):
-#     db = request.app.state.movie_db
-#     liked_collection = db["liked"]
-
-#     try:
-#         pipeline = [
-#             { "$unwind": "$likedMovies" },
-#             { "$group": { "_id": "$likedMovies", "likeCount": { "$sum": 1 } } },
-#             { "$sort": { "likeCount": -1 } },
-#             { "$limit": 10 }
-#         ]
-#         liked_result = list(liked_collection.aggregate(pipeline))
-
-#         movie_ids = [m["_id"] for m in liked_result]
-
-#         movie_docs = list(db["hybridRecommendation2"].find({ "movieId": { "$in": movie_ids } }))
-
-#         movie_dict = {str(movie["movieId"]): movie for movie in movie_docs}
-
-#         response = []
-#         for movie in liked_result:
-#             movie_id_str = str(movie["_id"])
-#             details = movie_dict.get(movie_id_str, None)
-#             if details and "_id" in details:
-#                 del details["_id"]
-            
-#             response.append({
-#                 "movieId": movie_id_str,
-#                 "likeCount": movie["likeCount"],
-#                 "details": details
-#             })
-
-#         return response
-
-#     except Exception as e:
-#         print("❌ Backend Error:", e)
-#         raise HTTPException(status_code=500, detail=str(e))
-
-# updated top liked
 @router.get("/top-liked")
 async def get_top_liked_movies(request: Request):
     db = request.app.state.movie_db
@@ -1069,16 +1064,19 @@ async def get_top_liked_movies(request: Request):
             { "$unwind": "$likedMovies" },
             { "$group": { "_id": "$likedMovies", "likeCount": { "$sum": 1 } } },
             { "$sort": { "likeCount": -1, "_id": 1 } },
+
             { "$limit": 10 }
         ]
         liked_result = list(liked_collection.aggregate(pipeline))
 
         movie_ids = [m["_id"] for m in liked_result]
 
+
         # Step 2: Filter out deleted movies
         movie_docs = list(db["hybridRecommendation2"].find({ "movieId": { "$in": movie_ids } }))
 
         # Create a dictionary with valid movies
+
         movie_dict = {str(movie["movieId"]): movie for movie in movie_docs}
 
         response = []
@@ -1091,6 +1089,7 @@ async def get_top_liked_movies(request: Request):
                 continue  # Skip the movie if it's deleted
 
             if "_id" in details:
+
                 del details["_id"]
             
             response.append({

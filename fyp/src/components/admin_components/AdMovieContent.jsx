@@ -1,17 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlobal, currentRecentMoviesGlobal }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedMovieId, setSelectedMovieId] = useState(null);
   const [movies, setMovies] = useState([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hoveredMovieId, setHoveredMovieId] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({});
+
   const [syncStatus, setSyncStatus] = useState({ stage: 'idle', message: '' });
 
   const fetchMovies = async () => {
@@ -40,6 +42,7 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
       setTotalPages(1);
     } finally {
       setIsLoading(false);  // Set loading to false after data is fetched
+
     }
   };
 
@@ -58,7 +61,6 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
 
       setMovies((prev) => prev.filter((movie) => movie.movieId !== id));
       setRecentMoviesGlobal((prev) => prev.filter((movie) => movie.movieId !== id));
-
       setTimeout(() => {
         setSyncStatus({
           stage: 'finished',
@@ -249,12 +251,14 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
 
             {syncStatus.stage === 'deleting' && (
               <div className="animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+
             )}
 
             {syncStatus.stage === 'finished' && (
               <>
                 <p className="text-gray-700 mb-4">{syncStatus.message}</p>
                 <button onClick={() => setSyncStatus({ stage: 'idle' })} className="w-[100px] bg-fuchsia-100 text-black px-4 py-2 rounded-lg hover:bg-fuchsia-200">
+
                   Close
                 </button>
               </>
@@ -262,6 +266,7 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
           </div>
         </div>
       )}
+
     </div>
   );
 };

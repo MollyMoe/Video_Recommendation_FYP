@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Trash2, CheckCircle } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdUserHistoryPage = () => {
   const { id: userId } = useParams();
@@ -46,8 +46,8 @@ const AdUserHistoryPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen p-6">
 
+    <div className="min-h-screen p-6">
       {/* Loading / Error / Empty */}
       {isLoading ? (
         <div className="text-center text-gray-600 mt-10">Loading watch history...</div>
@@ -81,3 +81,4 @@ const AdUserHistoryPage = () => {
 };
 
 export default AdUserHistoryPage;
+

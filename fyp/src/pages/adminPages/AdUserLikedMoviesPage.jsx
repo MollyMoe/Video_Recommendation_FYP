@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Trash2, CheckCircle } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
+
 
 const AdUserLikedMoviesPage = () => {
   const { id: userId } = useParams();
@@ -72,8 +73,8 @@ const AdUserLikedMoviesPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen p-6">
 
+    <div className="min-h-screen p-6">
       {/* Loading, Error, or Empty */}
       {isLoading && (
         <div className="text-center text-gray-600 mt-10">Loading liked movies...</div>

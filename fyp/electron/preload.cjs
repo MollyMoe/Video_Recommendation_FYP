@@ -119,6 +119,7 @@ function dedupeMovies(arr){
   });
 }
 
+
 contextBridge.exposeInMainWorld('electron', {
    // start from session replaced
   // ✅ Session
@@ -842,6 +843,7 @@ addMovieToLikedList: (movie) => {
     const seen = new Set(list.map(idOf));
     if (!seen.has(id)) {
       list.unshift(movie);
+
       fs.writeFileSync(likedListPath, JSON.stringify(list, null, 2), "utf-8");
       console.log("➕ Added movie to liked snapshot:", id);
     }
