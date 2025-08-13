@@ -293,11 +293,21 @@ const fetchUserAndMovies = async () => {
       }
     }
 
-      const normalizedMovies = moviesToDisplay.map(normalizeMovie).filter(Boolean);
-      const sixty = normalizedMovies.slice(0, 60);
-      setLastRecommendedMovies(sixty);
-      setAllShownTitles(new Set(sixty.map((m) => m.title)));
-      writeRecsCache(sixty); // <-- add this
+      //added
+      // Existing: moviesToDisplay collected from API/offline
+      const filteredByDelete = (moviesToDisplay || []).filter(
+        m => !deletedIds.has(String(m.movieId))
+      );
+
+      const normalizedMovies = filteredByDelete.map(normalizeMovie).filter(Boolean);
+
+      setLastRecommendedMovies(normalizedMovies.slice(0, 60));
+      setAllShownTitles(new Set(normalizedMovies.map(m => m.title)));
+      
+    if (window.electron?.saveRecommendedMovies) {
+        window.electron.saveRecommendedMovies(filteredByDelete); // save filtered
+      }
+
     } catch (err) {
       console.error("❌ Error in fetchUserAndMovies:", err);
     } finally {
@@ -329,7 +339,6 @@ const fetchUserAndMovies = async () => {
         const newTitles = newMovies.map(m => m.title);
         setMovies(newMovies);
         setLastRecommendedMovies(newMovies);
-        writeRecsCache(newMovies);
         setAllShownTitles(prev => new Set([...prev, ...newTitles]));
 
         if (window.electron?.saveRecommendedMovies) {
@@ -372,6 +381,20 @@ const fetchUserAndMovies = async () => {
   }
 };
 
+//handle delete presisted set 
+// --- Persisted "deleted" memory (per user) ---
+const DELETED_KEY = `deleted_${savedUser?.userId || 'anon'}`;
+
+const loadDeleted = () => {
+  try { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY)) || []); }
+  catch { return new Set(); }
+};
+
+const saveDeleted = (set) =>
+  localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(set)));
+
+const [deletedIds, setDeletedIds] = useState(loadDeleted());
+useEffect(() => { saveDeleted(deletedIds); }, [deletedIds]);
 
 const handleAction = async (actionType, movieId) => {
     if (!movieId || !savedUser?.userId) return;
@@ -459,7 +482,17 @@ const handleAction = async (actionType, movieId) => {
     if (actionType === "delete") {
       setMovies(prev => prev.filter(m => m.movieId !== movieId));
       setLastRecommendedMovies(prev => prev.filter(m => m.movieId !== movieId));
-    }
+      setLikedMovies(prev => prev.filter(m => m.movieId !== movieId));
+      setSavedMovies(prev => prev.filter(m => m.movieId !== movieId));
+      setWatchedMovies(prev => prev.filter(m => m.movieId !== movieId));
+
+      // persist deletion
+      setDeletedIds(prev => {
+        const next = new Set(prev);
+        next.add(String(movieId));
+        return next;
+      });
+  }
   
     // ---------- ONLINE / other actions ----------
     try {
@@ -810,16 +843,6 @@ useEffect(() => {
 const pickTop10 = (list=[]) =>
   [...list].sort((a,b)=>(b.predicted_rating||0)-(a.predicted_rating||0)).slice(0,10);
 
-const writeRecsCache = async (list) => {
-  try {
-    await window.electron?.replaceRecommendedMovies?.(list);     // overwrite the 60
-    await window.electron?.saveTopRatedMovies?.(pickTop10(list)); // keep a stable Top 10
-    localStorage.setItem("recs_version", String(Date.now()));     // bump version
-    window.dispatchEvent(new Event("cineit:recommendationsUpdated")); // notify listeners
-  } catch (e) {
-    console.warn("Failed to write recs cache:", e);
-  }
-};
 
 useEffect(() => {
   const loadOfflineTop10 = async () => {
