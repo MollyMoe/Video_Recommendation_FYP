@@ -11,7 +11,6 @@ import FilterButtons from "../movie_components/FilterButtons";
 import { API } from "@/config/api";
 
 function StHomeContent({ searchQuery }) {
-
   const [movies, setMovies] = useState([]);
   const [lastRecommendedMovies, setLastRecommendedMovies] = useState([]);
   const [preferredGenres, setPreferredGenres] = useState([]);
@@ -29,7 +28,8 @@ function StHomeContent({ searchQuery }) {
   const [likedMovies, setLikedMovies] = useState([]);
   const [savedMovies, setSavedMovies] = useState([]);
   const [watchedMovies, setWatchedMovies] = useState([]);
-  const [interactionCounts, setInteractionCounts] = useState({ liked: 0, saved: 0, watched: 0 });
+  const [interactionCounts, setInteractionCounts] = useState({ 
+    liked: 0, saved: 0, watched: 0 });
   const [likedTitles, setLikedTitles] = useState([]);
   const [savedTitles, setSavedTitles] = useState([]);
   const [watchedTitles, setWatchedTitles] = useState([]);
@@ -57,7 +57,7 @@ function StHomeContent({ searchQuery }) {
     };
   }, []);
 
-   const fetchSubscription = async (userId) => {
+  const fetchSubscription = async (userId) => {
   try {
     let subscription;
 
@@ -293,20 +293,15 @@ const fetchUserAndMovies = async () => {
       }
     }
 
-      //added
-      // Existing: moviesToDisplay collected from API/offline
       const filteredByDelete = (moviesToDisplay || []).filter(
         m => !deletedIds.has(String(m.movieId))
       );
 
-      const normalizedMovies = filteredByDelete.map(normalizeMovie).filter(Boolean);
-
+      const normalizedMovies = moviesToDisplay
+        .map(normalizeMovie)
+        .filter(Boolean);
       setLastRecommendedMovies(normalizedMovies.slice(0, 60));
-      setAllShownTitles(new Set(normalizedMovies.map(m => m.title)));
-      
-    if (window.electron?.saveRecommendedMovies) {
-        window.electron.saveRecommendedMovies(filteredByDelete); // save filtered
-      }
+      setAllShownTitles(new Set(normalizedMovies.map((m) => m.title)));
     } catch (err) {
       console.error("❌ Error in fetchUserAndMovies:", err);
     } finally {
@@ -343,6 +338,7 @@ const fetchUserAndMovies = async () => {
         if (window.electron?.saveRecommendedMovies) {
           window.electron.saveRecommendedMovies(response.data);
         }
+
         setRegenerateIndex(1);
       }
 
@@ -363,10 +359,12 @@ const fetchUserAndMovies = async () => {
         setRegenerateIndex(0);
         nextBatch = normalized.slice(0, 60);
       }
+
       const newTitles = nextBatch.map(m => m.title);
       setMovies(nextBatch);
       setLastRecommendedMovies(nextBatch);
       setAllShownTitles(prev => new Set([...prev, ...newTitles]));
+
       setRegenerateIndex(prev => prev + 1);
     }
 
@@ -405,7 +403,7 @@ const handleAction = async (actionType, movieId) => {
     const action = actions[actionType];
     if (!action) return;
 
-      if (!isOnline && actionType === "delete"){
+    if (!isOnline && actionType === "delete"){
         try {
     // 1) update UI immediately
     setMovies((prev) => prev.filter((m) => String(m.movieId) !== String(movieId)));
@@ -535,16 +533,10 @@ const handleAction = async (actionType, movieId) => {
   const handleLike = async (movie) => {
       if (!movie || !savedUser?.userId) return;
   
-      // ✅ normalize to keep genres/trailer_key/etc. consistent offline and online
       const normalized = normalizeMovie({ ...movie });
   
       if (!isOnline) {
-        // 📴 Store the entire movie object locally for the Liked page
-        // window.electron?.addMovieToLikedCache?.(normalized);
-  
-        // window.electron?.queueLiked?.({ type: "add", movie: normalized });
-  
-        // queue for future sync
+
         window.electron?.queueLiked?.({ type: "add", movie: normalized });
         console.log(
           "bridge:",
@@ -608,26 +600,28 @@ const handleAction = async (actionType, movieId) => {
         }
       }, [isOnline, savedUser?.userId]);
 
-const handleHistory = (movie) => {
-    if (!isSubscribed || !movie) return;
-    handleAction('history', movie.movieId);
-    if (movie.trailer_url) {
-      window.open(movie.trailer_url, "_blank");
-    }
-  };
+      const handleHistory = (movie) => {
+          if (!isSubscribed || !movie) return;
+          handleAction('history', movie.movieId);
+          if (movie.trailer_url) {
+            window.open(movie.trailer_url, "_blank");
+          }
+        };
 
-  // === USEEFFECT HOOKS ===
-  useEffect(() => {
-    if (savedUser?.userId && username) {
-      fetchUserAndMovies();
-    }
-  }, [savedUser?.userId, username]);
+      // === USEEFFECT HOOKS ===
+      useEffect(() => {
+        if (savedUser?.userId && username) {
+          fetchUserAndMovies();
+        }
+      }, [savedUser?.userId, username]);
 
-useEffect(() => {
-  if (savedUser?.userId) {
-    fetchSubscription(savedUser.userId);
-  }
-}, [savedUser?.userId, isOnline]);
+    useEffect(() => {
+      if (savedUser?.userId) {
+        fetchSubscription(savedUser.userId);
+      }
+    }, [savedUser?.userId, isOnline]);
+
+  
 
    useEffect(() => {
   if (!savedUser?.userId) return;
@@ -793,6 +787,8 @@ useEffect(() => {
     return () => debouncedFetch.cancel();
   }, [searchQuery, isSubscribed, lastRecommendedMovies]);
 
+  
+
   // A simple boolean to determine if we are in "search mode"
   const isSearching = searchQuery?.trim().length > 0 && isSubscribed;
 
@@ -806,30 +802,6 @@ useEffect(() => {
   savedTitles,
   watchedTitles
 });
-
-useEffect(() => {
-  const reloadFromDisk = async () => {
-    const list = (await window.electron?.getRecommendedMovies?.()) || [];
-    const normalized = list.map(normalizeMovie).filter(Boolean);
-    setLastRecommendedMovies(normalized.slice(0, 60));
-    setMovies(normalized.slice(0, 60));
-  };
-
-  const onUpdated = () => !navigator.onLine && reloadFromDisk();
-  window.addEventListener("cineit:filterDataUpdated", onUpdated);
-  return () => window.removeEventListener("cineit:filterDataUpdated", onUpdated);
-}, []);
-
-useEffect(() => {
-  if (!isOnline) {
-    (async () => {
-      const list = (await window.electron?.getRecommendedMovies?.()) || [];
-      const normalized = list.map(normalizeMovie).filter(Boolean);
-      setLastRecommendedMovies(normalized.slice(0, 60));
-      setMovies(normalized.slice(0, 60));
-    })();
-  }
-}, [isOnline]);
 
 // helper
 const pickTop10 = (list=[]) =>
@@ -877,6 +849,7 @@ useEffect(() => {
   }
 }, [isOnline]);
 
+
   // === RENDER ===
   return (
     <div className="sm:ml-64 pt-10 px-4 sm:px-8 dark:bg-gray-800 dark:border-gray-700 bg-gray-50 min-h-screen">
@@ -887,7 +860,6 @@ useEffect(() => {
           // --- SEARCH RESULTS VIEW ---
           <div className="mt-15">
             <h2 className="text-2xl font-semibold text-black mb-4 px-4 dark:text-white">Search Results</h2>
-
               {isSubscribed && (
                 <FilterButtons
                   allGenres={allAvailableGenres}
