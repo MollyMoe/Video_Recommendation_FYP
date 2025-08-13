@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Video, Users, UserCheck, Film } from "lucide-react";
 import { useUser } from '../../context/UserContext';
-import { API } from "@/config/api";
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdDashboard = () => {
   const [user, setUser] = useState({ username: "Admin", email: "loading..." });

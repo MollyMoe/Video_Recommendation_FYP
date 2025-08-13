@@ -19,6 +19,17 @@ const StFilterPage = () => {
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const userId = savedUser?.userId;
 
+  const DELETED_KEY = `deleted_${userId || 'anon'}`;
+
+  // Helper function to load the Set of deleted IDs from localStorage.
+  const loadDeleted = () => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(DELETED_KEY)) || []);
+    } catch {
+      return new Set();
+    }
+  };
+  
   // ✅ Normalize helper
   const normalizeString = (value) => {
     if (Array.isArray(value)) return value.join(" ").toLowerCase();
@@ -40,6 +51,7 @@ const StFilterPage = () => {
   // ✅ Load everything (recommended + topRated)
   const loadRecommendedMovies = async () => {
     setIsLoading(true);
+    const deletedIds = loadDeleted(); 
     try {
       // --- 1) Resolve subscription first (online -> offline fallback, owner-checked) ---
       if (isOnline) {
@@ -80,6 +92,9 @@ const StFilterPage = () => {
         top = (await window.electron?.getTopRatedMovies?.()) || [];
       }
 
+      const filteredRecs = recs.filter(m => !deletedIds.has(String(m.movieId)));
+      const filteredTop = top.filter(m => !deletedIds.has(String(m.movieId)));
+
       // --- 3) Normalize just like Home ---
       const norm = (m) => {
         const mm = { ...m };
@@ -92,10 +107,10 @@ const StFilterPage = () => {
         return mm;
       };
 
-      const processed = recs.map(norm);
+      const processed = filteredRecs.map(norm);
       setMovies(processed);
       setAllMovies(processed);
-      setTopRated(top.map(norm));
+      setTopRated(filteredTop.map(norm));
 
       // ✅ DO NOT overwrite isSubscribed here with a stale cache again
     } catch (e) {

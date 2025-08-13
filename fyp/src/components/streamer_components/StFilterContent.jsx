@@ -20,6 +20,8 @@ const StFilterContent = ({
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const savedUser = JSON.parse(localStorage.getItem("user"));
 
+  const userId = (savedUser?.userId ?? "").toString();
+
   // ---- helpers ----
   const normalizeMovie = (movie) => {
     if (!movie) return null;
@@ -64,13 +66,14 @@ const StFilterContent = ({
   // ---- OFFLINE: always load Top-10 (shared with Home) ----
   const loadOfflineTop10 = async () => {
     // 1) prefer the dedicated top10 file (kept in sync by syncOfflineCache / settings flow)
-    const top10 = await window.electron?.getTopRatedMovies?.();
+    const top10 = await window.electron?.getTopRatedMovies?.(userId);
+    
     if (top10?.length) {
       setMovies(top10.map(normalizeMovie).filter(Boolean));
       return;
     }
     // 2) fallback: compute from recommended pool
-    const recs = (await window.electron?.getRecommendedMovies?.()) || [];
+    const recs = (await window.electron?.getRecommendedMovies?.(userId)) || [];
     const normalized = recs.map(normalizeMovie).filter(Boolean);
     setMovies(pickTop10(normalized));
   };
@@ -95,10 +98,14 @@ const StFilterContent = ({
     const fetchOnline = async () => {
       try {
         if (isOnline && savedUser?.userId && !submittedQuery.trim()) {
-          const res = await axios.get(
-            `${API}/api/movies/recommendations/${savedUser.userId}`
-          );
-          setMovies((res.data || []).map(normalizeMovie));
+          const res = await axios.get(`${API}/api/movies/recommendations/${savedUser.userId}`);
+          const list = (res.data || []).map(normalizeMovie);
+          setMovies(list);
+          window.electron?.saveRecommendedMovies?.(list, userId);
+          const topTen = [...list]
+          .sort((a, b) => (b.predicted_rating || 0) - (a.predicted_rating || 0))
+          .slice(0, 10);
+          window.electron?.saveTopRatedMovies?.(topTen, userId)
         }
       } catch (e) {
         console.warn("Failed to fetch online recommendations:", e);
@@ -112,10 +119,8 @@ const StFilterContent = ({
     const id = String(movieId);
     let full = movies.find((m) => String(m.movieId) === id) || null;
     if (!full && window.electron?.getRecommendedMovies) {
-      try {
-        const pool = await window.electron.getRecommendedMovies();
-        full = pool.find((m) => String(m.movieId) === id) || null;
-      } catch {}
+      const pool = await window.electron.getRecommendedMovies(userId);
+      full = pool.find((m) => String(m.movieId) === id) || null;
     }
     return normalizeMovie(full || { movieId: id, title: `Movie #${id}`, poster_url: "" });
   };
@@ -141,7 +146,7 @@ const StFilterContent = ({
     try {
       const rec = (await window.electron?.getRecommendedMovies?.()) || [];
       const recFiltered = rec.filter(m => String(m.movieId) !== String(movieId));
-      await window.electron?.replaceRecommendedMovies?.(recFiltered);
+      await window.electron?.removeFromRecommended?.(recFiltered);
     } catch (e) {
       console.warn("❌ Failed to update offline recommended after delete:", e);
     }
@@ -179,6 +184,7 @@ const StFilterContent = ({
     }
     return;
   }
+
 
   // OFFLINE SAVE
   if (!isOnline && actionType === "save") {
@@ -263,7 +269,7 @@ const StFilterContent = ({
 
 
   return (
-    <div className="w-full pt-24 sm:pt-20 px-4 sm:px-8 dark:bg-gray-900 min-h-screen mt-40">
+    <div className="pt-24 sm:pt-20 px-4 sm:px-8 dark:bg-gray-900 min-h-screen mt-40">
       {isSearching && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
@@ -384,5 +390,6 @@ const StFilterContent = ({
     </div>
   );
 };
+
 
 export default StFilterContent;

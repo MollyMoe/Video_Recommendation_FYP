@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlobal, currentRecentMoviesGlobal }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);

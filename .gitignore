@@ -57,6 +57,6 @@ dist-ssr/
 # *.deb
 # *.rpm
 # *.tar.gz
-# *.zip
+ *.zip
 
 uploads/

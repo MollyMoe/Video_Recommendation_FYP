@@ -46,9 +46,6 @@ function FilterButtons({ allGenres, onFilterAndSort, onClear, currentSort, curre
       <span className="text-sm font-semibold text-gray-600 mr-2">Sort by:</span>
       
       {/* We now call `onFilterAndSort` with a `sort` payload for each button. */}
-      <SortButton onClick={() => onFilterAndSort({ sort: 'rating' })} isActive={currentSort === 'rating'}>
-        Rating
-      </SortButton>
       <SortButton onClick={() => onFilterAndSort({ sort: 'year_desc' })} isActive={currentSort === 'year_desc'}>
         Newest First
       </SortButton>

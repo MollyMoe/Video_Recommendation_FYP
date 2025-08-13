@@ -36,6 +36,7 @@ function StHomeContent({ searchQuery }) {
 
   const savedUser = JSON.parse(localStorage.getItem("user"));
   const username = savedUser?.username;
+  
 
   const [activeSort, setActiveSort] = useState('default');
   const [activeGenres, setActiveGenres] = useState([]);

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import AdNav from "../../components/admin_components/AdNav";
 import { ArrowLeft, Download } from "lucide-react";
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     if (totalPages <= 1) return null;

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BadgeCheck, ArrowLeft } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
-import { API } from "@/config/api";
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const AdEditProfilePage = () => {
   const [formData, setFormData] = useState({
