@@ -143,6 +143,8 @@ const StFilterContent = ({
   // 1) Update UI immediately
   setMovies(prev => prev.filter(m => idOf(m) !== mid));
 
+  onDeleteMovie?.(mid);
+
   // 2) Persist (offline cache + server/queue)
   try {
     if (!isOnline) {

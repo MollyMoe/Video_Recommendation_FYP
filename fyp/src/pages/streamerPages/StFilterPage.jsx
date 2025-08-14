@@ -21,6 +21,13 @@ const StFilterPage = () => {
 
   const DELETED_KEY = `deleted_${userId || 'anon'}`;
 
+  const idEq = (a, b) => String(a ?? "") === String(b ?? "");
+
+    const handleRemove = (movieId) => {
+    setAllMovies(prev => prev.filter(m => !idEq(m.movieId, movieId)));
+    setMovies(prev => prev.filter(m => !idEq(m.movieId, movieId)));
+  };
+
   // Helper function to load the Set of deleted IDs from localStorage.
   const loadDeleted = () => {
     try {
@@ -29,7 +36,7 @@ const StFilterPage = () => {
       return new Set();
     }
   };
-  
+
   // ✅ Normalize helper
   const normalizeString = (value) => {
     if (Array.isArray(value)) return value.join(" ").toLowerCase();
@@ -243,6 +250,7 @@ const StFilterPage = () => {
           isSearching={isSearching}
           setMovies={setMovies}
           topRated={topRated} // 🔥 Use this in StFilterContent if needed
+          onDeleteMovie={handleRemove}
         />
       </div>
     </>
