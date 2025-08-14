@@ -30,7 +30,6 @@ const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
     );
 };
 
-
 const AdUserFeedback = () => {
   const [feedbackList, setFeedbackList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +37,7 @@ const AdUserFeedback = () => {
   
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
 
   useEffect(() => {
     const fetchFeedback = async () => {
@@ -241,5 +241,4 @@ const handleStatusChange = async (feedbackId, changedField, newValue) => {
     </div>
   );
 };
-
 export default AdUserFeedback;

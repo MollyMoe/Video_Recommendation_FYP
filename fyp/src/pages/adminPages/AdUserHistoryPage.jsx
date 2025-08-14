@@ -46,8 +46,8 @@ const AdUserHistoryPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen p-6">
 
+    <div className="min-h-screen p-6">
       {/* Loading / Error / Empty */}
       {isLoading ? (
         <div className="text-center text-gray-600 mt-10">Loading watch history...</div>
@@ -81,3 +81,4 @@ const AdUserHistoryPage = () => {
 };
 
 export default AdUserHistoryPage;
+

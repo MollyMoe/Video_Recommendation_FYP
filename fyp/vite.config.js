@@ -21,6 +21,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    strictPort: true, 
     hmr: process.env.NODE_ENV !== 'production',
     proxy: {
       '/api': {
@@ -35,3 +36,4 @@ export default defineConfig({
     emptyOutDir: true,
   },
 })
+
