@@ -136,55 +136,44 @@ const StFilterContent = ({
   };
   const action = actions[actionType];
   if (!action) return;
-
-  // DELETE: make it behave like other actions (local UI + offline files + queue/server)
   if (actionType === "delete") {
-    // 1) Update UI immediately
-    setMovies(prev => prev.filter(m => String(m.movieId) !== String(movieId)));
+  const mid = String(movieId);
 
-    // 2) Update offline recommended.json
-    try {
-      const rec = (await window.electron?.getRecommendedMovies?.()) || [];
-      const recFiltered = rec.filter(m => String(m.movieId) !== String(movieId));
-      await window.electron?.removeFromRecommended?.(recFiltered);
-    } catch (e) {
-      console.warn("❌ Failed to update offline recommended after delete:", e);
-    }
+  const idOf = (m) => String(m?.movieId ?? m?._id ?? m?.tmdb_id ?? m?.title ?? "");
+  // 1) Update UI immediately
+  setMovies(prev => prev.filter(m => idOf(m) !== mid));
 
-    // 3) Update offline topRatedMovies.json
-    try {
-      const tr = (await window.electron?.getTopRatedMovies?.()) || [];
-      const trFiltered = tr.filter(m => String(m.movieId) !== String(movieId));
-      await window.electron?.replaceTopRatedMovies?.(trFiltered);
-    } catch (e) {
-      console.warn("❌ Failed to update offline topRated after delete:", e);
-    }
-
-    // 4) Queue or POST
-    if (isOnline) {
-      try {
-        await axios.post(`${API}/api/movies/recommended/delete`, {
-          userId: savedUser.userId,
-          movieId: String(movieId),
-        });
-      } catch (e) {
-        window.electron?.queueRecommendedAction?.({ type: "delete", movieId: String(movieId) });
-      }
+  // 2) Persist (offline cache + server/queue)
+  try {
+    if (!isOnline) {
+      await window.electron?.removeFromRecommended?.(mid); // update recommended.json
+      window.electron?.queueRecommendedAction?.({ type: "delete", movieId: mid }); // <-- fixed 'electrob' typo
     } else {
-      window.electron?.queueRecommendedAction?.({ type: "delete", movieId: String(movieId) });
+      await axios.post(`${API}/api/movies/recommended/delete`, {
+        userId: savedUser.userId,
+        movieId: mid,
+      });
+      // keep offline cache consistent even when online
+      await window.electron?.removeFromRecommended?.(mid);
     }
-
-    // 5) Toast + (optional) refresh Top-10 if offline
-    setPopupMessage(action.message);
-    setShowPopup(true);
-    setTimeout(() => setShowPopup(false), 2000);
-
-    if (!isOnline && !submittedQuery.trim()) {
-      window.dispatchEvent(new Event("cineit:filterDataUpdated"));
+  } catch (e) {
+    // if online failed, queue for later
+    if (isOnline) {
+      window.electron?.queueRecommendedAction?.({ type: "delete", movieId: mid });
     }
-    return;
+    console.warn("❌ delete sync issue:", e);
   }
 
+  // 3) Toast + optional offline refresh
+  setPopupMessage("Removed from recommendations");
+  setShowPopup(true);
+  setTimeout(() => setShowPopup(false), 2000);
+
+  if (!isOnline && !submittedQuery.trim()) {
+    window.dispatchEvent(new Event("cineit:filterDataUpdated"));
+  }
+  return;
+}
 
   // OFFLINE SAVE
   if (!isOnline && actionType === "save") {

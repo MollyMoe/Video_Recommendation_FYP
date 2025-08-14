@@ -10,6 +10,10 @@ import FilterButtons from "../movie_components/FilterButtons";
 
 import { API } from "@/config/api";
 
+const getId = (m) => String(
+  m?.movieId ?? m?._id ?? m?.tmdb_id ?? m?.imdb_id ?? m?.title ?? ""
+);
+
 function StHomeContent({ searchQuery }) {
 
   const [movies, setMovies] = useState([]);
@@ -410,8 +414,8 @@ const handleAction = async (actionType, movieId) => {
     const action = actions[actionType];
     if (!action) return;
 
-      if (!isOnline && actionType === "delete"){
-        try {
+  if (!isOnline && actionType === "delete"){
+    try {
     // 1) update UI immediately
     setMovies((prev) => prev.filter((m) => String(m.movieId) !== String(movieId)));
     setLastRecommendedMovies((prev) => prev.filter((m) => String(m.movieId) !== String(movieId)));
@@ -573,7 +577,7 @@ const handleAction = async (actionType, movieId) => {
       try {
         await axios.post(`${API}/api/movies/like`, {
           userId: savedUser.userId,
-          movieId: normalized,
+          movieId: getId(normalized),
         });
   
         window.electron?.addMovieToLikedList?.(normalized);

@@ -5,7 +5,9 @@ import { Play, Trash2, CheckCircle } from "lucide-react";
 import CompactMovieCard from "../../components/movie_components/CompactMovieCard";
 import { API } from "@/config/api";
 
-const getId = (m) => (m?._id ?? m?.movieId ?? "").toString();
+const getId = (m) => String(
+  m?.movieId ?? m?._id ?? m?.tmdb_id ?? m?.imdb_id ?? m?.title ?? ""
+);
 
 const StLikedMoviesPage = () => {
   const [likedMovies, setLikedMovies] = useState([]);
@@ -103,7 +105,7 @@ const StLikedMoviesPage = () => {
 
 const syncQueuedLikes = async () => {
   try {
-    // If the queued likes belong to another user, wipe and stop
+    // ⛔ If the queued likes belong to another user, wipe and stop
     const owner = localStorage.getItem("liked_owner_userId");
     if (owner && owner !== savedUser?.userId) {
       window.electron?.clearLikedQueue?.();
@@ -128,7 +130,7 @@ const syncQueuedLikes = async () => {
           await fetch(`${API}/api/movies/like`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: savedUser.userId, movieId: m }),
+            body: JSON.stringify({ userId: savedUser.userId, movieId: id }),
           });
           if (!seen.has(id)) {
             ui.unshift(m);
