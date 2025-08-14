@@ -446,7 +446,7 @@ async def update_signout_time(request: Request):
 
 from datetime import datetime, timedelta
 
-@router.get("/status")
+@router.get("/stats")
 async def get_platform_stats(request: Request):
     try:
         # Get database connections
