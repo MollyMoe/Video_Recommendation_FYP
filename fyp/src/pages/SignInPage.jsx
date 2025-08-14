@@ -143,6 +143,7 @@ function SignInPage() {
       if (window.electron && data.user?.userType?.toLowerCase() === "streamer") {
         try {
           await syncOfflineCache(data.user);
+          await syncUserLists(data.user.userId);
         } catch (e) {
           console.warn("⚠️ syncOfflineCache failed:", e);
         }

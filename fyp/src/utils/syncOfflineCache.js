@@ -43,6 +43,17 @@ export const normalizeStreamerProfile = (raw) => {
   };
 };
 
+// ✅ ensure hoisting by using a function declaration
+function toId(m) {
+  if (m == null) return "";
+  if (typeof m === "string" || typeof m === "number") return String(m);
+  return String(m.movieId ?? m._id ?? m.id ?? m?.movie ?? "");
+}
+function uniqueIds(arr) {
+  return Array.from(new Set((arr || []).map(String).filter(Boolean)));
+}
+
+
 // ========== main (single definition) ==========
 export const syncOfflineCache = async (user, { force = false } = {}) => {
   if (!navigator.onLine || !user?.userId) return;
@@ -138,6 +149,7 @@ export const syncOfflineCache = async (user, { force = false } = {}) => {
     } catch {
       /* ignore */
     }
+    await syncUserLists(userId);
 
     // 6) notify UI
     window.dispatchEvent(new CustomEvent("cineit:filterDataUpdated"));
@@ -145,3 +157,67 @@ export const syncOfflineCache = async (user, { force = false } = {}) => {
     console.error("❌ syncOfflineCache failed:", e);
   }
 };
+
+// ✅ function declaration (hoisted)
+async function syncUserLists(userId) {
+  if (!navigator.onLine || !userId) return;
+
+  // ----- WATCH LATER (Saved) -> store **IDs** -----
+  try {
+    const res = await fetch(`${API}/api/movies/watchLater/${userId}`, {
+      headers: { "Cache-Control": "no-store" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // Supports: { SaveMovies: ["id"] } | { movies:[obj] } | ["id"] | [obj]
+      const ids = Array.isArray(data?.SaveMovies) ? data.SaveMovies.map(String)
+               : Array.isArray(data?.movies)     ? data.movies.map(toId)
+               : Array.isArray(data)              ? data.map(toId)
+               : [];
+      await window.electron?.saveSavedSnapshot?.(uniqueIds(ids));
+      await window.electron?.clearSavedQueue?.();
+      window.dispatchEvent(new Event("cineit:savedUpdated"));
+    }
+  } catch (err) {
+    console.warn("Watch Later fetch failed:", err);
+  }
+
+  // ----- LIKED -> store **IDs** -----
+  try {
+    const res = await fetch(`${API}/api/movies/likedMovies/${userId}`, {
+      headers: { "Cache-Control": "no-store" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const rows = Array.isArray(data?.likedMovies) ? data.likedMovies
+                 : Array.isArray(data)              ? data
+                 : [];
+      const ids = rows.map((row) => toId(row?.movie ?? row?.movieId ?? row));
+      await window.electron?.saveLikedList?.(uniqueIds(ids));
+      await window.electron?.clearLikedQueue?.();
+      window.dispatchEvent(new Event("cineit:likedUpdated"));
+    }
+  } catch (err) {
+    console.warn("Liked Movies fetch failed:", err);
+  }
+
+  // ----- HISTORY -> store **objects** (as you already do) -----
+  try {
+    const res = await fetch(`${API}/api/movies/historyMovies/${userId}`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const payload = await res.json().catch(() => ({ historyMovies: [] }));
+      const list = Array.isArray(payload?.historyMovies)
+        ? payload.historyMovies
+        : Array.isArray(payload)
+        ? payload
+        : [];
+      await window.electron?.saveHistorySnapshot?.(list);
+      await window.electron?.clearHistoryQueue?.();
+      window.dispatchEvent(new Event("cineit:historyUpdated"));
+    }
+  } catch (err) {
+    console.warn("History fetch failed:", err);
+  }
+}
