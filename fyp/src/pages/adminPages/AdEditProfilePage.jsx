@@ -251,7 +251,7 @@ const handleChange = async (e) => {
   return (
     <div className="bg-white min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800">
       {/* Sidebar */}
-      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white/70 dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
+      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
         <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
 
           {/* Back */}
@@ -266,7 +266,7 @@ const handleChange = async (e) => {
         </div>
       </aside>
 
-      <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
+      <div className="bg-white max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
