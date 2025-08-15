@@ -73,7 +73,7 @@ const AdUserTable = ({ searchQuery }) => {
 
   if (filteredUsers.length === 0 && searchQuery) {
     return (
-        <div className="text-center py-10 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-10 text-gray-500 bg-white min-h-screen dark:bg-gray-900 dark:text-gray-400">
             No users found matching your search.
         </div>
     );
