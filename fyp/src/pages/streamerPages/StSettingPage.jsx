@@ -482,8 +482,8 @@ const handleChange = async (e) => {
   }, [showConfirm]);
 
   return (
-    <div className="bg-white min-h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800">
-      <div className="bg-white text-black max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
+    <div className="bg-white min-h-screen sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-900">
+      <div className="bg-white text-black max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-900 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
           {/* Profile Image */}
           <div className="mb-5 flex items-center space-x-4">

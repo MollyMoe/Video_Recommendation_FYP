@@ -146,7 +146,7 @@ const StManageSubscriptionPage = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen pt-24 px-6 sm:px-12 sm:ml-64 max-w-5xl mx-auto dark:bg-gray-900">
+    <div className="bg-white min-h-screen pt-24 px-6 sm:px-12 sm:ml-64  dark:bg-gray-900">
       <h1 className="mt-10 text-3xl font-bold mb-5 text-gray-900 dark:text-white">
         Manage Your Subscription
       </h1>

@@ -211,11 +211,11 @@ const handleStatusChange = async (feedbackId, changedField, newValue) => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                           <input type="checkbox" checked={feedback.is_not_solved} onChange={(e) =>
-                            handleStatusChange(feedback._id, 'is_not_solved', e.target.checked)} className="form-checkbox h-5 w-5 text-red-600 rounded border-gray-300 dark:border-gray-500 dark:bg-gray-600 focus:ring-red-500 accent-red-500" />
+                            handleStatusChange(feedback._id, 'is_not_solved', e.target.checked)} className="form-checkbox h-5 w-5 text-red-600 rounded bg-gray-100 border-gray-300 dark:border-gray-500 dark:bg-gray-600 focus:ring-red-500 accent-red-500" />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                           <input type="checkbox" checked={feedback.is_solved} onChange={(e) =>
-                            handleStatusChange(feedback._id, 'is_solved', e.target.checked)} className="form-checkbox h-5 w-5 text-green-600 rounded border-gray-300 dark:border-gray-500 dark:bg-gray-600 focus:ring-green-500 accent-green-500" />
+                            handleStatusChange(feedback._id, 'is_solved', e.target.checked)} className="form-checkbox h-5 w-5 text-green-600 rounded  bg-gray-100 border-gray-300 dark:border-gray-500 dark:bg-gray-600 focus:ring-green-500 accent-green-500" />
                         </td>
                       </tr>
                     ))}

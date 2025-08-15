@@ -205,9 +205,7 @@ const StFilterPage = () => {
   if (!isSubscribed) {
     return (
       <>
-        <StNav />
-        <StSideBar />
-        <div className="sm:ml-64 flex items-center justify-center h-screen dark:bg-gray-900 text-center px-4">
+        <div className="sm:ml-64 flex items-center justify-center h-screen  dark:bg-gray-900 bg-white text-center px-4">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-black text-xl font-semibold text-gray-800 dark:text-white mb-3">🔒 This feature is locked</h2>
             <p className="text-gray-600 dark:text-gray-300">Please subscribe to unlock the advanced filtering feature.</p>
@@ -222,7 +220,7 @@ const StFilterPage = () => {
       <StNav />
       <StSideBar />
 
-      <div className="bg-white fixed top-[80px] left-20 w-full h-35 flex justify-center px-4 z-30 dark:bg-gray-900">
+      <div className="bg-white fixed top-[80px] left-20 w-full h-35 flex justify-center px-4 z-30 dark:bg-gray-900 ">
         <div className="w-full max-w-sm flex flex-col justify-center">
           <StFilterBar
             searchQuery={searchQuery}
@@ -242,7 +240,7 @@ const StFilterPage = () => {
         </div>
       </div>
 
-      <div className="sm:ml-64 px-4">
+      <div className="sm:ml-64  ">
         <StFilterContent
           submittedQuery={submittedQuery}
           movies={movies}

@@ -160,7 +160,7 @@ const AdDashboard = () => {
 
   const ActionCard = ({ to, icon, title }) => (
     <Link to={to}>
-      <div className="flex flex-col items-center p-8 text-center bg-white rounded-lg shadow-md hover:shadow-xl dark:bg-gray-800 dark:hover:bg-gray-700">
+      <div className="flex flex-col items-center p-8 text-center bg-white rounded-lg shadow-md hover:shadow-xl dark:bg-gray-800  dark:hover:shadow-gray-700">
         {icon}
         <h3 className="text-xl mt-4 font-semibold text-gray-800 dark:text-white">
           {title}

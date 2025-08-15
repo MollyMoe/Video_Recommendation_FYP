@@ -249,9 +249,9 @@ const handleChange = async (e) => {
   }, [showConfirm]);
 
   return (
-    <div className="bg-white min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800">
+    <div className="bg-white min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-900">
       {/* Sidebar */}
-      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
+      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700">
         <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
 
           {/* Back */}
@@ -259,14 +259,14 @@ const handleChange = async (e) => {
             to="/admin"
             className="flex items-center gap-3 px-4 py-2 text-gray-800 dark:text-white hover:bg-fuchsia-200 dark:hover:bg-gray-700 rounded-lg"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 " />
             Back
           </Link>
 
         </div>
       </aside>
 
-      <div className="bg-white max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
+      <div className="bg-white max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans text-black dark:bg-gray-900 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
