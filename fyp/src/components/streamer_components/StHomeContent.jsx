@@ -925,7 +925,7 @@ useEffect(() => {
             {/* Carousels Section */}
             <div className="mt-15">
               <MovieCarousel
-                title={<span className="dark:text-white">🔥 Most Liked Movies </span>}
+                title={<span className="text-black dark:text-white">🔥 Most Liked Movies </span>}
                 movies={topLikedMovies}
                 onMovieClick={(m) => setSelectedMovie({ ...m, __noDelete: true })}
                 autoScroll={true} 
@@ -934,7 +934,7 @@ useEffect(() => {
               {/* These carousels will NOT auto-scroll because the prop is not passed (it defaults to false) */}
               {interactionCounts.liked >= 5 && likedMovies.length > 0 && (
                 <MovieCarousel 
-                  title={<span className="dark:text-white">Because you liked <span className="italic text-purple-500">{likedTitles.join(", ")}</span></span>}
+                  title={<span className="text-black dark:text-white">Because you liked <span className="italic text-purple-500">{likedTitles.join(", ")}</span></span>}
                   movies={likedMovies}
                   onMovieClick={setSelectedMovie}
                 />
@@ -943,7 +943,7 @@ useEffect(() => {
               {interactionCounts.saved >= 5 && savedMovies.length > 0 && (
                 <MovieCarousel
                   title={
-                    <span className="dark:text-white">
+                    <span className="text-black dark:text-white">
                       Because you saved{" "}
                       <span className="italic text-green-500">
                         {savedTitles.join(", ")}
@@ -959,7 +959,7 @@ useEffect(() => {
               {interactionCounts.watched >= 5 && watchedMovies.length > 0 && (
                 <MovieCarousel
                   title={
-                    <span className="dark:text-white">
+                    <span className="text-black dark:text-white">
                       Because you watched{" "}
                       <span className="italic text-orange-500">
                         {watchedTitles.join(", ")}

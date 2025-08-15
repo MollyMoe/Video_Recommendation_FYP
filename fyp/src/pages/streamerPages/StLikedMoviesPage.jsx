@@ -244,25 +244,6 @@ const StLikedMoviesPage = () => {
     }
   };
 
-  // useEffect(() => {
-useEffect(() => {
-  if (isOnline) {
-    (async () => {
-      try {
-        const savedUser = JSON.parse(localStorage.getItem("user"));
-        if (!savedUser?.userId) return;
-
-        console.log("🌐 Back online — syncing offline history queue...");
-        await window.electron?.syncQueuedHistory?.(API, savedUser.userId);
-
-        // After syncing, fetch from server and update local snapshot
-        await fetchHistoryMovies(savedUser.userId);
-      } catch (err) {
-        console.error("❌ Failed to sync queued history:", err);
-      }
-    })();
-  }
-}, [isOnline]);
 
   useEffect(() => {
     const run = async () => {
@@ -334,19 +315,28 @@ useEffect(() => {
   };
   
   return (
-    <div className="p-4">
+    <div className="bg-white dark:bg-gray-900 min-h-screen">
       <StNav />
       <StSideBar />
-      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
-        <div className="max-w-6xl mx-auto">
-          {likedMovies.length === 0 ? (
-            <div className="text-center mt-20">
-            <p className="text-lg text-gray-500 dark:text-gray-400">
-              No liked movies found.
-            </p>
-            </div>
+
+      <main className="sm:ml-64 pt-20">
+        <div className="p-4 sm:px-8">
+          <div className="max-w-6xl mx-auto mt-10">
+            {isLoading ? (
+              <div className="fixed inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="bg-white px-6 py-4 rounded-lg shadow-xl text-center">
+                  <p className="text-lg font-semibold text-gray-900">Loading Liked Movies</p>
+                  <div className="mt-3 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+                </div>
+              </div>
+            ) : likedMovies.length === 0 ? (
+              <div className="text-center mt-20">
+                <p className="text-lg text-gray-500 dark:text-gray-400">
+                  No like movies found.
+                </p>
+              </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {likedMovies.map((movie) => (
                 <CompactMovieCard
                   key={getId(movie)}
@@ -361,25 +351,19 @@ useEffect(() => {
           )}
         </div>
       </div>
+    </main>
 
-      {isLoading && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <p className="text-lg font-semibold">Loading Liked Movies</p>
-            <div className="mt-2 animate-spin h-6 w-6 border-4 border-violet-500 border-t-transparent rounded-full mx-auto" />
+    {showSuccess && (
+      <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 px-6 py-4 rounded-lg shadow-xl text-center">
+          <div className="flex justify-center mb-2">
+            <CheckCircle className="w-9 h-9 text-violet-500" />
           </div>
+          <span className="font-medium text-gray-900 dark:text-gray-100">
+            Movie removed from liked list!
+          </span>
         </div>
-      )}
-
-      {showSuccess && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
-            <div className="flex justify-center mb-2">
-              <CheckCircle className="w-8 h-8 text-violet-500" />
-            </div>
-            <span className="font-medium">Movie removed from liked list!</span>
-          </div>
-        </div>
+      </div>
       )}
     </div>
   );

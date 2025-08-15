@@ -68,8 +68,8 @@ const AdVideoManageGenrePage = () => {
   return (
     <>
       <AdSideButtons />
-      <div className="p-6 dark:bg-gray-900 min-h-screen ">
-        <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+      <div className="p-6 bg-white dark:bg-gray-900 min-h-screen ">
+        <h1 className="text-black text-3xl font-bold mb-6 text-gray-900 dark:text-white">
           🎞️ Filter Movies by Genre
         </h1>
         {/* Genre Buttons */}

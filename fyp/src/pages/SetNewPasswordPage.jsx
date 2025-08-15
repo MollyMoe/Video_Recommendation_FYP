@@ -72,7 +72,7 @@ const SetNewPasswordPage = () => {
 };
 
 return (
-  <div className="min-h-screen flex flex-col items-center justify-start pt-25 dark:bg-gray-800 px-4">
+  <div className="bg-white min-h-screen flex flex-col items-center justify-start pt-25 dark:bg-gray-800 px-4">
     {!successAcknowledged ? (
       <>
         {/* Header */}

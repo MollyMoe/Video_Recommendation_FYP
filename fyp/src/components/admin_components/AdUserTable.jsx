@@ -80,8 +80,8 @@ const AdUserTable = ({ searchQuery }) => {
   }
 
   return (
-    <div className="w-full dark:bg-gray-900">
-    <div className="sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-900">
+    <div className="w-full bg-white dark:bg-gray-900">
+    <div className="bg-white sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-900">
       <div className="shadow-md rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 isolate">
         <table className="min-w-full">
           <thead className="bg-gray-50 dark:bg-gray-800">

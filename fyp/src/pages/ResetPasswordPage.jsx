@@ -59,7 +59,7 @@ function ResetPasswordPage() {
 
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 font-sans mb-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="bg-white fixed inset-0 flex items-center justify-center p-4 font-sans mb-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-lg h-100 mx-auto flex flex-col">
         {/* Logo Header */}
         <div className="text-center py-4">

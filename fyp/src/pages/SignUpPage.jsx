@@ -124,7 +124,7 @@ function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto">
         {/* Header */}
         <div className="text-center py-4">
@@ -133,7 +133,7 @@ function SignUpPage() {
             alt="Cine It"
             className="mx-auto h-12 mb-1 rounded-full"
           />
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+          <h2 className="text-2xl text-black font-semibold text-gray-800 dark:text-white">
             Create Account
           </h2>
         </div>
@@ -180,7 +180,7 @@ function SignUpPage() {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
+                <ul className="absolute z-10 mt-1 w-full text-grey-900 bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
                   <li>
                     <button
                       type="button"

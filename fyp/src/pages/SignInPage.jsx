@@ -229,7 +229,7 @@ function SignInPage() {
 
   // FIXED: Return needs to be inside the component
   return (
-    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="bg-white min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto flex flex-col">
         {/* Header */}
         <div className="text-center py-4">
@@ -238,7 +238,7 @@ function SignInPage() {
             alt="Cine It"
             className="mx-auto h-12 mb-1 rounded-full"
           />
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+          <h2 className="text-2xl text-black font-semibold text-gray-800 dark:text-white">
             Sign In
           </h2>
         </div>
@@ -285,7 +285,7 @@ function SignInPage() {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
+                <ul className="absolute z-10 mt-1 w-full bg-white text-gray-900 dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
                   <li>
                     <button
                       type="button"
@@ -295,7 +295,7 @@ function SignInPage() {
                         });
                         setDropdownOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="block w-full text-left px-4 py-2 text-black hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       System Admin
                     </button>
@@ -309,7 +309,7 @@ function SignInPage() {
                         });
                         setDropdownOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="block w-full text-left px-4 py-2 text-black hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       Streamer
                     </button>

@@ -249,7 +249,7 @@ const handleChange = async (e) => {
   }, [showConfirm]);
 
   return (
-    <div className="min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800">
+    <div className="bg-white min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800">
       {/* Sidebar */}
       <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white/70 dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
         <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
@@ -305,7 +305,7 @@ const handleChange = async (e) => {
               value={formData[field]}
               onChange={handleChange}
               disabled={field === "contact"}
-              className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              className={`shadow-xs bg-gray-50 text-black border border-gray-300 text-gray-900 text-sm rounded-lg 
                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
                 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
                 ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
