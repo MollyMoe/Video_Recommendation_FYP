@@ -63,7 +63,7 @@ const InputGenrePage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center mt-20 bg-white space-y-6 px-4">
+    <div className="flex flex-col items-center justify-center mt-20 bg-white space-y-6 px-4 min-h-screen dark:bg-gray-800">
       <img className="w-70 h-20 rounded-full" src={logoPic} alt="Cine-It Logo" />
 
       <div className="w-full max-w-lg p-6 bg-[#F6EBFF] border rounded-lg shadow-sm">
