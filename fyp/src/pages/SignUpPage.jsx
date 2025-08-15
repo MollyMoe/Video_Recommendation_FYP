@@ -166,7 +166,7 @@ function SignUpPage() {
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md 
-                      bg-white text-gray-900 dark:bg-gray-700 dark:text-white 
+                      bg-white text-black dark:bg-gray-700 dark:text-white 
                       focus:outline-none focus:ring-2 focus:ring-purple-400 text-left flex justify-between items-center"
               >
                 <span>
