@@ -267,7 +267,7 @@ const handleChange = async (e) => {
       </aside>
 
       <div className="bg-white max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
-        <form onSubmit={handleSubmit} className="bg-white w-full">
+        <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
               src={profileImage|| defaultImage}
@@ -387,7 +387,7 @@ const handleChange = async (e) => {
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
                     placeholder="Current Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">
@@ -414,7 +414,7 @@ const handleChange = async (e) => {
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     placeholder="New Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
                   <input
                     type="password"
@@ -422,7 +422,7 @@ const handleChange = async (e) => {
                     value={passwordData.confirmNewPassword}
                     onChange={handlePasswordChange}
                     placeholder="Confirm New Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">
