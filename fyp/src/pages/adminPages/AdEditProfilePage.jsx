@@ -267,7 +267,7 @@ const handleChange = async (e) => {
       </aside>
 
       <div className="bg-white max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
-        <form onSubmit={handleSubmit} className="w-full">
+        <form onSubmit={handleSubmit} className="bg-white w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
               src={profileImage|| defaultImage}
