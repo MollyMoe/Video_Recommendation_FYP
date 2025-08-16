@@ -57,14 +57,15 @@ function SignInPage() {
   }, []);
 
  const handleSubmit = async (e) => {
+
   e.preventDefault();
   setMessage(null);
 
   if (!validateForm()) return;
 
   const isOnline = navigator.onLine;
-
   setIsLoading(true);
+
 
   try {
     if (isOnline) {
@@ -94,6 +95,7 @@ function SignInPage() {
           setMessage({
             type: "error",
             text: "Your account has been suspended. Please contact cineit.helpdesk@gmail.com.",
+
           });
         } else if (status === 400 && errMsg.toLowerCase().includes("invalid")) {
           setMessage({ type: "error", text: "Invalid username or password." });
@@ -141,6 +143,7 @@ function SignInPage() {
       if (window.electron && data.user?.userType?.toLowerCase() === "streamer") {
         try {
           await syncOfflineCache(data.user);
+          await syncUserLists(data.user.userId);
         } catch (e) {
           console.warn("⚠️ syncOfflineCache failed:", e);
         }

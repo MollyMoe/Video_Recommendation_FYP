@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import axios from "axios";
 import AdSideButtons from "../components/admin_components/AdSideButtons";
-import { API } from "@/config/api";
+
+const API = import.meta.env.VITE_API_BASE_URL;
+
 
 const tabs = [
   { label: "All Movies", path: "/admin/video/videoHomePage" },
@@ -67,7 +69,6 @@ const AdVideoManageLayout = () => {
   return (
     <>
       <AdSideButtons onUpdateClick={handleUpdateClick} isSyncing={syncStatus.stage === 'syncing'} />
-
       <div className="p-6 bg-white dark:bg-gray-900 min-h-screen mt-20 ml-40">
         <div className="flex justify-center mb-8 space-x-4">
           {tabs.map((tab) => (

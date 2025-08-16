@@ -73,8 +73,8 @@ const AdUserWatchLaterPage = () => {
   }, [userId]);
 
   return (
-    <div className="min-h-screen p-6">
 
+    <div className="min-h-screen p-6">
       {/* Loading */}
       {isLoading && (
         <div className="text-center text-gray-600 mt-10">Loading saved movies...</div>
@@ -115,3 +115,4 @@ const AdUserWatchLaterPage = () => {
 };
 
 export default AdUserWatchLaterPage;
+

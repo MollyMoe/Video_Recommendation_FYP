@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { API } from "@/config/api";
 
-const StPaymentSuccessPage = () => {
+const StPaymentSuccess = () => {
   const [isProcessing, setIsProcessing] = useState(true);
   const [error, setError] = useState(null);
 
@@ -76,4 +76,4 @@ const StPaymentSuccessPage = () => {
   );
 };
 
-export default StPaymentSuccessPage;
+export default StPaymentSuccess;

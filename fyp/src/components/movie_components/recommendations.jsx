@@ -147,5 +147,5 @@ useEffect(() => {
   );
 }
 
-
 export default Recommendations;
+

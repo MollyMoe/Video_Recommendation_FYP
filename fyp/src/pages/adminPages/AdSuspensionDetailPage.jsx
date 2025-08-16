@@ -23,6 +23,7 @@ const formatDateTime = (dateString) => {
 
 const AdSuspensionDetailPage = () => {
   const { id } = useParams();
+
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,6 +36,7 @@ const AdSuspensionDetailPage = () => {
       } catch (err) {
         console.error("Failed to fetch user details:", err);
       } finally {
+
         setIsLoading(false);
       }
     };

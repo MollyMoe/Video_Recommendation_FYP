@@ -219,7 +219,6 @@ const StFilterPage = () => {
     <>
       <StNav />
       <StSideBar />
-
       <div className="bg-white fixed top-[80px] left-20 w-full h-35 flex justify-center px-4 z-30 dark:bg-gray-900 ">
         <div className="w-full max-w-sm flex flex-col justify-center">
           <StFilterBar

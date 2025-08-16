@@ -318,7 +318,6 @@ const StLikedMoviesPage = () => {
     <div className="bg-white dark:bg-gray-900 min-h-screen">
       <StNav />
       <StSideBar />
-
       <main className="sm:ml-64 pt-20">
         <div className="p-4 sm:px-8">
           <div className="max-w-6xl mx-auto mt-10">

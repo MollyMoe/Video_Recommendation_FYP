@@ -97,3 +97,4 @@ return (
 };
 
 export default AdRecentlyAddedMovies;
+

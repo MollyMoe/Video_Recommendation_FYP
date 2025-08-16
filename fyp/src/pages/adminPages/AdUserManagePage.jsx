@@ -47,7 +47,7 @@ const AdUserManagePage = () => {
           </div>
         </aside>
       </div>
-      <div className=" min h-screen flex-1 pt-20 pl-[120px] dark:bg-gray-800">
+      <div className=" min h-screen flex-1 pt-20 pl-[120px] bg-white dark:bg-gray-800">
         <AdUserTable searchQuery={searchQuery} />
       </div>
     </>

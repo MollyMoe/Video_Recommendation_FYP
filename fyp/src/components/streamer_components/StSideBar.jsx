@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+
 const StSideBar = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ const StSideBar = () => {
           <li>
             <StSidebarButton
               to="/home/like"
-              label="Liked Movie"
+              label="Liked Movies"
               current={location.pathname === "/home/like"}
             />
           </li>
@@ -106,7 +107,7 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <StSidebarButton
+             <StSidebarButton
               to="/home/subscription"
               label="Subscription"
               current={location.pathname === "/home/subscription"}

@@ -327,11 +327,8 @@ contextBridge.exposeInMainWorld("electron", {
     },
     
 //watchLater
-
     queueSavedAction: (action) => queueAction(savedQueuePath, action),
 
-
-  
     getRawSavedQueue: () => {
       try {
         if (fs.existsSync(savedQueuePath)) {
@@ -620,9 +617,6 @@ syncQueuedHistory: async (apiBase, userId) => {
     return { ok: false, reason: String(err?.message || err) };
   }
 },
-
-
-
 
 });
 

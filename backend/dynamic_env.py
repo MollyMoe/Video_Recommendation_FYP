@@ -22,3 +22,4 @@ def set_env():
         os.environ["MONGO_URI"] = os.getenv("OFFLINE_MONGO_URI")
         os.environ["MOVIE_DB_URI"] = os.getenv("OFFLINE_MOVIE_DB_URI")
         os.environ["SUPPORT_DB_URI"] = os.getenv("OFFLINE_SUPPORT_DB_URI")
+

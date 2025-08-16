@@ -130,7 +130,6 @@ const handleChange = async (e) => {
     }),
   });
 
-
       if (!res.ok) throw new Error("Failed to update");
 
       const updated = await res.json();
@@ -213,7 +212,7 @@ const handleChange = async (e) => {
     }
 
     try {
-      const updateRes = await fetch(`${API}/api/password/update-password`, {
+       const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -265,7 +264,6 @@ const handleChange = async (e) => {
 
         </div>
       </aside>
-
       <div className="bg-white max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans text-black dark:bg-gray-900 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
@@ -389,6 +387,7 @@ const handleChange = async (e) => {
                     placeholder="Current Password"
                     className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
+
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">
                     <button
@@ -424,6 +423,7 @@ const handleChange = async (e) => {
                     placeholder="Confirm New Password"
                     className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
+                  
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">
                     <button

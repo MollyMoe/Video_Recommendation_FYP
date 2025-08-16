@@ -232,7 +232,7 @@ const StWatchLaterPage = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 min-h-screen">
+    <div className="bg-white dark:bg-gray-800 min-h-screen">
       <StNav />
       <StSideBar />
 

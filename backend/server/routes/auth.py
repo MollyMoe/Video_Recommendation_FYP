@@ -111,6 +111,7 @@ def signin(data: SigninRequest, request: Request):
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username")
 
+
     # Check if password matches
     if user["password"] != password:
         raise HTTPException(status_code=400, detail="Invalid password")
@@ -122,6 +123,7 @@ def signin(data: SigninRequest, request: Request):
     user_id = user["userId"]
     now = datetime.utcnow()
     status = user.get("status", "Active")
+
 
     # ✅ Admins bypass inactivity logic
     if user_type == "admin":
@@ -137,6 +139,7 @@ def signin(data: SigninRequest, request: Request):
     # 🚫 Block login if already suspended
     if user_type == "streamer":
         if status != "Active":
+
             raise HTTPException(status_code=403, detail="Account was suspended. Please contact CineIt Team at cineit.helpdesk@gmail.com.")
 
     # ⚠️ 1. Auto signout after 3 days of inactivity
@@ -153,6 +156,7 @@ def signin(data: SigninRequest, request: Request):
                 raise HTTPException(
                     status_code=403,
                     detail="Account is suspended due to inactivity over 3 months. Please contact CineIt Team at cineit.helpdesk@gmail.com."
+
                 )
 
         # 2️⃣ Check for auto sign-out after inactivity (2 day)
