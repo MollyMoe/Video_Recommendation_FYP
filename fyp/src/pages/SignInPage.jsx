@@ -232,7 +232,7 @@ function SignInPage() {
 
   // FIXED: Return needs to be inside the component
   return (
-    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans bg-white  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto flex flex-col">
         {/* Header */}
         <div className="text-center py-4">
@@ -288,7 +288,7 @@ function SignInPage() {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
+                <ul className="absolute z-10 mt-1 w-full text-gray-900  bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
                   <li>
                     <button
                       type="button"

@@ -70,7 +70,7 @@ const AdVideoManageLayout = () => {
     <>
       <AdSideButtons onUpdateClick={handleUpdateClick} isSyncing={syncStatus.stage === 'syncing'} />
 
-      <div className="p-6 dark:bg-gray-900 min-h-screen mt-20 ml-40">
+      <div className="p-6 dark:bg-gray-900 bg-white min-h-screen mt-20 ml-40">
         <div className="flex justify-center mb-8 space-x-4">
           {tabs.map((tab) => (
             <Link

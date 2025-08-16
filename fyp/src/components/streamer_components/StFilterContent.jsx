@@ -259,7 +259,7 @@ const StFilterContent = ({
   };
 
   return (
-    <div className="pt-24 sm:pt-20 px-4 sm:px-8 dark:bg-gray-900 min-h-screen mt-40">
+    <div className="pt-24 sm:pt-20 px-4 sm:px-8 bg-white dark:bg-gray-900 min-h-screen mt-40">
       {isSearching && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white px-6 py-4 rounded-lg shadow-lg text-center">
@@ -297,7 +297,7 @@ const StFilterContent = ({
           </div>
         ) : (
           <div className="w-full max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:bg-gray-800 dark:text-gray-200 mb-4">
               Top 10 Rated Movies Based On Your Recommendations
             </h2>
             <div className="w-full max-w-2xl ml-0">

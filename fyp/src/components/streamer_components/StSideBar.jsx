@@ -68,7 +68,7 @@ const StSideBar = () => {
           <li>
             <StSidebarButton
               to="/home/like"
-              label="Liked Movie"
+              label="Liked Movies"
               current={location.pathname === "/home/like"}
             />
           </li>

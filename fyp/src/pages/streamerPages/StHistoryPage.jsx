@@ -193,7 +193,7 @@ const StHistoryPage = () => {
       <StNav />
       <StSideBar />
 
-      <main className="sm:ml-64 pt-20">
+      <main className="sm:ml-64 pt-20 bg-white">
         <div className="p-4 sm:px-8">
           <div className="max-w-6xl mx-auto">
             <div className="flex justify-end mb-5">

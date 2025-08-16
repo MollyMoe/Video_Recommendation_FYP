@@ -248,7 +248,7 @@ const handleChange = async (e) => {
   }, [showConfirm]);
 
   return (
-    <div className="min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800">
+    <div className="min-h-screen pt-30 px-4 sm:px-8 bg-white dark:bg-gray-800">
       {/* Sidebar */}
       <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white/70 dark:bg-gray-900 shadow-lg border-r border-gray-200 dark:border-gray-700">
         <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
@@ -265,7 +265,7 @@ const handleChange = async (e) => {
         </div>
       </aside>
 
-      <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
+      <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 bg-white dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
@@ -386,7 +386,7 @@ const handleChange = async (e) => {
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
                     placeholder="Current Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 bg-white text-black dark:text-white mb-2"
                   />
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">
@@ -413,7 +413,7 @@ const handleChange = async (e) => {
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     placeholder="New Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 bg-white text-black dark:text-white mb-2"
                   />
                   <input
                     type="password"
@@ -421,7 +421,7 @@ const handleChange = async (e) => {
                     value={passwordData.confirmNewPassword}
                     onChange={handlePasswordChange}
                     placeholder="Confirm New Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 bg-white text-black dark:text-white mb-2"
                   />
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">

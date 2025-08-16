@@ -337,7 +337,7 @@ useEffect(() => {
     <div className="p-4">
       <StNav />
       <StSideBar />
-      <div className="sm:ml-64 pt-30 px-4 sm:px-8 dark:bg-gray-800 min-h-screen">
+      <div className="sm:ml-64 pt-30 px-4 sm:px-8 bg-white dark:bg-gray-800 min-h-screen">
         <div className="max-w-6xl mx-auto">
           {likedMovies.length === 0 ? (
             <div className="text-center mt-20">

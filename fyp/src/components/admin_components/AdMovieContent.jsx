@@ -130,7 +130,7 @@ const AdMovieContent = ({ searchQuery, externalUpdateTrigger, setRecentMoviesGlo
       <div className="relative z-10">
 
         {/* Movie Content Section */}
-        <div className="sm:ml-0 px-4 sm:px-8 dark:border-gray-700 mr-10">
+        <div className="sm:ml-0 px-4 sm:px-8 bg-white dark:border-gray-700 mr-10">
           {/* Search Result Header */}
           {searchQuery && !isLoading && (
             <div className="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-3 rounded-lg mb-6">

@@ -194,7 +194,7 @@ const StSendFeedbackPage = () => {
                 }}
                 placeholder="Let us know what's on your mind..."
                 rows={3}
-                className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition duration-200 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-black dark:placeholder-gray-400"
                 required
               ></textarea>
             </div>
