@@ -39,7 +39,7 @@
     "artifactName": "CineIt-${version}-${arch}.${ext}"
   },
   "dmg": {
-    "background": "assets/dmg-background.png",  
+    "background": "electron/assets/dmg-background.png",  
     "contents": [
       { "x": 130, "y": 220 },                   
       { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
