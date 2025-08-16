@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import offlineFallback from "../../images/offlineFallback.jpg";
 
@@ -106,4 +107,6 @@ const trailerAlign = 'left-1/2 -translate-x-1/2';
   );
 }
 
+
 export default MovieCard;
+

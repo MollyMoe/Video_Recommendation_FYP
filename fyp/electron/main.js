@@ -125,4 +125,6 @@ app.on('before-quit', async () => {
 // Exit app when all windows closed (except on macOS)
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+
 });
+0

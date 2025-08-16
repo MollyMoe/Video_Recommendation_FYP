@@ -1,3 +1,4 @@
+
 // components/movie_components/CompactMovieCard.jsx
 import React from "react";
 import { Play, Trash2 } from "lucide-react";
@@ -58,4 +59,6 @@ const CompactMovieCard = ({
   );
 };
 
+
 export default CompactMovieCard;
+

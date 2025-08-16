@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import MovieCard from './MovieCard';
@@ -114,4 +115,6 @@ function MovieCarousel({ title, movies, onMovieClick, autoScroll = false }) {
   );
 }
 
+
 export default MovieCarousel;
+

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 
@@ -109,4 +110,6 @@ function FilterButtons({ allGenres, onFilterAndSort, onClear, currentSort, curre
   );
 }
 
+
 export default FilterButtons;
+

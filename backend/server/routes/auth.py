@@ -489,3 +489,4 @@ async def get_platform_stats(request: Request):
     except Exception as e:
         print(f"❌ Error fetching platform stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch platform statistics.")
+

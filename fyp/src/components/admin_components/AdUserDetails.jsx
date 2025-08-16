@@ -1,3 +1,4 @@
+
 import { Link, useParams, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
@@ -113,4 +114,6 @@ const AdUserDetails = () => {
   );
 };
 
+
 export default AdUserDetails;
+
