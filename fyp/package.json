@@ -15,36 +15,21 @@
     "preview": "vite preview"
   },
   "build": {
-  "appId": "com.cineit.desktop",
-  "productName": "CineIt",
-  "icon": "electron/assets/cineitwhite",  
-  "asar": true,
-  "directories": {
-    "output": "dist",
-    "buildResources": "assets"
-  },
-  "files": [
-    "dist/**/*",
-    "electron/main.js",
-    "electron/preload.cjs",
-    "package.json",
-    "electron/assets/**/*"
-  ],
-  "mac": {
-    "category": "public.app-category.entertainment",
-    "target": [
-      "dmg",
-      "zip"
+    "appId": "com.cineit.desktop",
+    "productName": "CineIt",
+    "icon": "electron/assets/cineitwhite",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/main.js",
+      "electron/preload.cjs",
+      "package.json",
+      "electron/assets/**/*"
     ],
-    "artifactName": "CineIt-${version}-${arch}.${ext}"
-  },
-  "dmg": {
-    "background": "electron/assets/dmg-background.png",  
-    "contents": [
-      { "x": 130, "y": 220 },                   
-      { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
-    ]
-  },
     
     "extraMetadata": {
       "main": "electron/main.js"
@@ -53,7 +38,6 @@
       "target": "nsis"
     }
   },
-
   "dependencies": {
     "@headlessui/react": "^2.2.3",
     "@heroicons/react": "^2.2.0",
