@@ -1,10 +1,10 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { BadgeCheck } from "lucide-react";
 import logoPic from "../images/Cine-It.png";
 import { useSearchParams } from "react-router-dom";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const SetNewPasswordPage = () => {
   const [searchParams] = useSearchParams();
@@ -73,7 +73,7 @@ const SetNewPasswordPage = () => {
 };
 
 return (
-  <div className="min-h-screen flex flex-col items-center justify-start pt-25 dark:bg-gray-800 px-4">
+  <div className="bg-white min-h-screen flex flex-col items-center justify-start pt-25 dark:bg-gray-800 px-4">
     {!successAcknowledged ? (
       <>
         {/* Header */}

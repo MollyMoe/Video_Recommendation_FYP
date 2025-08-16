@@ -1,4 +1,8 @@
+
+from datetime import datetime
 from fastapi import APIRouter, Request, HTTPException
+from datetime import datetime, timezone
+from fastapi import HTTPException, Request
 from bson import ObjectId
 from pymongo import ReturnDocument
 import bcrypt
@@ -54,7 +58,8 @@ def signup(request: Request, user: SignUpRequest):
         {"_id": f"{user.userType}Id"},
         {"$inc": {"sequence_value": 1}},
         upsert=True,
-        return_document=True
+        # return_document=True
+        return_document=ReturnDocument.AFTER
     )
 
     user_id = f"U{str(counter['sequence_value']).zfill(3)}"
@@ -70,7 +75,9 @@ def signup(request: Request, user: SignUpRequest):
         "genres": [],
         "userId": user_id,
         "profileImage": DEFAULT_IMAGE_URL,
-        "likedMovies": [],
+        "createdAt": datetime.utcnow(),
+        "lastSignin": datetime.utcnow(),       # Stored as Date for queries
+        "lastSignout": datetime.utcnow(),      # Stored as Date, not ISO string
         "__v": 0
     }
 
@@ -82,12 +89,12 @@ def signup(request: Request, user: SignUpRequest):
         "userId": user_id,
         "userType": user.userType
     }
-
-
+    
 class SigninRequest(BaseModel):
     username: str
     password: str
     userType: str
+    email: EmailStr
 
 @router.post("/signin")
 def signin(data: SigninRequest, request: Request):
@@ -95,17 +102,113 @@ def signin(data: SigninRequest, request: Request):
     username = data.username
     password = data.password
     user_type = data.userType.lower()
+    email = data.email
 
     Model = db["admin"] if user_type == "admin" else db["streamer"]
     user = Model.find_one({"username": username}, {"_id": 0})
 
-    if not user or user["password"] != password:
-        raise HTTPException(status_code=400, detail="Invalid username or password")
+    # Check if user exists
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid username")
 
-    if user.get("status") == "Suspended":
-        raise HTTPException(status_code=403, detail="Account is suspended.")
+    # Check if password matches
+    if user["password"] != password:
+        raise HTTPException(status_code=400, detail="Invalid password")
 
-    return {"message": "Login successful", "user": user}
+    # Validate the email
+    if user.get("email") != email:
+        raise HTTPException(status_code=400, detail="Invalid email address")
+
+    user_id = user["userId"]
+    now = datetime.utcnow()
+    status = user.get("status", "Active")
+
+    # ✅ Admins bypass inactivity logic
+    if user_type == "admin":
+        Model.update_one(
+            { "userId": user_id },
+            { "$set": { "lastSignin": now } }
+        )
+        return {
+            "message": "Admin login successful",
+            "user": user
+        }
+
+    # 🚫 Block login if already suspended
+    if user_type == "streamer":
+        if status != "Active":
+            raise HTTPException(status_code=403, detail="Account was suspended. Please contact CineIt Team at cineit.helpdesk@gmail.com.")
+
+    # ⚠️ 1. Auto signout after 3 days of inactivity
+    if user_type == "streamer":
+    # 1️⃣ Check for auto-suspension (after 2 minutes since lastSignout)
+        if user.get("lastSignout") and user.get("status") == "Active":
+            signout_days = (now - user["lastSignout"]).days / 30 
+            if signout_days >= 3:
+                print(f"⛔ Auto-suspending {user['username']} after {signout_days:.2f} days")
+                Model.update_one(
+                    { "userId": user_id },
+                    { "$set": { "status": "Suspended" } }
+                )
+                raise HTTPException(
+                    status_code=403,
+                    detail="Account is suspended due to inactivity over 3 months. Please contact CineIt Team at cineit.helpdesk@gmail.com."
+                )
+
+        # 2️⃣ Check for auto sign-out after inactivity (2 day)
+        if user.get("lastSignin"):
+            last_signin = user["lastSignin"]
+            if isinstance(last_signin, str):
+                last_signin = datetime.fromisoformat(last_signin)
+
+            inactivity_days = (now - last_signin).days
+            if inactivity_days >= 3:  # <-- Now 3 days instead of 2
+                print(f"⚠️ Auto signout triggered after {inactivity_days} days")
+                Model.update_one(
+                    {"userId": user_id},
+                    {"$set": {"lastSignout": now}}
+                )
+
+                user = Model.find_one({"userId": user_id}, {"_id": 0})
+                return {
+                    "message": "Re-logged in after session timeout.",
+                    "user": {**user, "userType": user_type}
+                }
+
+        # Normal login path
+        Model.update_one(
+            {"userId": user_id},
+            {"$set": {"lastSignin": now}}
+)
+
+        user = Model.find_one({ "userId": user_id }, {"_id": 0 })
+
+        return {
+            "message": "Login successful",
+            "user": {
+                **user,
+                "userType": user_type
+            }
+        }
+
+
+# @router.post("/signin")
+# def signin(data: SigninRequest, request: Request):
+#     db = request.app.state.user_db
+#     username = data.username
+#     password = data.password
+#     user_type = data.userType.lower()
+
+#     Model = db["admin"] if user_type == "admin" else db["streamer"]
+#     user = Model.find_one({"username": username}, {"_id": 0})
+
+#     if not user or user["password"] != password:
+#         raise HTTPException(status_code=400, detail="Invalid username or password")
+
+#     if user.get("status") == "Suspended":
+#         raise HTTPException(status_code=403, detail="Account is suspended.")
+
+#     return {"message": "Login successful", "user": user}
 
 
 @router.delete("/delete/{userType}/{username}")
@@ -165,22 +268,66 @@ def reset_password(request: Request, body: dict):
 
 from fastapi.encoders import jsonable_encoder
 
-@router.put("/users/{userId}/status")
-def update_status(request: Request, userId: str, body: dict):
-    db = request.app.state.user_db
-    status = body.get("status")
+#Suspended
+# @router.put("/users/{userId}/status")
+# def update_status(request: Request, userId: str, body: dict):
+#     db = request.app.state.user_db
+#     status = body.get("status")
 
-    result = db.streamer.find_one_and_update(
-        {"userId": userId},  # ✅ using userId now
-        {"$set": {"status": status}},
-        return_document=ReturnDocument.AFTER
-    )
+#     if status not in ["Active", "Suspended"]:
+#         raise HTTPException(status_code=400, detail="Invalid status")
 
-    if result:
-        result["_id"] = str(result["_id"])  # still safe to convert
-        return JSONResponse(content=result)
+#     # Try updating in streamer collection first
+#     result = db.streamer.find_one_and_update(
+#         {"userId": userId},
+#         {"$set": {"status": status}},
+#         return_document=ReturnDocument.AFTER
+#     )
 
-    raise HTTPException(status_code=404, detail="User not found")
+#     if result:
+#         result["_id"] = str(result["_id"])
+#         return JSONResponse(content=result)
+
+#     raise HTTPException(status_code=404, detail="User not found")
+
+@router.put("/users/{user_id}/status")
+async def update_user_status(user_id: str, request: Request):
+    try:
+        body = await request.json()
+        status = body.get("status")
+        user_type = body.get("userType")
+
+        print("🧪 Received:", {
+            "userId": user_id,
+            "userType": user_type,
+            "status": status
+        })
+
+        if not status or not user_type:
+            raise HTTPException(status_code=400, detail="Missing status or userType")
+
+        db = request.app.state.user_db
+        Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
+
+        # ✅ Try finding the user first to confirm they exist
+        user = Model.find_one({ "userId": user_id })
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        result = db.streamer.find_one_and_update(
+            { "userId": user_id },
+            { "$set": { "status": status } }
+        )
+
+        print(f"✅ Updated {user_id} to {status}")
+        return { "message": f"User {user_id} status updated to {status}" }
+
+    except Exception as e:
+        print("🚨 Error:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 @router.post("/preferences")
 def update_preferences(request: Request, body: dict):
@@ -228,3 +375,117 @@ def get_user_by_id(request: Request, userType: str, userId: str):
 
     return user
 
+# @router.post("/update-signout-time")
+# async def update_signout_time(request: Request):
+#     body = await request.json()
+#     user_id = body.get("userId")
+#     user_type = body.get("userType")  # Needed to decide which collection
+#     time_str = body.get("time")
+
+#     if not user_id or not user_type:
+#         raise HTTPException(status_code=400, detail="Missing userId or userType")
+
+#     from dateutil.parser import parse
+#     last_signout = parse(time_str) if time_str else datetime.utcnow()
+
+#     db = request.app.state.user_db
+#     Model = db["admin"] if user_type.lower() == "admin" else db["streamer"]
+
+#     result = Model.update_one(
+#         { "userId": user_id },
+#         { "$set": { "lastSignout": last_signout } }
+#     )
+
+#     if result.modified_count == 0:
+#         raise HTTPException(status_code=404, detail="User not found")
+
+#     return {"message": "Sign-out time updated"}
+
+
+@router.post("/update-signout-time")
+async def update_signout_time(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    
+    user_id = body.get("userId")
+    user_type = (body.get("userType") or "").lower()
+    time_str = body.get("time")
+
+    if not user_id or user_type not in ["admin", "streamer"]:
+        raise HTTPException(status_code=400, detail="Missing or invalid userId/userType")
+
+    try:
+        last_signout = (
+            datetime.fromisoformat(time_str.replace("Z", "+00:00")).astimezone(timezone.utc)
+            if time_str 
+            else datetime.now(timezone.utc)
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid time format: {e}")
+
+    db = request.app.state.user_db
+    Model = db[user_type]
+
+    result = Model.update_one(
+        {"userId": user_id},
+        {"$set": {"lastSignout": last_signout}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"message": "Sign-out time updated successfully"}
+
+# Add this code to your movies router file (e.g., at the end)
+
+from datetime import datetime, timedelta
+
+@router.get("/stats")
+async def get_platform_stats(request: Request):
+    try:
+        # Get database connections
+        movie_db = request.app.state.movie_db
+        user_db = request.app.state.user_db
+
+        # Define the time window for "new" items
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+
+        # --- MOVIE COUNTS ---
+        # 1. Get total number of movies
+        total_movies = movie_db.hybridRecommendation2.count_documents({})
+
+        # 2. Get number of new movies added in the last 30 days
+        new_movies = movie_db.hybridRecommendation2.count_documents(
+            {"createdAt": {"$gte": thirty_days_ago}}
+        )
+
+        # --- USER COUNTS ---
+        # 3. Get total number of regular users (streamers) and admins
+        total_streamers = user_db.streamer.count_documents({})
+        total_admins = user_db.admin.count_documents({})
+        total_users = total_streamers + total_admins
+
+        # 4. Get number of new users in the last 30 days
+        new_streamers = user_db.streamer.count_documents(
+            {"createdAt": {"$gte": thirty_days_ago}}
+        )
+        new_admins = user_db.admin.count_documents(
+            {"createdAt": {"$gte": thirty_days_ago}}
+        )
+        new_users = new_streamers + new_admins
+
+        # 5. Assemble the response
+        stats = {
+            "totalUsers": total_users,
+            "newUsers": new_users,
+            "totalMovies": total_movies,
+            "newMovies": new_movies
+        }
+
+        return JSONResponse(content=stats)
+
+    except Exception as e:
+        print(f"❌ Error fetching platform stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch platform statistics.")

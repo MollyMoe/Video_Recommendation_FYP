@@ -6,16 +6,12 @@ const API = import.meta.env.VITE_API_BASE_URL;
 const AdUserTable = ({ searchQuery }) => {
   const [users, setUsers] = useState([]);
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const fetchStreamers = async () => {
       try {
-        const res = await fetch(
-          `${API}/api/auth/users/streamer`
-        );
+        const res = await fetch(`${API}/api/auth/users/streamer`);
         const data = await res.json();
-        console.log("Fetched streamers:", data);
         setUsers(data);
       } catch (err) {
         console.error("Error loading users:", err);
@@ -25,38 +21,38 @@ const AdUserTable = ({ searchQuery }) => {
     fetchStreamers();
   }, []);
 
-  useEffect(() => {
-  const fetchUser = async () => {
-    const res = await fetch(`${API}/api/auth/users/streamer/${user.userId}`);
-    const data = await res.json();
-    setUser(data);
-  };
-
-  fetchUser();
-}, []);
-
   const handleToggleSuspend = async (userId) => {
     const updatedUsers = users.map((user) =>
       user.userId === userId
-        ? {
-            ...user,
-            status: user.status === "Suspended" ? "Active" : "Suspended",
-          }
+        ? { ...user, status: user.status === "Suspended" ? "Active" : "Suspended" }
         : user
     );
-
     setUsers(updatedUsers);
 
     const newStatus = updatedUsers.find((user) => user.userId === userId)?.status;
+    const userType = updatedUsers.find((user) => user.userId === userId)?.userType;
+
+    if (!userType) {
+      console.error("❌ Missing userType for user:", userId);
+      return;
+    }
 
     try {
       await fetch(`${API}/api/auth/users/${userId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, userType }),
       });
+
+      if (newStatus === "Active") {
+        await fetch(`${API}/api/auth/update-signout-time`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, userType, time: new Date().toISOString() }),
+        });
+      }
     } catch (err) {
-      console.error("Failed to update status:", err);
+      console.error("❌ Error toggling suspension:", err);
     }
   };
 
@@ -69,61 +65,72 @@ const AdUserTable = ({ searchQuery }) => {
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
     return users.filter((user) =>
-      user.username.toLowerCase().includes(searchQuery.toLowerCase())
+      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.userId.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [searchQuery, users]);
 
-  if (filteredUsers.length === 0) return null;
+  if (filteredUsers.length === 0 && searchQuery) {
+    return (
+        <div className="text-center py-10 text-gray-500 bg-white min-h-screen dark:bg-gray-900 dark:text-gray-400">
+            No users found matching your search.
+        </div>
+    );
+  }
 
   return (
-    <div className="sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-800">
-      <div className="shadow rounded-lg overflow-hidden dark:bg-gray-800">
-        <table className="min-w-full overflow-hidden">
-          <thead>
-            <tr>
-              <th className="px-10 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+    <div className="min-h-screen w-full bg-white dark:bg-gray-900">
+    <div className="bg-white sm:ml-15 mx-auto px-4 py-8 dark:bg-gray-900">
+      <div className="shadow-md rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 isolate">
+        <table className="min-w-full">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="px-10 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 UserID
               </th>
-              <th className="px-7 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-7 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 User
               </th>
-              <th className="px-10 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-10 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 Email
               </th>
-              <th className="px-15 py-3 bg-gray-100 text-left text-sm font-semibold text-gray-600 dark:text-white dark:bg-gray-800 uppercase">
+              <th className="px-15 py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">
                 Action
               </th>
             </tr>
           </thead>
-          <tbody>
-            {filteredUsers.map((user, index) => (
-              <tr key={user._id}>
-                <td className="px-10 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+          <tbody className="bg-white dark:bg-gray-800/50">
+            {filteredUsers.map((user) => (
+              // --- FIX: Added dark mode border ---
+              <tr key={user._id || user.userId} className="border-b border-gray-200 dark:border-gray-700">
+                <td className="px-10 py-5 text-sm text-gray-700 dark:text-gray-300">
                   {user.userId}
                 </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+                <td className="px-5 py-5 text-sm">
                   <div className="flex items-center">
                     <div className="ml-3">
-                      <p className="text-gray-900 dark:text-white">
+                      {/* --- FIX: Added dark mode text color --- */}
+                      <p className="text-gray-900 dark:text-white font-semibold">
                         {user.username}
                       </p>
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
+                <td className="px-5 py-5 text-sm text-gray-700 dark:text-gray-300">
                   {user.email}
                 </td>
-                <td className="px-5 py-5 border-b border-gray-200 bg-white text-sm dark:text-white dark:bg-gray-800">
-                  <div className="flex gap-2 mt-2">
+                <td className="px-5 py-5 text-sm">
+                  <div className="flex gap-2 items-center">
                     <button
                       onClick={() => handleView(user)}
-                      className="bg-blue-500 text-white px-5 py-2 text-xs rounded hover:bg-blue-600"
+                      className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-black dark:text-gray-200 px-5 py-2 text-xs rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       View
                     </button>
                     <button
                       onClick={() => handleToggleSuspend(user.userId)}
-                      className={`min-w-[90px] px-3 py-1 text-xs rounded text-white ${
+                      className={`min-w-[90px] px-3 py-2 text-xs rounded-lg shadow-sm text-white ${
                         user.status === "Suspended"
                           ? "bg-green-500 hover:bg-green-600"
                           : "bg-red-500 hover:bg-red-600"
@@ -138,6 +145,7 @@ const AdUserTable = ({ searchQuery }) => {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 };

@@ -1,24 +1,37 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const StSideBar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const StSidebarButton = ({ to, label, current, children }) => {
+    const handleClick = (e) => {
+      e.preventDefault();
+      if (current) {
+        // Reload the page if clicking on the active route
+        window.location.reload();
+      } else {
+        // Navigate normally
+        navigate(to);
+      }
+    };
+
     return (
-      <Link
-        to={to}
+      <a
+        href={to}
+        onClick={handleClick}
         className={`block p-4 rounded-lg ${
           current
-            ? "bg-gray-200 text-black font-semibold"
-            : "hover:bg-gray-200 dark:hover:bg-gray-700"
+            ? "bg-fuchsia-100 text-black font-semibold"
+            : "hover:bg-fuchsia-100 dark:hover:bg-gray-700"
         }`}
       >
         {children || label}
-      </Link>
+      </a>
     );
   };
 
-  const location = useLocation();
   return (
     <aside
       id="logo-sidebar"
@@ -26,7 +39,7 @@ const StSideBar = () => {
       aria-label="Sidebar"
     >
       <div className="h-full px-3 pb-4 overflow-y-auto bg-white dark:bg-gray-800">
-        <ul className="space-y-2 font-medium text-center text-black dark:text-white">
+        <ul className="mt-7 space-y-2 font-medium text-center text-black dark:text-white">
           <li>
             <StSidebarButton
               to="/home"
@@ -45,7 +58,6 @@ const StSideBar = () => {
             />
           </li>
           <li>
-
             <StSidebarButton
               to="/home/watchLater"
               label="Watch Later"
@@ -54,14 +66,14 @@ const StSideBar = () => {
           </li>
           <li>
             <StSidebarButton
-              to="/home/liked"
-              label="Liked Movies"
-              current={location.pathname === "/home/liked"}
+              to="/home/like"
+              label="Liked Movie"
+              current={location.pathname === "/home/like"}
             />
           </li>
 
           <hr className="my-2 border-gray-300" />
-          
+
           <li>
             <StSidebarButton
               to="/home/filter"
@@ -87,20 +99,18 @@ const StSideBar = () => {
             />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Send Feedback
-            </a>
+            <StSidebarButton
+              to="/home/sendfeedback"
+              label="Send Feedback"
+              current={location.pathname === "/home/sendfeedback"}
+            />
           </li>
           <li>
-            <a
-              href="#"
-              className="block p-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-            >
-              Manage Subscriptions
-            </a>
+            <StSidebarButton
+              to="/home/subscription"
+              label="Subscription"
+              current={location.pathname === "/home/subscription"}
+            />
           </li>
         </ul>
       </div>

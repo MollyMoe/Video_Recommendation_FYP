@@ -1,9 +1,12 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
-const API = import.meta.env.VITE_API_BASE_URL;
+import { syncOfflineCache } from "@/utils/syncOfflineCache";
+import { API } from "@/config/api";
+
 
 function SignInPage() {
   const navigate = useNavigate();
@@ -19,6 +22,7 @@ function SignInPage() {
   const [message, setMessage] = useState(null);
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,15 +57,19 @@ function SignInPage() {
     };
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMessage(null);
 
-    if (!validateForm()) return;
+  if (!validateForm()) return;
 
-    setIsLoading(true);
+  const isOnline = navigator.onLine;
 
-    try {
+  setIsLoading(true);
+
+  try {
+    if (isOnline) {
+      // ✅ ONLINE LOGIN FLOW
       const res = await fetch(`${API}/api/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,115 +77,160 @@ function SignInPage() {
           username: formData.username,
           password: formData.password,
           userType: formData.userType.toLowerCase(),
+          email: formData.email,
         }),
       });
 
-      const data = await res.json();
-      console.log("Login API response data:", data);
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        // ignore JSON parse errors for non-OK responses
+      }
 
-      if (res.ok) {
-        setMessage({ type: "success", text: "Login successful!" });
-        localStorage.setItem("token", data.token);
-
-        // Clear old profile images
-        localStorage.removeItem("streamer_profileImage");
-        localStorage.removeItem("admin_profileImage");
-
-        localStorage.setItem("token", data.token);
-
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        if (formData.userType === "streamer") {
-          localStorage.removeItem("streamer_profileImage");
-        } else if (formData.userType === "admin") {
-          localStorage.removeItem("admin_profileImage");
+      if (!res.ok) {
+        const status = res.status;
+        const errMsg = (data?.detail || data?.error || "Login failed. Please try again.").toString();
+        if (status === 403 && errMsg.toLowerCase().includes("suspended")) {
+          setMessage({
+            type: "error",
+            text: "Your account has been suspended. Please contact cineit.helpdesk@gmail.com.",
+          });
+        } else if (status === 400 && errMsg.toLowerCase().includes("invalid")) {
+          setMessage({ type: "error", text: "Invalid username or password." });
+        } else {
+          setMessage({ type: "error", text: errMsg });
         }
+        return;
+      }
 
-        // ✅ Fetch profile image only after successful login
-        if (data.user?.userId && formData.userType) {
-          const endpoint = `${API}/api/auth/users/${formData.userType.toLowerCase()}/${
-            data.user.userId
-          }`;
-          try {
-            const imageRes = await fetch(endpoint);
-            const userInfo = await imageRes.json();
+      // ok
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-            if (userInfo.profileImage) {
-              const key = `${formData.userType.toLowerCase()}_profileImage`;
-              localStorage.setItem(key, userInfo.profileImage);
-            }
-          } catch (error) {
-            console.warn("⚠️ Could not fetch profile image:", error);
+      // Clear old profile images first
+      localStorage.removeItem("streamer_profileImage");
+      localStorage.removeItem("admin_profileImage");
+
+      // 🔎 Fetch full profile (so we persist genres + image consistently)
+      try {
+        const who = data.user?.userType?.toLowerCase(); // "admin" | "streamer"
+        const id = data.user?.userId;
+        if (who && id) {
+          const profRes = await fetch(`${API}/api/auth/users/${who}/${id}`);
+          const profRaw = await profRes.json();
+          const profile = normalizeProfile(profRaw);
+
+          // Save normalized profile for offline
+          window.electron?.saveProfileUpdate?.(profile);
+          localStorage.setItem("profile", JSON.stringify(profile));
+
+          // Merge genres onto user so UI can read either place
+          const mergedUser = { ...data.user, genres: profile.genres };
+          localStorage.setItem("user", JSON.stringify(mergedUser));
+
+          // Save profile image key
+          if (profile.profileImage) {
+            localStorage.setItem(`${who}_profileImage`, profile.profileImage);
           }
         }
+      } catch (e) {
+        console.warn("⚠️ Could not fetch/normalize profile:", e);
+      }
 
-        // Navigate based on user type
-        if (formData.userType === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/home");
+      // 🔁 Sync offline cache for streamers only
+      if (window.electron && data.user?.userType?.toLowerCase() === "streamer") {
+        try {
+          await syncOfflineCache(data.user);
+        } catch (e) {
+          console.warn("⚠️ syncOfflineCache failed:", e);
         }
-      } else if (
-        res.status === 403 &&
-        data.detail?.toLowerCase().includes("suspend")
-      ) {
+      }
 
-        // 👉 Add this block BELOW:
-        // Set profile image for context to pick up on next reload
-        const baseUrl = "http://localhost:3001";
-        const profileImageUrl = data.user.profileImage
-          ? data.user.profileImage.startsWith("http")
-            ? data.user.profileImage
-            : `${baseUrl}${data.user.profileImage}`
-          : baseUrl + "/uploads/profile.png";
-        if (formData.userType === "streamer") {
-          localStorage.setItem("streamer_profileImage", profileImageUrl);
-        } else if (formData.userType === "admin") {
-          localStorage.setItem("admin_profileImage", profileImageUrl);
+      // 💾 Save session offline
+      window.electron?.saveSession?.({
+        userId: data.user.userId,
+        username: data.user.username,
+        userType: data.user.userType,
+        password: formData.password, // stored for offline match
+        lastSignin: new Date().toISOString(),
+      });
+
+      // 🚀 Navigate
+      navigate(formData.userType === "admin" ? "/admin" : "/home");
+      setMessage({ type: "success", text: "Login successful!" });
+
+    } else {
+      // ⚡ OFFLINE LOGIN FLOW
+      try {
+        const offlineData = window.electron?.getSession?.();
+
+        const match =
+          offlineData &&
+          offlineData.username === formData.username &&
+          offlineData.password === formData.password &&
+          (offlineData.userType?.toLowerCase?.() === formData.userType?.toLowerCase?.());
+
+        if (!match) {
+          setMessage({
+            type: "error",
+            text: "Offline login failed. No matching saved session.",
+          });
+          return;
         }
 
-        // Navigation...
-        if (formData.userType === "admin") {
-          navigate("/admin");
-        } else if (formData.userType === "streamer") {
-          navigate("/home");
-        } else {
-          navigate("/home");
+        const who = formData.userType.toLowerCase();
+
+        // 1) Load cached, normalized profile (Electron → localStorage fallback)
+        let cachedProfile = null;
+        try {
+          cachedProfile = await window.electron?.getProfileUpdate?.();
+        } catch {}
+        if (!cachedProfile) {
+          const raw = localStorage.getItem("profile");
+          cachedProfile = raw ? JSON.parse(raw) : null;
         }
 
-      } else if (
-        res.status === 403 &&
-        data.error?.toLowerCase().includes("suspend")
-      ) {
+        // 2) Merge cached profile onto the offline session for genres/profileImage
+        const mergedUser = { ...offlineData };
 
+        if (cachedProfile) {
+          localStorage.setItem("profile", JSON.stringify(cachedProfile));
+
+          if (!Array.isArray(mergedUser.genres) && Array.isArray(cachedProfile.genres)) {
+            mergedUser.genres = cachedProfile.genres;
+          }
+          if (cachedProfile.profileImage) {
+            localStorage.setItem(`${who}_profileImage`, cachedProfile.profileImage);
+          }
+        } else if (offlineData.profileImage) {
+          // fallback if only in session
+          localStorage.setItem(`${who}_profileImage`, offlineData.profileImage);
+        }
+
+        // 3) Persist and go
+        localStorage.setItem("user", JSON.stringify(mergedUser));
+        navigate(who === "admin" ? "/admin" : "/home");
+        setMessage({ type: "success", text: "Logged in offline." });
+      } catch (e) {
+        console.error("Offline login error:", e);
         setMessage({
           type: "error",
-          text: "Your account is suspended. Please contact support.",
-        });
-      } else if (
-        res.status === 400 &&
-        data.detail?.toLowerCase().includes("invalid")
-      ) {
-        setMessage({
-          type: "error",
-          text: "Invalid username or password.",
-        });
-      } else {
-        setMessage({
-          type: "error",
-          text: data.detail || "Login failed. Please try again.",
+          text: "Offline login failed. Try signing in online once to cache your profile.",
         });
       }
-    } catch (error) {
-      setMessage({ type: "error", text: "Server error. Please try again." });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    setMessage({ type: "error", text: "Unexpected error. Try again." });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // FIXED: Return needs to be inside the component
   return (
-    <div className="min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans  dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="bg-white min-h-screen flex flex-col inset-0 items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto flex flex-col">
         {/* Header */}
         <div className="text-center py-4">
@@ -186,7 +239,7 @@ function SignInPage() {
             alt="Cine It"
             className="mx-auto h-12 mb-1 rounded-full"
           />
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+          <h2 className="text-2xl text-black font-semibold text-gray-800 dark:text-white">
             Sign In
           </h2>
         </div>
@@ -233,7 +286,7 @@ function SignInPage() {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
+                <ul className="absolute z-10 mt-1 w-full bg-white text-gray-900 dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
                   <li>
                     <button
                       type="button"
@@ -243,7 +296,7 @@ function SignInPage() {
                         });
                         setDropdownOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="block w-full text-left px-4 py-2 text-black hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       System Admin
                     </button>
@@ -257,7 +310,7 @@ function SignInPage() {
                         });
                         setDropdownOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="block w-full text-left px-4 py-2 text-black hover:bg-gray-100 dark:hover:bg-gray-600"
                     >
                       Streamer
                     </button>

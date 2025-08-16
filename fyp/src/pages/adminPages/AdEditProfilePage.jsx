@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheck, ArrowLeft } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -213,7 +214,6 @@ const handleChange = async (e) => {
     }
 
     try {
-
       const updateRes = await fetch(`${API}/api/password/update-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -250,14 +250,24 @@ const handleChange = async (e) => {
   }, [showConfirm]);
 
   return (
-    <div className="min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-800">
-      <div className="fixed top-17 px-3 pb-4 bg-white dark:bg-gray-800">
-        <button className="bg-white border border-gray-400 text-black text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
-          <Link to="/admin">Back</Link>
-        </button>
-      </div>
+    <div className="bg-white min-h-screen pt-30 px-4 sm:px-8 dark:bg-gray-900">
+      {/* Sidebar */}
+      <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700">
+        <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
 
-      <div className="max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:text-white">
+          {/* Back */}
+          <Link
+            to="/admin"
+            className="flex items-center gap-3 px-4 py-2 text-gray-800 dark:text-white hover:bg-fuchsia-200 dark:hover:bg-gray-700 rounded-lg"
+          >
+            <ArrowLeft className="w-4 h-4 " />
+            Back
+          </Link>
+
+        </div>
+      </aside>
+
+      <div className="bg-white max-w-xl mx-auto flex flex-col items-center justify-center p-4 font-sans text-black dark:bg-gray-900 dark:text-white">
         <form onSubmit={handleSubmit} className="w-full">
           <div className="mb-5 flex flex-row items-center space-x-4">
             <img
@@ -296,7 +306,7 @@ const handleChange = async (e) => {
               value={formData[field]}
               onChange={handleChange}
               disabled={field === "contact"}
-              className={`shadow-xs bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+              className={`shadow-xs bg-gray-50 text-black border border-gray-300 text-gray-900 text-sm rounded-lg 
                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 
                 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white
                 ${field === "contact" ? "cursor-not-allowed bg-gray-100 dark:bg-gray-800" : ""}`}
@@ -378,7 +388,7 @@ const handleChange = async (e) => {
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
                     placeholder="Current Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">
@@ -405,7 +415,7 @@ const handleChange = async (e) => {
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     placeholder="New Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
                   <input
                     type="password"
@@ -413,7 +423,7 @@ const handleChange = async (e) => {
                     value={passwordData.confirmNewPassword}
                     onChange={handlePasswordChange}
                     placeholder="Confirm New Password"
-                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
+                    className="text-black bg-white w-full p-2 border rounded-md dark:bg-gray-700 dark:text-white mb-2"
                   />
                   {passwordError && <p className="text-red-600 text-sm">{passwordError}</p>}
                   <div className="flex justify-end space-x-3 pt-2">

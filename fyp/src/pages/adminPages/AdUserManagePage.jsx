@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import AdNav from "../../components/admin_components/AdNav";
-import AdSearch from "../../components/admin_components/AdSearch";
+import AdUserSearchBar from "../../components/admin_components/AdUserSearchBar";
 import { Link } from "react-router-dom";
 import AdUserTable from "../../components/admin_components/AdUserTable";
 import { useLocation } from "react-router-dom";
+import { House, Newspaper } from "lucide-react";
 
 const AdUserManagePage = () => {
   const location = useLocation();
@@ -14,7 +16,7 @@ const AdUserManagePage = () => {
       <AdNav />
 
       <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
-        <AdSearch
+        <AdUserSearchBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearch={(value) => setSearchQuery(value)}
@@ -22,18 +24,27 @@ const AdUserManagePage = () => {
 
       </div>
       <div>
-        <aside
-          id="logo-sidebar"
-          className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-gray-200 sm:translate-x-0 dark:bg-gray-800 dark:border-gray-700"
-          aria-label="Sidebar"
-        >
-          <div className="min-h-screen flex-1 pt-20 pl-[160px] pr-6 dark:bg-gray-800">
-
-            <Link to="/admin">
-              <button className="fixed bg-white border border-gray-400 text-black top-17 left-10 text-md px-4 py-1 mt-10 rounded-lg shadow-md hover:bg-gray-200">
+        <aside className="fixed top-0 left-0 z-40 w-40 h-screen pt-20 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700">
+          <div className="h-full px-4 pb-4 overflow-y-auto mt-2 space-y-2">
+              
+            {/* Home Link */}
+            <Link
+                to="/admin"
+                className="flex items-center gap-3 px-3 py-2 text-gray-800 hover:bg-fuchsia-200 dark:text-white dark:hover:bg-gray-700 rounded-lg"
+              >
+              <House className="w-4 h-4" />
                 Home
-              </button>
             </Link>
+
+            {/* Feedback Link */}
+            <Link
+                to="/admin/feedback"
+                className="flex items-center gap-3 px-3 py-2 text-gray-800 hover:bg-fuchsia-200 dark:text-white dark:hover:bg-gray-700 rounded-lg"
+              >
+              <Newspaper className="w-4 h-4" />
+                Feedback
+            </Link>
+              
           </div>
         </aside>
       </div>

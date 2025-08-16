@@ -21,11 +21,10 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    strictPort: true, 
     hmr: process.env.NODE_ENV !== 'production',
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://cineit.onrender.com',
         changeOrigin: true,
         secure: false,
       },
@@ -36,4 +35,3 @@ export default defineConfig({
     emptyOutDir: true,
   },
 })
-

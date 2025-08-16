@@ -1,13 +1,32 @@
+
 import { useState, useRef, useEffect } from "react";
 import { FaSearch, FaBackspace, FaTimes } from "react-icons/fa";
 
-const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
-  const [history, setHistory] = useState(() => {
-    const stored = localStorage.getItem("searchHistory");
-    return stored ? JSON.parse(stored) : [];
-  });
-  const [isFocused, setIsFocused] = useState(false);
-  const wrapperRef = useRef(null);
+const StSearchBar = ({ searchQuery, setSearchQuery, onSearch, isSubscribed }) => {
+const savedUser = JSON.parse(localStorage.getItem("user"));
+const userId = savedUser?.userId || "default";
+const [isFocused, setIsFocused] = useState(false);
+const wrapperRef = useRef(null);
+const storageKey = `searchHistory_main_${userId}`;
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+const isSearchDisabled = !isOnline || !isSubscribed;
+
+  useEffect(() => {
+    const handleOnlineStatus = () => setIsOnline(navigator.onLine);
+
+    window.addEventListener("online", handleOnlineStatus);
+    window.addEventListener("offline", handleOnlineStatus);
+
+    return () => {
+      window.removeEventListener("online", handleOnlineStatus);
+      window.removeEventListener("offline", handleOnlineStatus);
+    };
+  }, []);
+
+const [history, setHistory] = useState(() => {
+  const stored = localStorage.getItem(storageKey);
+  return stored ? JSON.parse(stored) : [];
+});
 
   const handleClickOutside = (event) => {
     if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -23,8 +42,8 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("searchHistory", JSON.stringify(history));
-  }, [history]);
+    localStorage.setItem(storageKey, JSON.stringify(history));
+  }, [history, storageKey]);
 
   const addToHistory = (term) => {
     const normalizedTerm = term.toLowerCase();
@@ -64,11 +83,25 @@ const StSearchBar = ({ searchQuery, setSearchQuery, onSearch }) => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          onKeyDown={handleKeyDown}
-          placeholder="Search..."
-          className="w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="Search movies"
+          onKeyDown={(e) => {
+            if (isSearchDisabled) return;
+            handleKeyDown(e);
+          }}
+          disabled={isSearchDisabled}
+          placeholder={
+            !isOnline
+              ? "Unavailable while offline!"
+              : !isSubscribed
+              ? "Subscribe to unlock search"
+              : "Search..."
+          }
+          className={`w-full pl-4 pr-10 py-2 bg-gray-100 border border-gray-300 rounded-full focus:outline-none focus:ring-2 ${
+            !isSearchDisabled
+              ? "focus:ring-purple-500"
+              : "cursor-not-allowed text-gray-400 bg-gray-200"
+          }`}
         />
+
         {searchQuery && (
           <button
             type="button"

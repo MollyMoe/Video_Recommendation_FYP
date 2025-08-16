@@ -1,10 +1,11 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import logoPic from "../images/Cine-It.png";
 import { useNavigate } from "react-router-dom";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import { API } from "@/config/api";
 
-const API = import.meta.env.VITE_API_BASE_URL;
 console.log("API =", API); 
 const defaultImage = `${API}/uploads/profile.jpg`;
 
@@ -124,7 +125,7 @@ function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 font-sans dark:bg-gray-800 dark:border-gray-700 dark:text-white">
       <div className="w-full max-w-sm mx-auto">
         {/* Header */}
         <div className="text-center py-4">
@@ -133,7 +134,7 @@ function SignUpPage() {
             alt="Cine It"
             className="mx-auto h-12 mb-1 rounded-full"
           />
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+          <h2 className="text-2xl text-black font-semibold text-gray-800 dark:text-white">
             Create Account
           </h2>
         </div>
@@ -166,7 +167,7 @@ function SignUpPage() {
                 type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md 
-                      bg-white text-gray-900 dark:bg-gray-700 dark:text-white 
+                      bg-white text-black dark:bg-gray-700 dark:text-white 
                       focus:outline-none focus:ring-2 focus:ring-purple-400 text-left flex justify-between items-center"
               >
                 <span>
@@ -180,7 +181,7 @@ function SignUpPage() {
               </button>
 
               {dropdownOpen && (
-                <ul className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
+                <ul className="absolute z-10 mt-1 w-full text-grey-900 bg-white dark:bg-gray-700 border border-gray-300 rounded-md shadow-md">
                   <li>
                     <button
                       type="button"
@@ -190,7 +191,7 @@ function SignUpPage() {
                         });
                         setDropdownOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-black dark:hover:bg-gray-600"
                     >
                       System Admin
                     </button>
@@ -204,7 +205,7 @@ function SignUpPage() {
                         });
                         setDropdownOpen(false);
                       }}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-black dark:hover:bg-gray-600"
                     >
                       Streamer
                     </button>

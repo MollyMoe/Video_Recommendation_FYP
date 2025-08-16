@@ -1,28 +1,37 @@
 
 import React from "react";
+import { useOutletContext } from "react-router-dom";
 import AdSearch from "../../components/admin_components/AdSearch";
 import AdSideButtons from "../../components/admin_components/AdSideButtons";
 import AdNav from "../../components/admin_components/AdNav";
 import AdMovieContent from "../../components/admin_components/AdMovieContent";
 import { useState } from "react";
 
-
 const AdVideoHomePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  return (
-    
-    <>
-      <AdNav />
-      <AdSideButtons />
-      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5">
+  const context = useOutletContext();
+  
+  const {
+    recentMoviesGlobal = [],
+    setRecentMoviesGlobal = () => {},
+    updateFlag = false
+  } = context || {};
 
+  return (
+    <>
+      {/* add ml-20 */}
+      <div className="fixed top-[25px] left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-5 ml-20">
         <AdSearch
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearch={(value) => setSearchQuery(value)}
         />
       </div>
-      <AdMovieContent searchQuery={searchQuery} />
+      <AdMovieContent 
+        searchQuery={searchQuery}
+        externalUpdateTrigger={updateFlag} 
+        setRecentMoviesGlobal={setRecentMoviesGlobal} 
+        currentRecentMoviesGlobal={recentMoviesGlobal} />
     </>
   );
 };

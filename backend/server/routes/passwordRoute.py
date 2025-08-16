@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
@@ -42,4 +43,3 @@ def update_password(data: UpdatePasswordRequest, request: Request):
     )
 
     return {"message": "Password updated successfully."}
-

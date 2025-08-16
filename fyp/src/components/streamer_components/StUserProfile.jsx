@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { FaUserEdit, FaSun, FaMoon, FaSignOutAlt } from "react-icons/fa";
 import { useUser } from "../../context/UserContext";
+import axios from "axios";
 import { Link } from "react-router-dom";
-
-const API = import.meta.env.VITE_API_BASE_URL;
+import { API } from "@/config/api";
 
 const defaultImage = "https://res.cloudinary.com/dnbyospvs/image/upload/v1751267557/beff3b453bc8afd46a3c487a3a7f347b_tqgcpi.jpg";
 
@@ -12,7 +12,7 @@ function StUserProfile({ userProfile }) {
   const dropdownRef = useRef(null);
   const [darkMode, setDarkMode] = useState(false);
 
-  const { profileImage, updateProfileImage, setCurrentRole } = useUser();
+  const { profileImage, updateProfileImage, currentRole, setCurrentRole } = useUser();
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -40,28 +40,39 @@ function StUserProfile({ userProfile }) {
       });
   }, []);
 
+ // ✅ Load dark mode from offline file
   useEffect(() => {
-    const savedTheme = localStorage.getItem("darkMode");
-    if (savedTheme === "true") {
-      setDarkMode(true);
-    }
+    const loadTheme = async () => {
+      if (window.electron?.getTheme) {
+        const data = await window.electron.getTheme();
+        if (data?.darkMode === true) {
+          setDarkMode(true);
+        }
+      }
+    };
+    loadTheme();
   }, []);
 
   useEffect(() => {
     setCurrentRole("streamer");
   }, []);
 
+  // ✅ Apply & save dark mode setting
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
-    localStorage.setItem("darkMode", darkMode);
+
+    if (window.electron?.saveTheme) {
+      window.electron.saveTheme({ darkMode });
+    }
   }, [darkMode]);
 
+  // ✅ Toggle dark mode
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+    setDarkMode((prev) => !prev);
   };
 
   useEffect(() => {
@@ -76,6 +87,71 @@ function StUserProfile({ userProfile }) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+ 
+const handleSignout = async () => {
+  const savedUser = JSON.parse(localStorage.getItem("user"));
+
+  if (!savedUser?.userId || !savedUser?.userType) {
+    console.warn("⚠️ No valid user session found.");
+  } else {
+    const payload = {
+      userId: savedUser.userId,
+      userType: savedUser.userType,
+      time: new Date().toISOString(),
+      reason: "manual",
+    };
+
+    if (navigator.onLine) {
+      try {
+        await axios.post(`${API}/api/auth/update-signout-time`, payload);
+        console.log("✅ Signout time recorded to backend");
+      } catch (err) {
+        console.error("❌ Failed to record signout time:", err);
+        // Optional: fallback to local save here too
+        if (window.electron?.saveOfflineSignout) {
+          try {
+            window.electron.saveOfflineSignout({ userId: savedUser.userId });
+            console.log("📁 Fallback: offline signout saved");
+          } catch (e) {
+            console.warn("⚠️ Failed to fallback-save offline:", e);
+          }
+        }
+      }
+    } else {
+      if (window.electron?.saveOfflineSignout) {
+        try {
+          window.electron.saveOfflineSignout({ userId: savedUser.userId });
+          console.log("📁 Offline signout saved locally");
+        } catch (err) {
+          console.warn("⚠️ Failed to save offline session:", err);
+        }
+      } else {
+        console.warn("🧪 Not running in Electron — offline save skipped");
+      }
+    }
+  }
+
+  // Clear user session
+  localStorage.removeItem("user");
+
+  if (window.electron?.clearOfflineSignout) {
+    try {
+      window.electron.clearOfflineSignout();
+    } catch (err) {
+      console.warn("⚠️ Failed to clear offline sync:", err);
+    }
+  }
+
+  // Redirect to signin page
+  if (window.location.hash.includes("#")) {
+    window.location.hash = "#/signin";
+  } else {
+    window.location.href = "/signin";
+  }
+};
+
+
 
   return (
     // User Profile
@@ -122,13 +198,9 @@ function StUserProfile({ userProfile }) {
               )}
             </li>
             <hr className="my-1 border-gray-200 dark:border-gray-700" />
-            <li>
-              <Link
-                to="/signin"
-                className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"
-              >
+            <li onClick={handleSignout}
+            className="flex items-center px-4 py-2 hover:bg-purple-100 dark:hover:bg-gray-700 cursor-pointer"> 
                 <FaSignOutAlt className="mr-2" /> Sign Out
-              </Link>
             </li>
           </ul>
         </div>
